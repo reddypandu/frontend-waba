@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
+      console.log(`[Auth] Attempting login at: ${BASE}/api/auth/login`);
       const res = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log(`[Auth] Status: ${res.status} ${res.statusText}`);
       const text = await res.text();
       if (!text) {
         throw new Error(
