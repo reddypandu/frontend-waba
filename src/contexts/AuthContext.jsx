@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5005";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -23,7 +23,13 @@ export const AuthProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, full_name: fullName }),
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      if (!text) {
+        throw new Error(`Backend returned empty response (${res.status}). URL: ${BASE}/api/auth/signup`);
+      }
+
+      const data = JSON.parse(text);
       if (!res.ok) throw new Error(data.error || "Signup failed");
 
       localStorage.setItem("token", data.token);
@@ -44,7 +50,6 @@ export const AuthProvider = ({ children }) => {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
