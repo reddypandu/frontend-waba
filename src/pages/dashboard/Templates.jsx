@@ -40,7 +40,7 @@ const Templates = () => {
     enabled: !!user,
   });
 
-  const allTemplates = templatesData?.data || [];
+  const allTemplates = templatesData?.templates || [];
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
@@ -112,7 +112,7 @@ const Templates = () => {
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"
-                  onClick={() => navigate(`/dashboard/templates/edit/${t.id}`)}
+                  onClick={() => navigate(`/dashboard/templates/edit/${t._id}`)}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
