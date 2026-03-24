@@ -42,7 +42,7 @@ const EditTemplate = () => {
 
   React.useEffect(() => {
     if (template) {
-      const components = template.components || [];
+      const components = Array.isArray(template.components) ? template.components : [];
       const header = components.find(c => c.type === 'HEADER');
       const body = components.find(c => c.type === 'BODY');
       const footer = components.find(c => c.type === 'FOOTER');

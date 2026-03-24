@@ -50,9 +50,11 @@ const CreateCampaign = () => {
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["templates-for-campaign"],
     queryFn: async () => {
-      const { templates: metaTemplates } = await apiPost("/api/whatsapp", { action: "sync_templates" });
-      const localRes = await apiGet("/api/whatsapp/templates/all"); // Assuming we have an all-templates getter
-      const localTemplates = localRes.templates || [];
+      const metaRes = await apiPost("/api/whatsapp", { action: "sync_templates" });
+      const metaTemplates = metaRes?.templates || [];
+      
+      const localRes = await apiGet("/api/whatsapp/templates/all");
+      const localTemplates = localRes?.templates || [];
       
       const metaNames = new Set(metaTemplates.map(t => t.name));
       const localOnly = localTemplates.filter(t => !metaNames.has(t.name));
@@ -66,16 +68,18 @@ const CreateCampaign = () => {
     queryKey: ["contacts-for-campaign"],
     queryFn: async () => {
       const data = await apiPost("/api/whatsapp", { action: "get_contacts" });
-      return data.contacts || [];
+      return data?.contacts || [];
     },
     enabled: !!user,
   });
 
-  const selectedTemplate = templates.find(t => t.id === templateId || t._id === templateId || t.name === templateId);
+  const selectedTemplate = (templates || []).find(t => t.id === templateId || t._id === templateId || t.name === templateId);
   const totalRecipients = dataSource === "excel" ? excelContacts.length : selectedContacts.length;
 
   // Extract variables
-  const templateBody = selectedTemplate?.components?.find(c => c.type === 'BODY')?.text || selectedTemplate?.body || "";
+  const templateBody = (Array.isArray(selectedTemplate?.components) 
+    ? selectedTemplate?.components?.find(c => c.type === 'BODY')?.text 
+    : selectedTemplate?.body_text) || "";
   const templateVars = (templateBody.match(/\{\{(\d+)\}\}/g) || [])
     .map(v => parseInt(v.replace(/[{}]/g, "")))
     .filter((v, i, a) => a.indexOf(v) === i)
@@ -114,7 +118,7 @@ const CreateCampaign = () => {
     mutationFn: async () => {
       let finalContacts = selectedContacts;
       if (dataSource === 'excel') {
-        const res = await apiPost("/api/contacts/batch", { contacts: excelContacts });
+        const res = await apiPost("/api/whatsapp/contacts/batch", { contacts: excelContacts });
         finalContacts = res.ids;
       }
       

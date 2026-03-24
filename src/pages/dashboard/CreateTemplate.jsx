@@ -308,9 +308,9 @@ const CreateTemplate = () => {
                 <div className="flex items-center justify-between">
                    <Label className="text-sm font-bold">Buttons (Optional)</Label>
                    <div className="flex gap-2">
-                      <Button variant="outline" size="xs" onClick={() => addButton('QUICK_REPLY')} className="text-[10px] h-7">+ Quick Reply</Button>
-                      <Button variant="outline" size="xs" onClick={() => addButton('URL')} className="text-[10px] h-7">+ Website</Button>
-                      <Button variant="outline" size="xs" onClick={() => addButton('PHONE_NUMBER')} className="text-[10px] h-7">+ Phone</Button>
+                      <Button variant="outline" size="sm" onClick={() => addButton('QUICK_REPLY')} className="text-[10px] h-7">+ Quick Reply</Button>
+                      <Button variant="outline" size="sm" onClick={() => addButton('URL')} className="text-[10px] h-7">+ Website</Button>
+                      <Button variant="outline" size="sm" onClick={() => addButton('PHONE_NUMBER')} className="text-[10px] h-7">+ Phone</Button>
                    </div>
                 </div>
                 
