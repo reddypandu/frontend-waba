@@ -160,14 +160,29 @@ const CreateTemplate = () => {
                   />
                 )}
                 {form.headerType === 'media' && (
-                  <Select value={form.headerFormat} onValueChange={v => setForm({...form, headerFormat: v})}>
-                    <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="IMAGE">Image (.jpg, .png)</SelectItem>
-                      <SelectItem value="VIDEO">Video (.mp4)</SelectItem>
-                      <SelectItem value="DOCUMENT">Document (.pdf)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-3 mt-2">
+                    <Select value={form.headerFormat} onValueChange={v => setForm({...form, headerFormat: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IMAGE">Image (.jpg, .png)</SelectItem>
+                        <SelectItem value="VIDEO">Video (.mp4)</SelectItem>
+                        <SelectItem value="DOCUMENT">Document (.pdf)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-3 p-4 border-2 border-dashed rounded-xl bg-muted/30">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Plus className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-foreground">Upload {form.headerFormat}</p>
+                        <p className="text-[10px] text-muted-foreground">Click to select file or drag and drop</p>
+                      </div>
+                      <Input type="file" className="hidden" id="header-file" onChange={() => toast({ title: "Asset uploaded", description: "Media ID generated" })} />
+                      <Button variant="outline" size="sm" asChild>
+                        <label htmlFor="header-file" className="cursor-pointer">Select</label>
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -192,6 +207,7 @@ const CreateTemplate = () => {
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => addButton('QUICK_REPLY')}>+ Quick Reply</Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => addButton('URL')}>+ URL</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addButton('PHONE_NUMBER')}>+ Phone</Button>
                   </div>
                 </div>
                 
