@@ -29,30 +29,45 @@ const Contacts = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [deleteId, setDeleteId] = React.useState(null);
 
-  // Mock data
-  const contacts = [];
-  const isLoading = false;
+  const { data: contacts = [], isLoading } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: () => apiGet("/api/admin/contacts"),
+    enabled: !!user,
+  });
 
   const addMutation = useMutation({
-    mutationFn: async (contact) => {
-      console.log("Add contact", contact);
-    },
+    mutationFn: (contact) => apiPost("/api/admin/contacts", {
+      name: contact.name,
+      phone_number: contact.phone,
+      tags: contact.tags.split(",").map(t => t.trim()).filter(Boolean)
+    }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setDialogOpen(false);
       setNewContact({ name: "", phone: "", tags: "" });
-      toast({ title: "Contact added" });
+      toast({ title: "Contact added successfully" });
     },
+    onError: (err) => {
+      toast({ title: "Failed to add contact", description: err.message, variant: "destructive" });
+    }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      console.log("Delete contact", id);
-    },
+    mutationFn: (id) => apiPost(`/api/admin/contacts/${id}`, {}, { method: 'DELETE' }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setDeleteId(null);
       toast({ title: "Contact deleted" });
     },
+    onError: (err) => {
+      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+    }
   });
+
+  const filteredContacts = contacts.filter(c => 
+    c.name?.toLowerCase().includes(search.toLowerCase()) || 
+    c.phone_number?.includes(search)
+  );
 
   return (
     <div className="space-y-6">
@@ -136,10 +151,10 @@ const Contacts = () => {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading...</div>
-          ) : contacts.length === 0 ? (
+          ) : filteredContacts.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
               <Search className="mx-auto h-12 w-12 mb-4 opacity-10" />
-              <p>No contacts found. Add your first contact or import a CSV!</p>
+              <p>{search ? "No matching contacts found." : "No contacts found. Add your first contact or import a CSV!"}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -153,10 +168,10 @@ const Contacts = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {contacts.map((c) => (
-                    <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                  {filteredContacts.map((c) => (
+                    <tr key={c._id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                       <td className="py-3 px-4 font-medium text-foreground">{c.name}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{c.phone}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{c.phone_number}</td>
                       <td className="py-3 px-4">
                         <div className="flex gap-1 flex-wrap">
                           {(c.tags || []).map((tag) => (
@@ -167,7 +182,7 @@ const Contacts = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteId(c.id)}>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteId(c._id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </td>

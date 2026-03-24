@@ -58,6 +58,14 @@ const WhatsAppSetup = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary/50" />
+      </div>
+    );
+  }
+
   // ─── Connected State ───────────────────────────────────────────────────────
   if (isConnected && view === "status") {
     return (
@@ -109,28 +117,30 @@ const WhatsAppSetup = () => {
           <InfoCard label="Verification Status" value={waAccount?.verification_status} badge />
         </div>
 
-        {/* Webhook Notice */}
-        <Card className="shadow-sm border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Wifi className="h-4 w-4 text-primary" />
-              Webhook Configuration
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Configure your webhook in Meta App Dashboard</AlertTitle>
-              <AlertDescription className="text-xs mt-1">
-                Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{(import.meta.env.VITE_API_BASE_URL || "http://localhost:5005").replace(/\/$/, '')}/api/webhook</code><br />
-                Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">mysecrettoken</code>
-              </AlertDescription>
-            </Alert>
-            <Button variant="outline" size="sm" className="rounded-xl" onClick={() => window.open("https://developers.facebook.com/apps", "_blank")}>
-              <ExternalLink className="h-4 w-4 mr-2" /> Open Meta Developer Console
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Webhook Notice (Only for Admins) */}
+        {user?.role === "admin" && (
+          <Card className="shadow-sm border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Wifi className="h-4 w-4 text-primary" />
+                Platform Webhook Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Admin: Configure your webhook in Meta App Dashboard</AlertTitle>
+                <AlertDescription className="text-xs mt-1">
+                  Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{(import.meta.env.VITE_API_BASE_URL || "http://localhost:5005").replace(/\/$/, '')}/api/webhook</code><br />
+                  Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">mysecrettoken</code>
+                </AlertDescription>
+              </Alert>
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => window.open("https://developers.facebook.com/apps", "_blank")}>
+                <ExternalLink className="h-4 w-4 mr-2" /> Open Meta Developer Console
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }

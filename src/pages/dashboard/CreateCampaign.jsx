@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft, FileSpreadsheet, Send, Zap,
+  ArrowLeft, FileSpreadsheet, Send, Zap, Smartphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -34,12 +34,13 @@ const CreateCampaign = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      return apiPost("/api/whatsapp", {
-        action: "create_campaign",
+      const template = templates.find(t => t.id === templateId);
+      return apiPost("/api/whatsapp/campaigns", {
         name: campaignName,
-        template_id: templates.find(t => t.id === templateId)?.name || templateId,
+        template_name: template?.name || templateId,
         audience_type: audienceType,
         schedule_type: scheduleType,
+        contacts: [], // Backend will fetch if audience_type is 'existing'
       });
     },
     onSuccess: () => {
