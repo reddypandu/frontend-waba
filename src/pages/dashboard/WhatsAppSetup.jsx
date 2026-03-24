@@ -33,6 +33,7 @@ const WhatsAppSetup = () => {
 
   const waAccount = dashData?.waAccount || null;
   const isConnected = !!waAccount?.phone_number_id;
+  const isStep3Visible = isConnected;
 
   const handleManualSave = async () => {
     setSaving(true);
