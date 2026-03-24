@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Bold, Italic, Type, MessageSquare, Globe, Phone, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -26,6 +27,16 @@ const CreateTemplate = () => {
     footer: "",
     buttons: []
   });
+  const [headerPreviewUrl, setHeaderPreviewUrl] = React.useState(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setHeaderPreviewUrl(url);
+      toast({ title: "Asset uploaded", description: "Media ID generated" });
+    }
+  };
 
   const addButton = (type) => {
     if (form.buttons.length >= 3) {
@@ -46,7 +57,7 @@ const CreateTemplate = () => {
 
   const updateButton = (index, field, value) => {
     const newBtns = [...form.buttons];
-    newBtns[index][field] = value;
+    newBtns[index] = { ...newBtns[index], [field]: value };
     setForm({ ...form, buttons: newBtns });
   };
 
@@ -177,7 +188,7 @@ const CreateTemplate = () => {
                         <p className="text-xs font-bold text-foreground">Upload {form.headerFormat}</p>
                         <p className="text-[10px] text-muted-foreground">Click to select file or drag and drop</p>
                       </div>
-                      <Input type="file" className="hidden" id="header-file" onChange={() => toast({ title: "Asset uploaded", description: "Media ID generated" })} />
+                      <Input type="file" className="hidden" id="header-file" onChange={handleFileChange} accept={form.headerFormat === 'IMAGE' ? "image/*" : form.headerFormat === 'VIDEO' ? "video/*" : ".pdf"} />
                       <Button variant="outline" size="sm" asChild>
                         <label htmlFor="header-file" className="cursor-pointer">Select</label>
                       </Button>
@@ -224,19 +235,19 @@ const CreateTemplate = () => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs">Button Text</Label>
-                          <Input value={btn.text} onChange={e => updateButton(index, 'text', e.target.value)} placeholder="e.g. Visit Website" className="h-8 text-sm" />
+                          <Input value={btn.text || ""} onChange={e => updateButton(index, 'text', e.target.value)} placeholder="e.g. Visit Website" className="h-8 text-sm" />
                         </div>
                       </div>
                       {btn.type === 'URL' && (
                         <div className="space-y-1.5">
                           <Label className="text-xs">URL</Label>
-                          <Input value={btn.url} onChange={e => updateButton(index, 'url', e.target.value)} placeholder="https://example.com" className="h-8 text-sm" />
+                          <Input value={btn.url || ""} onChange={e => updateButton(index, 'url', e.target.value)} placeholder="https://example.com" className="h-8 text-sm" />
                         </div>
                       )}
                       {btn.type === 'PHONE_NUMBER' && (
                         <div className="space-y-1.5">
                           <Label className="text-xs">Phone Number</Label>
-                          <Input value={btn.phone_number} onChange={e => updateButton(index, 'phone_number', e.target.value)} placeholder="+919876543210" className="h-8 text-sm" />
+                          <Input value={btn.phone_number || ""} onChange={e => updateButton(index, 'phone_number', e.target.value)} placeholder="+919876543210" className="h-8 text-sm" />
                         </div>
                       )}
                     </div>
@@ -258,9 +269,24 @@ const CreateTemplate = () => {
             <CardContent className="min-h-[460px] p-4 flex flex-col justify-start">
               <div className="bg-white rounded-xl rounded-tl-none shadow-sm max-w-[90%] overflow-hidden relative">
                 {form.headerType === 'media' && (
-                  <div className="aspect-video bg-gray-100 flex flex-col items-center justify-center border-b">
-                    <Type className="h-8 w-8 text-gray-300 mb-1" />
-                    <span className="text-[10px] text-gray-400 font-bold">{form.headerFormat} HEADER</span>
+                  <div className="aspect-video bg-gray-100 flex flex-col items-center justify-center border-b overflow-hidden">
+                    {headerPreviewUrl ? (
+                      form.headerFormat === 'IMAGE' ? (
+                        <img src={headerPreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+                      ) : form.headerFormat === 'VIDEO' ? (
+                        <video src={headerPreviewUrl} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Type className="h-8 w-8 text-gray-300 mb-1" />
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{form.headerFormat} HEADER</span>
+                        </div>
+                      )
+                    ) : (
+                      <>
+                        <Type className="h-8 w-8 text-gray-300 mb-1" />
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{form.headerFormat} HEADER</span>
+                      </>
+                    )}
                   </div>
                 )}
                 <div className="p-3 space-y-1">
