@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Signup failed");
-      
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setToken(data.token);
@@ -40,11 +40,26 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
+
+      const text = await res.text();
+      if (!text) {
+        throw new Error(
+          `Backend returned empty response (${res.status}). URL: ${BASE}/api/auth/login`,
+        );
+      }
+
+      const data = JSON.parse(text);
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || `Request failed: ${res.status}`,
+        );
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -64,7 +79,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, signUp, signIn, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
