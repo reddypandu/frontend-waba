@@ -122,7 +122,7 @@ const WhatsAppSetup = () => {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Configure your webhook in Meta App Dashboard</AlertTitle>
               <AlertDescription className="text-xs mt-1">
-                Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{window.location.origin.replace(/^http:/, 'https:')}/api/webhook</code><br />
+                Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{(import.meta.env.VITE_API_BASE_URL || "http://localhost:5005").replace(/\/$/, '')}/api/webhook</code><br />
                 Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">mysecrettoken</code>
               </AlertDescription>
             </Alert>
