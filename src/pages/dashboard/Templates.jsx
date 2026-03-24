@@ -36,7 +36,7 @@ const Templates = () => {
 
   const { data: templatesData, isLoading, refetch } = useQuery({
     queryKey: ["whatsapp-templates"],
-    queryFn: () => apiPost("/api/whatsapp", { action: "get_templates" }),
+    queryFn: () => apiPost("/api/whatsapp", { action: "sync_templates" }),
     enabled: !!user,
   });
 

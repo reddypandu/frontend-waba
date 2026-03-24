@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Phone, CheckCircle2, AlertCircle, Zap, Shield, ArrowRight, ExternalLink, RefreshCw, Wifi, Settings2, Trash2 } from "lucide-react";
+import { Phone, CheckCircle2, AlertCircle, Zap, Shield, ArrowRight, ExternalLink, RefreshCw, Wifi, Settings2, Trash2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -132,11 +132,42 @@ const WhatsAppSetup = () => {
                 <AlertTitle>Admin: Configure your webhook in Meta App Dashboard</AlertTitle>
                 <AlertDescription className="text-xs mt-1">
                   Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{(import.meta.env.VITE_API_BASE_URL || "http://localhost:5005").replace(/\/$/, '')}/api/webhook</code><br />
-                  Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">mysecrettoken</code>
+                  Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary font-bold">{(import.meta.env.VITE_WEBHOOK_VERIFY_TOKEN || "Set in .env")}</code>
                 </AlertDescription>
               </Alert>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Note: Webhook verification is handled automatically by the platform once configured in Meta.
+              </p>
               <Button variant="outline" size="sm" className="rounded-xl" onClick={() => window.open("https://developers.facebook.com/apps", "_blank")}>
                 <ExternalLink className="h-4 w-4 mr-2" /> Open Meta Developer Console
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Branding & QR Code (For Users) */}
+        {isStep3Visible && (
+          <Card className="shadow-sm border-border/50 bg-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base text-primary">
+                <QrCode className="h-4 w-4" />
+                Your WhatsApp Marketing QR
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center text-center space-y-4">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/' + waAccount?.display_phone_number?.replace(/\+/g, ''))}`}
+                  alt="WhatsApp QR"
+                  className="w-32 h-32"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Scan to test your connection</p>
+                <p className="text-xs text-muted-foreground mt-1">Share this QR with your customers to start chatting!</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => window.open(`https://wa.me/${waAccount?.display_phone_number?.replace(/\+/g, '')}`, "_blank")}>
+                Test wa.me Link
               </Button>
             </CardContent>
           </Card>

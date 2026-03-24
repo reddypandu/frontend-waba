@@ -15,21 +15,49 @@ const BusinessProfile = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = React.useState(false);
   
-  // Mock data
-  const business = { name: "Your Business", address: "123 Main St", email: "info@example.com", website: "https://example.com" };
-  const whatsappProfile = { about: "Welcome to our business!", description: "We provide quality services.", vertical: "RETAIL" };
+  const { data: profile, isLoading, refetch } = useQuery({
+    queryKey: ["whatsapp-profile"],
+    queryFn: () => apiGet("/api/admin/whatsapp-profile"),
+    enabled: !!user,
+  });
 
-  const [form, setForm] = React.useState({ ...business, ...whatsappProfile });
+  const [form, setForm] = React.useState({
+    name: "", address: "", email: "", websites: [], vertical: "", about: "", description: ""
+  });
+
+  React.useEffect(() => {
+    if (profile) {
+      setForm({
+        name: profile.name || "Your Business",
+        address: profile.address || "",
+        email: profile.email || "",
+        websites: profile.websites || [],
+        vertical: profile.vertical || "",
+        about: profile.about || "",
+        description: profile.description || ""
+      });
+    }
+  }, [profile]);
 
   const updateMutation = useMutation({
-    mutationFn: async () => {
-      console.log("Update profile", form);
-    },
+    mutationFn: (data) => apiPost("/api/admin/whatsapp-profile", data),
     onSuccess: () => {
       setIsEditing(false);
-      toast({ title: "Profile updated successfully" });
+      refetch();
+      toast({ title: "Profile updated successfully on Meta" });
     },
+    onError: (err) => {
+      toast({ title: "Failed to update Meta profile", description: err.message, variant: "destructive" });
+    }
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -43,7 +71,10 @@ const BusinessProfile = () => {
         ) : (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2" /> Cancel</Button>
-            <Button onClick={() => updateMutation.mutate()}><Check className="h-4 w-4 mr-2" /> Save Changes</Button>
+            <Button onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+              Save Changes
+            </Button>
           </div>
         )}
       </div>
@@ -51,8 +82,12 @@ const BusinessProfile = () => {
       <div className="grid gap-6">
         <Card className="overflow-hidden">
           <div className="h-32 bg-primary/10 flex items-end p-6">
-            <div className="w-24 h-24 rounded-2xl bg-background border-4 border-background shadow-lg flex items-center justify-center -mb-12 ring-2 ring-primary/5">
-              <Building2 className="h-10 w-10 text-primary" />
+            <div className="w-24 h-24 rounded-2xl bg-background border-4 border-background shadow-lg flex items-center justify-center -mb-12 ring-2 ring-primary/5 relative overflow-hidden">
+              {profile?.profile_picture_url ? (
+                <img src={profile.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <Building2 className="h-10 w-10 text-primary" />
+              )}
             </div>
           </div>
           <CardContent className="pt-16 pb-6">
@@ -61,7 +96,7 @@ const BusinessProfile = () => {
                 <h2 className="text-2xl font-bold">{form.name}</h2>
                 <div className="flex items-center gap-2 text-muted-foreground mt-1 text-sm">
                   <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Verified</Badge>
-                  <span>WhatsApp Business API</span>
+                  <span>Official Business Account</span>
                 </div>
               </div>
             </div>
@@ -77,7 +112,7 @@ const BusinessProfile = () => {
               <div className="grid sm:grid-cols-2 gap-6">
                 <InfoItem icon={MapPin} label="Address" value={form.address} />
                 <InfoItem icon={Mail} label="Contact Email" value={form.email} />
-                <InfoItem icon={Globe} label="Website" value={form.website} />
+                <InfoItem icon={Globe} label="Website" value={form.websites?.[0]} />
                 <InfoItem icon={Building2} label="Vertical" value={form.vertical} />
               </div>
             ) : (
@@ -85,7 +120,8 @@ const BusinessProfile = () => {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Business Name</Label>
-                    <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    <Input value={form.name} readOnly className="bg-muted cursor-not-allowed" title="Name is managed in Meta Dashboard" />
+                    <p className="text-[10px] text-muted-foreground">Managed on Meta side</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label>Vertical / Industry</Label>
@@ -103,7 +139,7 @@ const BusinessProfile = () => {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Website</Label>
-                    <Input value={form.website} onChange={e => setForm({...form, website: e.target.value})} />
+                    <Input value={form.websites?.[0] || ""} onChange={e => setForm({...form, websites: [e.target.value]})} />
                   </div>
                 </div>
               </div>

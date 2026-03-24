@@ -53,7 +53,7 @@ const Contacts = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => apiPost(`/api/admin/contacts/${id}`, {}, { method: 'DELETE' }),
+    mutationFn: (id) => apiDelete(`/api/admin/contacts/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setDeleteId(null);

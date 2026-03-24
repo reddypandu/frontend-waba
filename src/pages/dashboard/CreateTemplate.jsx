@@ -25,12 +25,29 @@ const CreateTemplate = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      console.log("Create template", form);
+      const components = [{ type: "BODY", text: form.body }];
+      if (form.headerType === "text" && form.headerText) {
+        components.unshift({ type: "HEADER", format: "TEXT", text: form.headerText });
+      }
+      if (form.footer) {
+        components.push({ type: "FOOTER", text: form.footer });
+      }
+
+      return apiPost("/api/whatsapp", {
+        action: "create_template",
+        name: form.name,
+        category: form.category,
+        language: form.language,
+        components
+      });
     },
     onSuccess: () => {
       toast({ title: "Template submitted for approval" });
       navigate("/dashboard/templates");
     },
+    onError: (err) => {
+      toast({ title: "Failed to submit template", description: err.message, variant: "destructive" });
+    }
   });
 
   return (
@@ -45,7 +62,9 @@ const CreateTemplate = () => {
         </div>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" onClick={() => navigate("/dashboard/templates")}>Cancel</Button>
-          <Button onClick={() => createMutation.mutate()} disabled={!form.name || !form.body}>Submit</Button>
+          <Button onClick={() => createMutation.mutate()} disabled={!form.name || !form.body || createMutation.isPending}>
+            {createMutation.isPending ? "Submitting..." : "Submit"}
+          </Button>
         </div>
       </div>
 
@@ -79,7 +98,7 @@ const CreateTemplate = () => {
             <CardHeader>
               <CardTitle>Message Content</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Header (Optional)</Label>
                 <RadioGroup value={form.headerType} onValueChange={v => setForm({...form, headerType: v})} className="flex gap-4">
@@ -92,18 +111,25 @@ const CreateTemplate = () => {
                     <Label htmlFor="h-text">Text</Label>
                   </div>
                 </RadioGroup>
+                {form.headerType === 'text' && (
+                  <Input 
+                    value={form.headerText} 
+                    onChange={e => setForm({...form, headerText: e.target.value})} 
+                    placeholder="Enter header text..." 
+                    maxLength={60}
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Body Message</Label>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><Bold className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><Italic className="h-4 w-4" /></Button>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    Use {"{{1}}"} for variables
                   </div>
                 </div>
                 <Textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})} placeholder="Hi {{1}}, thank you for your order!" rows={6} />
-                <Button variant="link" className="p-0 h-auto text-xs" onClick={() => setForm({...form, body: form.body + '{{1}}'})}>+ Add variable</Button>
               </div>
 
               <div className="space-y-2">
@@ -116,16 +142,19 @@ const CreateTemplate = () => {
 
         <div className="md:col-span-2 space-y-6">
           <Card className="sticky top-6 overflow-hidden">
-            <CardHeader className="bg-[#075E54] text-white">
-              <CardTitle className="text-sm">WhatsApp Preview</CardTitle>
+            <CardHeader className="bg-[#075E54] text-white py-3">
+              <CardTitle className="text-xs">WhatsApp Preview</CardTitle>
             </CardHeader>
-            <CardContent className="bg-[#ECE5DD] min-h-[400px] p-4 flex flex-col justify-end">
+            <CardContent className="bg-[#ECE5DD] min-h-[440px] p-4 flex flex-col justify-end">
               <div className="bg-white rounded-lg shadow-sm max-w-[90%] overflow-hidden relative">
                  <div className="p-3 space-y-1">
+                  {form.headerType === 'text' && form.headerText && (
+                    <p className="text-xs font-bold text-gray-900 border-b pb-1 mb-1">{form.headerText}</p>
+                  )}
                   {form.body ? (
                     <>
-                      <p className="text-xs text-gray-800 whitespace-pre-wrap">{form.body}</p>
-                      {form.footer && <p className="text-[10px] text-gray-400 mt-1">{form.footer}</p>}
+                      <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{form.body}</p>
+                      {form.footer && <p className="text-[10px] text-gray-400 mt-2 border-t pt-1 italic">{form.footer}</p>}
                     </>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">Start typing to see preview...</p>
