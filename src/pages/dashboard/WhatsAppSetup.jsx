@@ -158,7 +158,7 @@ const WhatsAppSetup = () => {
             <CardContent className="flex flex-col items-center text-center space-y-4">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/' + waAccount?.display_phone_number?.replace(/\+/g, ''))}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/' + (waAccount?.phone_number || '').replace(/\D/g, ''))}`}
                   alt="WhatsApp QR"
                   className="w-32 h-32"
                 />
@@ -167,7 +167,7 @@ const WhatsAppSetup = () => {
                 <p className="text-sm font-bold text-foreground">Scan to test your connection</p>
                 <p className="text-xs text-muted-foreground mt-1">Share this QR with your customers to start chatting!</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => window.open(`https://wa.me/${waAccount?.display_phone_number?.replace(/\+/g, '')}`, "_blank")}>
+              <Button variant="outline" size="sm" onClick={() => window.open(`https://wa.me/${(waAccount?.phone_number || '').replace(/\D/g, '')}`, "_blank")}>
                 Test wa.me Link
               </Button>
             </CardContent>
