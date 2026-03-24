@@ -29,7 +29,7 @@ const Inbox = () => {
     refetchInterval: 5000,
   });
 
-  const { data: contactsData } = useQuery({
+  const { data: contactsData, isLoading: contactsLoading } = useQuery({
     queryKey: ["contacts"],
     queryFn: () => apiGet("/api/admin/contacts"),
     enabled: !!user,
@@ -38,6 +38,7 @@ const Inbox = () => {
   const conversations = convsData?.conversations || [];
   const contacts = contactsData || [];
 
+  const isLoading = (convsLoading || contactsLoading) && conversations.length === 0 && contacts.length === 0;
   // Filtered list: show conversations first, then contacts who don't have a conversation yet
   const filteredList = React.useMemo(() => {
     let list = conversations.map(c => ({ ...c, isConv: true }));
@@ -111,6 +112,7 @@ const Inbox = () => {
     },
     onSuccess: (data) => {
       setMessage("");
+      if (data.conversation_id) setSelectedConv(data.conversation_id);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({ queryKey: ["messages"] });
       if (selectedConv === "new" || selectedConv?.startsWith("contact-")) {

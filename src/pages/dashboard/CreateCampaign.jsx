@@ -1,188 +1,387 @@
-import * as React from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft, FileSpreadsheet, Send, Zap, Smartphone,
+  ArrowLeft, Loader2, Upload, ChevronDown, ChevronUp,
+  FileSpreadsheet, UserPlus, Clock, Zap, Check, Smartphone,
+  Send, CalendarDays,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiPost } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
+import * as XLSX from "xlsx";
 
 const CreateCampaign = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [campaignName, setCampaignName] = React.useState("");
-  const [templateId, setTemplateId] = React.useState("");
-  const [audienceType, setAudienceType] = React.useState("existing");
-  const [scheduleType, setScheduleType] = React.useState("now");
+  const fileInputRef = useRef(null);
 
-  const { data: templatesData } = useQuery({
-    queryKey: ["whatsapp-templates"],
-    queryFn: () => apiPost("/api/whatsapp", { action: "get_templates" }),
+  const [campaignName, setCampaignName] = useState("");
+  const [openSection, setOpenSection] = useState("type");
+  const [campaignType, setCampaignType] = useState("");
+  const [templateId, setTemplateId] = useState("");
+  const [dataSource, setDataSource] = useState("");
+  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [excelContacts, setExcelContacts] = useState([]);
+  const [scheduleType, setScheduleType] = useState("immediate");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [testPhone, setTestPhone] = useState("");
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [variableMappings, setVariableMappings] = useState({});
+
+  const [completedSections, setCompletedSections] = useState(new Set());
+
+  const markComplete = (section) => {
+    setCompletedSections(prev => new Set(prev).add(section));
+  };
+
+  // Fetch templates
+  const { data: templates = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ["templates-for-campaign"],
+    queryFn: async () => {
+      const { templates: metaTemplates } = await apiPost("/api/whatsapp", { action: "sync_templates" });
+      const localRes = await apiGet("/api/whatsapp/templates/all"); // Assuming we have an all-templates getter
+      const localTemplates = localRes.templates || [];
+      
+      const metaNames = new Set(metaTemplates.map(t => t.name));
+      const localOnly = localTemplates.filter(t => !metaNames.has(t.name));
+      return [...metaTemplates, ...localOnly];
+    },
     enabled: !!user,
   });
 
-  const templates = (templatesData?.data || []).filter(t => t.status === "APPROVED");
+  // Fetch existing contacts (for manual selection)
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["contacts-for-campaign"],
+    queryFn: async () => {
+      const data = await apiPost("/api/whatsapp", { action: "get_contacts" });
+      return data.contacts || [];
+    },
+    enabled: !!user,
+  });
+
+  const selectedTemplate = templates.find(t => t.id === templateId || t._id === templateId || t.name === templateId);
+  const totalRecipients = dataSource === "excel" ? excelContacts.length : selectedContacts.length;
+
+  // Extract variables
+  const templateBody = selectedTemplate?.components?.find(c => c.type === 'BODY')?.text || selectedTemplate?.body || "";
+  const templateVars = (templateBody.match(/\{\{(\d+)\}\}/g) || [])
+    .map(v => parseInt(v.replace(/[{}]/g, "")))
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort((a, b) => a - b);
+
+  const handleExcelUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (rows.length < 2) return toast({ title: "Invalid File", variant: "destructive" });
+
+        const header = rows[0].map(h => String(h || "").toLowerCase().trim());
+        const phoneIdx = header.findIndex(h => h.includes("phone") || h.includes("number"));
+        const nameIdx = header.findIndex(h => h.includes("name"));
+
+        const parsed = [];
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const phone = String(row[phoneIdx] || "").trim();
+          if (phone) parsed.push({ name: nameIdx !== -1 ? String(row[nameIdx] || "") : "User", phone });
+        }
+        setExcelContacts(parsed);
+        toast({ title: `${parsed.length} contacts loaded` });
+      } catch { toast({ title: "Error parsing Excel", variant: "destructive" }); }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const template = templates.find(t => t.id === templateId);
-      return apiPost("/api/whatsapp/campaigns", {
+      let finalContacts = selectedContacts;
+      if (dataSource === 'excel') {
+        const res = await apiPost("/api/contacts/batch", { contacts: excelContacts });
+        finalContacts = res.ids;
+      }
+      
+      const payload = {
         name: campaignName,
-        template_name: template?.name || templateId,
-        audience_type: audienceType,
-        schedule_type: scheduleType,
-        contacts: [], // Backend will fetch if audience_type is 'existing'
-      });
+        template_name: selectedTemplate?.name,
+        audience_type: dataSource === 'excel' ? 'excel' : 'existing',
+        schedule_type: scheduleType === 'scheduled' ? 'later' : 'now',
+        scheduled_at: scheduleType === 'scheduled' ? `${scheduledDate}T${scheduledTime}` : null,
+        contacts: finalContacts,
+      };
+      
+      return await apiPost("/api/whatsapp/campaigns", payload);
     },
-    onSuccess: () => {
-      toast({ title: "Campaign created successfully!" });
-      navigate("/dashboard/campaigns");
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast({ title: "Campaign Saved!" });
+      navigate(`/dashboard/campaigns/${data.campaign_id}${scheduleType === 'immediate' ? '?golive=true' : ''}`);
     },
-    onError: (err) => {
-      toast({ title: "Failed to create campaign", description: err.message, variant: "destructive" });
-    }
+    onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
-  const selectedTemplate = templates.find(t => t.id === templateId);
-  const templateBody = selectedTemplate?.components?.find(c => c.type === 'BODY')?.text || "Select a template to preview its content.";
+  const SectionHeader = ({ number, title, sectionKey, summary }) => {
+    const isOpen = openSection === sectionKey;
+    const isComplete = completedSections.has(sectionKey);
+    return (
+      <button
+        onClick={() => setOpenSection(isOpen ? "" : sectionKey)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors border-b border-border last:border-0"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isComplete ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            {isComplete ? <Check className="w-4 h-4" /> : number}
+          </div>
+          <span className="font-semibold text-sm text-foreground">{title}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {summary && !isOpen && <span className="text-xs text-muted-foreground truncate max-w-[150px]">{summary}</span>}
+          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
+      </button>
+    );
+  };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/campaigns")}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/campaigns")}><ArrowLeft className="w-5 h-5" /></Button>
           <Input 
-            value={campaignName}
-            onChange={(e) => setCampaignName(e.target.value)}
-            className="text-2xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0"
-            placeholder="Untitled Campaign"
+            value={campaignName} 
+            onChange={e => setCampaignName(e.target.value)} 
+            placeholder="Untitled Campaign" 
+            className="h-10 text-lg font-bold border-none focus-visible:ring-0 px-0 translate-y-[-2px] uppercase tracking-tight"
           />
         </div>
-        <Button 
-          onClick={() => createMutation.mutate()} 
-          disabled={!campaignName || !templateId || createMutation.isPending}
-          className="shadow-md"
-        >
-          <Send className="h-4 w-4 mr-2" /> 
-          {createMutation.isPending ? "Launching..." : "Launch Campaign"}
-        </Button>
+        <div className="flex gap-2">
+           <Button variant="outline" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName}>Save Draft</Button>
+           <Button variant="default" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName || !templateId || totalRecipients === 0}>
+             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Go Live"}
+           </Button>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-sm">1</span>
-                Template Selection
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue placeholder="Select a WhatsApp template" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {templates.map(t => (
-                    <SelectItem key={t.id} value={t.id} className="cursor-pointer">{t.name}</SelectItem>
-                  ))}
-                  {templates.length === 0 && <div className="p-4 text-sm text-center text-muted-foreground italic">No templates approved yet</div>}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-sm">2</span>
-                Choose Audience
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup value={audienceType} onValueChange={setAudienceType} className="grid grid-cols-2 gap-4">
-                <div className={`flex items-center space-x-2 border-2 rounded-xl p-4 cursor-pointer transition-all ${audienceType === "existing" ? "border-primary bg-primary/5" : "hover:bg-muted border-border"}`}>
-                  <RadioGroupItem value="existing" id="existing" />
-                  <Label htmlFor="existing" className="flex flex-col gap-1 cursor-pointer">
-                    <span className="font-bold">Existing Contacts</span>
-                    <span className="text-xs text-muted-foreground">Select from your contact list</span>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        <div className="space-y-4">
+          {/* Step 1: Type */}
+          <SectionHeader number={1} title="Campaign Type" sectionKey="type" summary={campaignType ? "One Time Campaign" : ""} />
+          {openSection === "type" && (
+            <Card className="border-none shadow-none bg-muted/20">
+              <CardContent className="p-4 pt-0 space-y-4">
+                <RadioGroup value={campaignType} onValueChange={setCampaignType} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Label htmlFor="one_time" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${campaignType === 'one_time' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                    <RadioGroupItem value="one_time" id="one_time" className="sr-only" />
+                    <Send className="w-5 h-5 text-primary mb-2" />
+                    <p className="font-bold text-sm">One Time</p>
+                    <p className="text-[10px] text-muted-foreground">Broadcast to selected audience</p>
                   </Label>
-                </div>
-                <div className={`flex items-center space-x-2 border-2 rounded-xl p-4 cursor-pointer transition-all ${audienceType === "excel" ? "border-primary bg-primary/5" : "hover:bg-muted border-border"}`}>
-                  <RadioGroupItem value="excel" id="excel" />
-                  <Label htmlFor="excel" className="flex flex-col gap-1 cursor-pointer">
-                    <span className="font-bold">Upload Excel/CSV</span>
-                    <span className="text-xs text-muted-foreground">Import contacts for this campaign</span>
+                  <Label htmlFor="ongoing" className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
+                    <RadioGroupItem value="ongoing" id="ongoing" disabled className="sr-only" />
+                    <Zap className="w-5 h-5 text-muted-foreground mb-2" />
+                    <p className="font-bold text-sm">Ongoing</p>
+                    <p className="text-[10px] text-muted-foreground">Triggered by external events</p>
                   </Label>
-                </div>
-              </RadioGroup>
+                </RadioGroup>
+                <div className="flex justify-end"><Button size="sm" disabled={!campaignType} onClick={() => { markComplete("type"); setOpenSection("template"); }}>Continue</Button></div>
+              </CardContent>
+            </Card>
+          )}
 
-              {audienceType === "excel" && (
-                <div className="border-2 border-dashed border-primary/30 rounded-xl p-10 text-center space-y-3 bg-primary/5">
-                  <FileSpreadsheet className="mx-auto h-12 w-12 text-primary/50" />
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Click to upload or drag and drop</p>
-                    <p className="text-xs text-muted-foreground mt-1">Accepts .csv, .xlsx, .xls</p>
+          {/* Step 2: Template */}
+          <SectionHeader number={2} title="Message Template" sectionKey="template" summary={selectedTemplate?.name} />
+          {openSection === "template" && (
+            <Card className="border-none shadow-none bg-muted/20">
+              <CardContent className="p-4 pt-0 space-y-4">
+                <Select value={templateId} onValueChange={setTemplateId}>
+                  <SelectTrigger className="bg-card"><SelectValue placeholder="Select template..." /></SelectTrigger>
+                  <SelectContent>
+                    {templates.map(t => (
+                      <SelectItem key={t.id || t._id} value={t.id || t._id || t.name}>
+                        <div className="flex items-center gap-2">
+                           <span className="font-medium text-xs">{t.name}</span>
+                           <Badge variant="outline" className="text-[9px] uppercase">{t.status}</Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTemplate && (
+                  <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Body Text</p>
+                    <p className="text-xs whitespace-pre-wrap">{templateBody}</p>
                   </div>
-                  <Input type="file" className="hidden" id="file-upload" />
-                  <Button variant="outline" size="sm" onClick={() => document.getElementById('file-upload').click()} className="rounded-lg">
-                    Browse Files
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+                <div className="flex justify-end"><Button size="sm" disabled={!templateId} onClick={() => { markComplete("template"); setOpenSection("audience"); }}>Continue</Button></div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card className="shadow-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-sm">3</span>
-                Schedule
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-               <RadioGroup value={scheduleType} onValueChange={setScheduleType} className="grid grid-cols-2 gap-4">
-                <div className={`flex items-center space-x-2 border-2 rounded-xl p-4 cursor-pointer transition-all ${scheduleType === "now" ? "border-primary bg-primary/5" : "hover:bg-muted border-border"}`}>
-                  <RadioGroupItem value="now" id="now" />
-                  <Label htmlFor="now" className="font-bold cursor-pointer">Send Instantly</Label>
-                </div>
-                <div className={`flex items-center space-x-2 border-2 rounded-xl p-4 cursor-pointer transition-all ${scheduleType === "later" ? "border-primary bg-primary/5" : "hover:bg-muted border-border"}`}>
-                  <RadioGroupItem value="later" id="later" />
-                  <Label htmlFor="later" className="font-bold cursor-pointer">Schedule for Later</Label>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
+          {/* Step 3: Audience */}
+          <SectionHeader number={3} title="Audience" sectionKey="audience" summary={totalRecipients > 0 ? `${totalRecipients} Contacts` : ""} />
+          {openSection === "audience" && (
+            <Card className="border-none shadow-none bg-muted/20">
+              <CardContent className="p-4 pt-0 space-y-4">
+                <RadioGroup value={dataSource} onValueChange={setDataSource} className="grid grid-cols-2 gap-3">
+                  <Label htmlFor="manual" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${dataSource === 'manual' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                    <RadioGroupItem value="manual" id="manual" className="sr-only" />
+                    <UserPlus className="w-5 h-5 text-primary mb-2" />
+                    <p className="font-bold text-xs text-center">Existing List</p>
+                  </Label>
+                  <Label htmlFor="excel" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${dataSource === 'excel' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                    <RadioGroupItem value="excel" id="excel" className="sr-only" />
+                    <FileSpreadsheet className="w-5 h-5 text-emerald-600 mb-2" />
+                    <p className="font-bold text-xs text-center">Upload File</p>
+                  </Label>
+                </RadioGroup>
+
+                {dataSource === 'manual' && (
+                  <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
+                    {contacts.map(c => (
+                      <div key={c._id} className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-muted/30">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedContacts.includes(c._id)} 
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedContacts(prev => [...prev, c._id]);
+                            else setSelectedContacts(prev => prev.filter(id => id !== c._id));
+                          }}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                           <p className="text-xs font-bold truncate">{c.name}</p>
+                           <p className="text-[10px] text-muted-foreground">{c.phone_number}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {dataSource === 'excel' && (
+                  <div className="space-y-3">
+                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
+                    <Button variant="outline" className="w-full h-24 border-dashed border-2 bg-card group" onClick={() => fileInputRef.current.click()}>
+                       <div className="flex flex-col items-center gap-2">
+                         <Upload className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                         <span className="text-xs text-muted-foreground">{excelContacts.length > 0 ? `${excelContacts.length} numbers loaded` : "Select Excel/CSV file"}</span>
+                       </div>
+                    </Button>
+                  </div>
+                )}
+                <div className="flex justify-end"><Button size="sm" disabled={totalRecipients === 0} onClick={() => { markComplete("audience"); setOpenSection("schedule"); }}>Continue</Button></div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 4: Schedule */}
+          <SectionHeader number={4} title="Schedule" sectionKey="schedule" summary={scheduleType === 'immediate' ? "Immediate" : scheduledDate} />
+          {openSection === "schedule" && (
+             <Card className="border-none shadow-none bg-muted/20">
+               <CardContent className="p-4 pt-0 space-y-4">
+                 <RadioGroup value={scheduleType} onValueChange={setScheduleType} className="grid grid-cols-2 gap-3">
+                    <Label htmlFor="immediate" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${scheduleType === 'immediate' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                      <RadioGroupItem value="immediate" id="immediate" className="sr-only" />
+                      <Zap className="w-5 h-5 text-amber-500 mb-2" />
+                      <p className="font-bold text-xs text-center">Now</p>
+                    </Label>
+                    <Label htmlFor="later" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${scheduleType === 'scheduled' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                      <RadioGroupItem value="scheduled" id="later" className="sr-only" />
+                      <Clock className="w-5 h-5 text-blue-500 mb-2" />
+                      <p className="font-bold text-xs text-center">Later</p>
+                    </Label>
+                 </RadioGroup>
+                 {scheduleType === 'scheduled' && (
+                   <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in-95">
+                      <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
+                      <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
+                   </div>
+                 )}
+                 <div className="flex justify-end"><Button size="sm" onClick={() => markComplete("schedule")}>Finish</Button></div>
+               </CardContent>
+             </Card>
+          )}
         </div>
 
-        <div className="space-y-6">
-          <Card className="sticky top-6 overflow-hidden rounded-2xl border-none shadow-xl bg-[#ECE5DD]">
-            <CardHeader className="bg-[#075E54] text-white py-4">
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <Smartphone className="w-4 h-4" /> WhatsApp Preview
+        {/* Sidebar: Preview */}
+        <div className="space-y-4">
+           <div className="sticky top-6">
+              <div className="rounded-[40px] border-[8px] border-foreground/90 bg-foreground/5 shadow-2xl relative overflow-hidden aspect-[9/16] w-full max-w-[280px] mx-auto">
+                 <div className="bg-[#075e54] pt-8 pb-3 px-4 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><Users className="w-4 h-4 text-white" /></div>
+                    <div className="flex-1">
+                       <p className="text-[12px] font-bold text-white leading-tight">Your Business</p>
+                       <p className="text-[10px] text-white/70">Online</p>
+                    </div>
+                 </div>
+                 <div className="p-3 space-y-3 bg-[#e5ddd5] h-full overflow-y-auto">
+                    <div className="max-w-[85%] bg-white rounded-xl p-3 shadow-sm relative animate-in slide-in-from-left duration-300">
+                       <p className="text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
+                         {templateBody || "Select a template to preview your message here..."}
+                       </p>
+                       <p className="text-[9px] text-muted-foreground text-right mt-1">10:45 AM</p>
+                    </div>
+                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="min-h-[450px] p-4 flex flex-col justify-start">
-              <div className="bg-white rounded-xl rounded-tl-none p-3 shadow-sm max-w-[90%] space-y-2 relative border-l-4 border-[#25D366]">
-                <p className="text-[13px] text-foreground whitespace-pre-wrap leading-relaxed">{templateBody}</p>
-                <div className="flex items-center justify-end gap-1 opacity-50">
-                   <p className="text-[10px] text-right">12:00 PM</p>
-                   <Zap className="w-3 h-3 fill-blue-500 text-blue-500" />
+
+              {/* Test Message UI */}
+              {templateId && (
+                <div className="mt-6 space-y-3 bg-muted/50 p-4 rounded-2xl border border-border">
+                   <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Quick Test</p>
+                      <Smartphone className="w-3 h-3 text-muted-foreground" />
+                   </div>
+                   {!showTestDialog ? (
+                     <Button variant="outline" className="w-full text-xs h-9 rounded-xl" onClick={() => setShowTestDialog(true)}>
+                       Send Test to Me
+                     </Button>
+                   ) : (
+                     <div className="space-y-3 animate-in fade-in zoom-in-95">
+                        <Input 
+                          placeholder="Phone (incl. code)" 
+                          value={testPhone} 
+                          onChange={e => setTestPhone(e.target.value)} 
+                          className="h-9 text-xs"
+                        />
+                        <div className="flex gap-2">
+                           <Button size="sm" className="flex-1 text-xs" disabled={sendingTest || !testPhone} onClick={async () => {
+                             setSendingTest(true);
+                             try {
+                               await apiPost("/api/whatsapp", { 
+                                 action: "send_template", 
+                                 to: testPhone, 
+                                 template_name: selectedTemplate.name 
+                               });
+                               toast({ title: "Test Sent!" });
+                               setShowTestDialog(false);
+                             } catch (e) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
+                             finally { setSendingTest(false); }
+                           }}>
+                             {sendingTest ? <Loader2 className="w-3 h-3 animate-spin" /> : "Send"}
+                           </Button>
+                           <Button size="sm" variant="ghost" className="text-xs" onClick={() => setShowTestDialog(false)}>Cancel</Button>
+                        </div>
+                     </div>
+                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+           </div>
         </div>
       </div>
     </div>
