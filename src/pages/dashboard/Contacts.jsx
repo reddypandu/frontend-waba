@@ -2,11 +2,12 @@ import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Trash2, FileUp, Download } from "lucide-react";
+import { Plus, Search, Trash2, FileUp, Download, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { apiGet, apiPost, apiDelete } from "@/lib/api";
@@ -23,6 +24,7 @@ import {
 
 const Contacts = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = React.useState("");
@@ -183,9 +185,14 @@ const Contacts = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteId(c._id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate(`/dashboard/inbox?phone=${c.phone_number}`)}>
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteId(c._id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Plus, Bold, Italic, Type, MessageSquare } from "lucide-react";
+import { ArrowLeft, Plus, Bold, Italic, Type, MessageSquare, Globe, Phone, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiPost } from "@/lib/api";
 
 const CreateTemplate = () => {
   const navigate = useNavigate();
@@ -19,18 +20,51 @@ const CreateTemplate = () => {
     category: "MARKETING",
     language: "en",
     headerType: "none",
+    headerText: "",
+    headerFormat: "IMAGE",
     body: "",
     footer: "",
+    buttons: []
   });
+
+  const addButton = (type) => {
+    if (form.buttons.length >= 3) {
+      toast({ title: "Max 3 buttons allowed", variant: "destructive" });
+      return;
+    }
+    const newBtn = type === 'QUICK_REPLY' 
+      ? { type, text: "" } 
+      : { type, text: "", url: type === 'URL' ? "" : undefined, phone_number: type === 'PHONE_NUMBER' ? "" : undefined };
+    setForm({ ...form, buttons: [...form.buttons, newBtn] });
+  };
+
+  const removeButton = (index) => {
+    const newBtns = [...form.buttons];
+    newBtns.splice(index, 1);
+    setForm({ ...form, buttons: newBtns });
+  };
+
+  const updateButton = (index, field, value) => {
+    const newBtns = [...form.buttons];
+    newBtns[index][field] = value;
+    setForm({ ...form, buttons: newBtns });
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
       const components = [{ type: "BODY", text: form.body }];
       if (form.headerType === "text" && form.headerText) {
         components.unshift({ type: "HEADER", format: "TEXT", text: form.headerText });
+      } else if (form.headerType === "media") {
+        components.unshift({ type: "HEADER", format: form.headerFormat, example: { header_handle: ["TEMPLATE_MEDIA_ID"] } });
       }
+      
       if (form.footer) {
         components.push({ type: "FOOTER", text: form.footer });
+      }
+
+      if (form.buttons.length > 0) {
+        components.push({ type: "BUTTONS", buttons: form.buttons });
       }
 
       return apiPost("/api/whatsapp", {
@@ -110,7 +144,12 @@ const CreateTemplate = () => {
                     <RadioGroupItem value="text" id="h-text" />
                     <Label htmlFor="h-text">Text</Label>
                   </div>
+                  <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="media" id="h-media" />
+                    <Label htmlFor="h-media">Media</Label>
+                  </div>
                 </RadioGroup>
+
                 {form.headerType === 'text' && (
                   <Input 
                     value={form.headerText} 
@@ -119,6 +158,16 @@ const CreateTemplate = () => {
                     maxLength={60}
                     className="mt-2"
                   />
+                )}
+                {form.headerType === 'media' && (
+                  <Select value={form.headerFormat} onValueChange={v => setForm({...form, headerFormat: v})}>
+                    <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IMAGE">Image (.jpg, .png)</SelectItem>
+                      <SelectItem value="VIDEO">Video (.mp4)</SelectItem>
+                      <SelectItem value="DOCUMENT">Document (.pdf)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
 
@@ -136,31 +185,87 @@ const CreateTemplate = () => {
                 <Label>Footer (Optional)</Label>
                 <Input value={form.footer} onChange={e => setForm({...form, footer: e.target.value})} placeholder="Reply STOP to opt-out" />
               </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-bold">Buttons (Optional)</Label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => addButton('QUICK_REPLY')}>+ Quick Reply</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addButton('URL')}>+ URL</Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {form.buttons.map((btn, index) => (
+                    <div key={index} className="p-4 rounded-xl border bg-muted/30 space-y-3 relative">
+                      <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-destructive" onClick={() => removeButton(index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <div className="grid grid-cols-2 gap-4 mr-8">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Type</Label>
+                          <Badge variant="secondary">{btn.type.replace('_', ' ')}</Badge>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Button Text</Label>
+                          <Input value={btn.text} onChange={e => updateButton(index, 'text', e.target.value)} placeholder="e.g. Visit Website" className="h-8 text-sm" />
+                        </div>
+                      </div>
+                      {btn.type === 'URL' && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">URL</Label>
+                          <Input value={btn.url} onChange={e => updateButton(index, 'url', e.target.value)} placeholder="https://example.com" className="h-8 text-sm" />
+                        </div>
+                      )}
+                      {btn.type === 'PHONE_NUMBER' && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Phone Number</Label>
+                          <Input value={btn.phone_number} onChange={e => updateButton(index, 'phone_number', e.target.value)} placeholder="+919876543210" className="h-8 text-sm" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {form.buttons.length === 0 && <p className="text-xs text-center text-muted-foreground py-2 italic">No buttons added</p>}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <Card className="sticky top-6 overflow-hidden">
+          <Card className="sticky top-6 overflow-hidden border-none shadow-xl bg-[#ECE5DD]">
             <CardHeader className="bg-[#075E54] text-white py-3">
-              <CardTitle className="text-xs">WhatsApp Preview</CardTitle>
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+                <MessageSquare className="w-3 h-3" /> WhatsApp Preview
+              </div>
             </CardHeader>
-            <CardContent className="bg-[#ECE5DD] min-h-[440px] p-4 flex flex-col justify-end">
-              <div className="bg-white rounded-lg shadow-sm max-w-[90%] overflow-hidden relative">
-                 <div className="p-3 space-y-1">
+            <CardContent className="min-h-[460px] p-4 flex flex-col justify-start">
+              <div className="bg-white rounded-xl rounded-tl-none shadow-sm max-w-[90%] overflow-hidden relative">
+                {form.headerType === 'media' && (
+                  <div className="aspect-video bg-gray-100 flex flex-col items-center justify-center border-b">
+                    <Type className="h-8 w-8 text-gray-300 mb-1" />
+                    <span className="text-[10px] text-gray-400 font-bold">{form.headerFormat} HEADER</span>
+                  </div>
+                )}
+                <div className="p-3 space-y-1">
                   {form.headerType === 'text' && form.headerText && (
-                    <p className="text-xs font-bold text-gray-900 border-b pb-1 mb-1">{form.headerText}</p>
+                    <p className="text-[13px] font-bold text-gray-900 leading-tight mb-1">{form.headerText}</p>
                   )}
                   {form.body ? (
-                    <>
-                      <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{form.body}</p>
-                      {form.footer && <p className="text-[10px] text-gray-400 mt-2 border-t pt-1 italic">{form.footer}</p>}
-                    </>
+                    <p className="text-[13px] text-gray-800 whitespace-pre-wrap leading-relaxed">{form.body}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">Start typing to see preview...</p>
+                    <p className="text-[13px] text-muted-foreground italic">Start typing to see preview...</p>
                   )}
+                  {form.footer && <p className="text-[11px] text-gray-400 mt-2 border-t pt-1">{form.footer}</p>}
                   <p className="text-[9px] text-gray-400 text-right mt-1">12:00 PM</p>
                 </div>
+                {form.buttons.map((btn, i) => (
+                  <div key={i} className="border-t border-gray-100 py-2.5 text-center text-[13px] font-medium text-[#00a5f4] hover:bg-gray-50 flex items-center justify-center gap-2">
+                    {btn.type === 'URL' && <Globe className="w-3 h-3" />}
+                    {btn.type === 'PHONE_NUMBER' && <Phone className="w-3 h-3" />}
+                    {btn.text || "Button Text"}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

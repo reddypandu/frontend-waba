@@ -9,6 +9,7 @@ import { Building2, Phone, Globe, Mail, MapPin, RefreshCw, Pencil, Check, X } fr
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiGet, apiPost } from "@/lib/api";
 
 const BusinessProfile = () => {
   const { user } = useAuth();
@@ -66,27 +67,42 @@ const BusinessProfile = () => {
           <h1 className="text-2xl font-bold text-foreground">Business Profile</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage your WhatsApp Business presence</p>
         </div>
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)}><Pencil className="h-4 w-4 mr-2" /> Edit Profile</Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2" /> Cancel</Button>
-            <Button onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-              Save Changes
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} /> 
+            Sync from Meta
+          </Button>
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}><Pencil className="h-4 w-4 mr-2" /> Edit Profile</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2" /> Cancel</Button>
+              <Button onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6">
         <Card className="overflow-hidden">
           <div className="h-32 bg-primary/10 flex items-end p-6">
-            <div className="w-24 h-24 rounded-2xl bg-background border-4 border-background shadow-lg flex items-center justify-center -mb-12 ring-2 ring-primary/5 relative overflow-hidden">
-              {profile?.profile_picture_url ? (
-                <img src={profile.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <Building2 className="h-10 w-10 text-primary" />
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-2xl bg-background border-4 border-background shadow-lg flex items-center justify-center -mb-12 ring-2 ring-primary/5 relative overflow-hidden">
+                {profile?.profile_picture_url ? (
+                  <img src={profile.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <Building2 className="h-10 w-10 text-primary" />
+                )}
+              </div>
+              {isEditing && (
+                <div className="absolute inset-x-0 bottom-[-48px] flex justify-center">
+                  <Button size="xs" variant="secondary" className="h-7 text-[10px] px-2 shadow-sm" onClick={() => toast({ title: "Logo upload coming soon", description: "Currently updated via Meta Dashboard" })}>
+                    Update Logo
+                  </Button>
+                </div>
               )}
             </div>
           </div>
