@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Search, MessageSquare, ArrowLeft } from "lucide-react";
+import { Send, Search, MessageSquare, ArrowLeft, Paperclip, LayoutTemplate } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +26,8 @@ const Inbox = () => {
   const [selectedConv, setSelectedConv] = React.useState(null);
   const [message, setMessage] = React.useState("");
   const [search, setSearch] = React.useState("");
+  const messagesEndRef = React.useRef(null);
+
   const [newChatPhone, setNewChatPhone] = React.useState(null);
 
   const { data: convsData, isLoading: convsLoading } = useQuery({
@@ -39,6 +47,25 @@ const Inbox = () => {
   const contacts = contactsData || [];
 
   const isLoading = (convsLoading || contactsLoading) && conversations.length === 0 && contacts.length === 0;
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["templates-inbox"],
+    queryFn: async () => {
+      try {
+        const metaRes = await apiPost("/api/whatsapp", { action: "sync_templates" });
+        const metaTemplates = metaRes?.templates || [];
+        const localRes = await apiGet("/api/whatsapp/templates/all");
+        const localTemplates = localRes?.templates || [];
+        const metaNames = new Set(metaTemplates.map(t => t.name));
+        const localOnly = localTemplates.filter(t => !metaNames.has(t.name));
+        return [...metaTemplates, ...localOnly];
+      } catch (err) {
+        return [];
+      }
+    },
+    enabled: !!user,
+  });
+
   // Filtered list: show conversations first, then contacts who don't have a conversation yet
   const filteredList = React.useMemo(() => {
     let list = conversations.map(c => ({ ...c, isConv: true }));
@@ -91,6 +118,10 @@ const Inbox = () => {
 
   const messages = msgsData?.messages || [];
 
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, selectedConv]);
+
   const sendMutation = useMutation({
     mutationFn: async () => {
       let to = newChatPhone;
@@ -112,11 +143,11 @@ const Inbox = () => {
     },
     onSuccess: (data) => {
       setMessage("");
-      if (data.conversation_id) setSelectedConv(data.conversation_id);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["messages"] });
-      if (selectedConv === "new" || selectedConv?.startsWith("contact-")) {
-        setSelectedConv(null);
+      queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
+      if (data.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ["messages", data.conversation_id] });
+        setSelectedConv(data.conversation_id);
       }
     },
     onError: (err) => {
@@ -150,7 +181,7 @@ const Inbox = () => {
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {convsLoading ? (
+          {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading...</div>
           ) : filteredList.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
@@ -217,11 +248,24 @@ const Inbox = () => {
                         <div className={`rounded-2xl px-4 py-2.5 text-sm max-w-[70%] ${
                           isOutbound ? "bg-primary text-primary-foreground rounded-br-md" : "bg-secondary text-foreground rounded-bl-md"
                         }`}>
-                          {msg.content}
+                          {msg.message_type === "interactive" || msg.message_type === "button" ? (
+                             <div className="flex flex-col gap-1">
+                               <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">Button Reply</span>
+                               <span>{msg.content}</span>
+                             </div>
+                          ) : msg.message_type === "template" ? (
+                             <div className="flex flex-col gap-1">
+                               <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">Template</span>
+                               <span>{msg.content || `[Sent template: ${msg.template_name}]`}</span>
+                             </div>
+                          ) : (
+                             msg.content
+                          )}
                         </div>
                       </div>
                     );
                   })}
+                  <div ref={messagesEndRef} />
                 </div>
               )}
             </ScrollArea>
@@ -231,13 +275,64 @@ const Inbox = () => {
                 onSubmit={(e) => { e.preventDefault(); if (message.trim()) sendMutation.mutate(); }}
                 className="flex items-center gap-2"
               >
+                <input type="file" id="media-upload" className="hidden" onChange={(e) => {
+                   if (e.target.files?.length) {
+                     toast({ title: "Media uploading coming soon!" });
+                   }
+                }} />
+                <Button type="button" variant="ghost" size="icon" className="shrink-0 text-muted-foreground" onClick={() => document.getElementById("media-upload").click()}>
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 text-muted-foreground">
+                      <LayoutTemplate className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 overflow-y-auto max-h-[300px]">
+                    {templates.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">No templates available.</div>}
+                    {templates.map(t => (
+                      <DropdownMenuItem 
+                        key={t._id || t.id} 
+                        onClick={() => {
+                           toast({ title: "Sending Template", description: `Sending ${t.name}...` });
+                           let to = newChatPhone;
+                           if (selectedConv && selectedConv !== "new") {
+                             if (selectedConv.startsWith("contact-")) {
+                               const c = contacts.find(con => `contact-${con._id}` === selectedConv);
+                               to = c?.phone_number;
+                             } else {
+                               const conv = conversations.find(c => c._id === selectedConv);
+                               to = conv?.contact_id?.phone_number || conv?.phone_number;
+                             }
+                           }
+                           apiPost("/api/whatsapp", { action: "send_template", to, template_name: t.name })
+                             .then((res) => {
+                                queryClient.invalidateQueries({ queryKey: ["conversations"] });
+                                queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
+                                if (res.conversation_id) {
+                                  queryClient.invalidateQueries({ queryKey: ["messages", res.conversation_id] });
+                                  setSelectedConv(res.conversation_id);
+                                }
+                                toast({ title: "Template sent!" });
+                             })
+                             .catch(err => toast({ title: "Error", description: err.message, variant: "destructive" }));
+                        }}
+                      >
+                        {t.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1"
+                  className="flex-1 bg-muted/50 border-input"
                 />
-                <Button type="submit" size="icon" disabled={!message.trim() || sendMutation.isPending}>
+                <Button type="submit" size="icon" disabled={!message.trim() || sendMutation.isPending} className="shrink-0 rounded-full h-10 w-10">
                   <Send className="h-4 w-4" />
                 </Button>
               </form>

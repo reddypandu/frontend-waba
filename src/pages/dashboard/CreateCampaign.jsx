@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, Loader2, Upload, ChevronDown, ChevronUp,
   FileSpreadsheet, UserPlus, Clock, Zap, Check, Smartphone,
-  Send, CalendarDays,
+  Send, CalendarDays, Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +39,8 @@ const CreateCampaign = () => {
   const [showTestDialog, setShowTestDialog] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [variableMappings, setVariableMappings] = useState({});
+  const [requiresFollowUp, setRequiresFollowUp] = useState(false);
+  const [interactiveParams, setInteractiveParams] = useState({ header_image_url: "", offer_code: "" });
 
   const [completedSections, setCompletedSections] = useState(new Set());
 
@@ -50,8 +52,13 @@ const CreateCampaign = () => {
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["templates-for-campaign"],
     queryFn: async () => {
-      const metaRes = await apiPost("/api/whatsapp", { action: "sync_templates" });
-      const metaTemplates = metaRes?.templates || [];
+      let metaTemplates = [];
+      try {
+        const metaRes = await apiPost("/api/whatsapp", { action: "sync_templates" });
+        metaTemplates = metaRes?.templates || [];
+      } catch (e) {
+        console.error("Meta sync failed", e);
+      }
       
       const localRes = await apiGet("/api/whatsapp/templates/all");
       const localTemplates = localRes?.templates || [];
@@ -129,6 +136,8 @@ const CreateCampaign = () => {
         schedule_type: scheduleType === 'scheduled' ? 'later' : 'now',
         scheduled_at: scheduleType === 'scheduled' ? `${scheduledDate}T${scheduledTime}` : null,
         contacts: finalContacts,
+        requires_follow_up: requiresFollowUp,
+        interactive_params: interactiveParams.header_image_url || interactiveParams.offer_code ? interactiveParams : null,
       };
       
       return await apiPost("/api/whatsapp/campaigns", payload);
@@ -218,7 +227,7 @@ const CreateCampaign = () => {
                   <SelectTrigger className="bg-card"><SelectValue placeholder="Select template..." /></SelectTrigger>
                   <SelectContent>
                     {templates.map(t => (
-                      <SelectItem key={t.id || t._id} value={t.id || t._id || t.name}>
+                      <SelectItem key={String(t.id || t._id)} value={String(t.id || t._id || t.name)}>
                         <div className="flex items-center gap-2">
                            <span className="font-medium text-xs">{t.name}</span>
                            <Badge variant="outline" className="text-[9px] uppercase">{t.status}</Badge>
@@ -228,9 +237,39 @@ const CreateCampaign = () => {
                   </SelectContent>
                 </Select>
                 {selectedTemplate && (
-                  <div className="rounded-xl border border-border bg-card p-3 space-y-2">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Body Text</p>
-                    <p className="text-xs whitespace-pre-wrap">{templateBody}</p>
+                  <div className="rounded-xl border border-border bg-card p-3 space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Body Text</p>
+                      <p className="text-xs whitespace-pre-wrap">{templateBody}</p>
+                    </div>
+                    
+                    <div className="space-y-3 pt-3 border-t border-border">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Rich Template Settings (Optional)</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">Header Image URL</Label>
+                          <Input 
+                            placeholder="https://..." 
+                            className="h-8 text-xs" 
+                            value={interactiveParams.header_image_url}
+                            onChange={e => setInteractiveParams(p => ({...p, header_image_url: e.target.value}))}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">Offer/Coupon Code</Label>
+                          <Input 
+                            placeholder="e.g. SAVE20" 
+                            className="h-8 text-xs uppercase" 
+                            value={interactiveParams.offer_code}
+                            onChange={e => setInteractiveParams(p => ({...p, offer_code: e.target.value.toUpperCase()}))}
+                          />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer mt-2">
+                        <input type="checkbox" className="rounded accent-primary w-3 h-3" checked={requiresFollowUp} onChange={e => setRequiresFollowUp(e.target.checked)} />
+                        <span className="text-[11px] text-muted-foreground font-medium">Enable Follow-up (Send demo msg when read)</span>
+                      </label>
+                    </div>
                   </div>
                 )}
                 <div className="flex justify-end"><Button size="sm" disabled={!templateId} onClick={() => { markComplete("template"); setOpenSection("audience"); }}>Continue</Button></div>

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Phone, Globe, Mail, MapPin, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
 
@@ -20,6 +20,18 @@ const BusinessProfile = () => {
     queryKey: ["whatsapp-profile"],
     queryFn: () => apiGet("/api/admin/whatsapp-profile"),
     enabled: !!user,
+  });
+
+  const queryClient = useQueryClient();
+  const syncMutation = useMutation({
+    mutationFn: () => apiGet("/api/admin/whatsapp-profile?sync=true"),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["whatsapp-profile"], data);
+      toast({ title: "Synced with Meta successfully" });
+    },
+    onError: (err) => {
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    }
   });
 
   const [form, setForm] = React.useState({
@@ -68,8 +80,8 @@ const BusinessProfile = () => {
           <p className="text-muted-foreground text-sm mt-1">Manage your WhatsApp Business presence</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} /> 
+          <Button variant="outline" onClick={() => syncMutation.mutate()} disabled={isLoading || syncMutation.isPending}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${(isLoading || syncMutation.isPending) ? "animate-spin" : ""}`} /> 
             Sync from Meta
           </Button>
           {!isEditing ? (
