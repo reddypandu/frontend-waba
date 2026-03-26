@@ -9,7 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Plus, Bold, Italic, Globe, Phone, X, Smartphone, 
-  ExternalLink, Type, Image as ImageIcon, Video, FileText, Loader2 
+  ExternalLink, Type, Image as ImageIcon, Video, FileText, Loader2,
+  Check, Info
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Search, MessageSquare, ArrowLeft, Paperclip, LayoutTemplate } from "lucide-react";
+import { Send, Search, MessageSquare, ArrowLeft, Paperclip, LayoutTemplate, Check, Info } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
