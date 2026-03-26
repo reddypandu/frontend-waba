@@ -51,17 +51,28 @@ const Inbox = () => {
   const { data: templates = [] } = useQuery({
     queryKey: ["templates-inbox"],
     queryFn: async () => {
+      const ts = [];
+      // Try to sync from Meta (optional)
       try {
         const metaRes = await apiPost("/api/whatsapp", { action: "sync_templates" });
-        const metaTemplates = metaRes?.templates || [];
+        if (metaRes?.templates) ts.push(...metaRes.templates);
+      } catch (e) {
+        console.error("Meta sync failed", e);
+      }
+      
+      // Always get local templates
+      try {
         const localRes = await apiGet("/api/whatsapp/templates/all");
         const localTemplates = localRes?.templates || [];
-        const metaNames = new Set(metaTemplates.map(t => t.name));
-        const localOnly = localTemplates.filter(t => !metaNames.has(t.name));
-        return [...metaTemplates, ...localOnly];
-      } catch (err) {
-        return [];
+        localTemplates.forEach(t => {
+          if (!ts.some(existing => existing.name === t.name)) {
+            ts.push(t);
+          }
+        });
+      } catch (e) {
+        console.error("Local fetch failed", e);
       }
+      return ts;
     },
     enabled: !!user,
   });
@@ -294,7 +305,7 @@ const Inbox = () => {
                     {templates.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">No templates available.</div>}
                     {templates.map(t => (
                       <DropdownMenuItem 
-                        key={t._id || t.id} 
+                        key={String(t._id || t.id)} 
                         onClick={() => {
                            toast({ title: "Sending Template", description: `Sending ${t.name}...` });
                            let to = newChatPhone;

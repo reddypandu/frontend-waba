@@ -7,15 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, Plus, Bold, Italic, Globe, Phone, X, Smartphone, 
+import {
+  ArrowLeft, Plus, Bold, Italic, Globe, Phone, X, Smartphone,
   ExternalLink, Type, Image as ImageIcon, Video, FileText, Loader2,
   Check, Info
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiPost } from "@/lib/api";
+import { apiPost, apiUpload } from "@/lib/api";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -93,16 +93,25 @@ const CreateTemplate = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      let headerHandle = null;
+      if (['image', 'video', 'document'].includes(form.headerType)) {
+        if (!headerFile) throw new Error(`Please upload a sample ${form.headerType} file`);
+        const formData = new FormData();
+        formData.append('file', headerFile);
+        const uploadRes = await apiUpload("/api/whatsapp/upload_media", formData);
+        headerHandle = uploadRes.handle;
+      }
+
       const components = [];
 
       // Header component
       if (form.headerType === 'text' && form.headerText) {
         components.push({ type: "HEADER", format: "TEXT", text: form.headerText });
       } else if (['image', 'video', 'document'].includes(form.headerType)) {
-        components.push({ 
-          type: "HEADER", 
-          format: form.headerType.toUpperCase(), 
-          example: { header_handle: ["4_HANDLE_ID_FROM_UPLOAD_API"] } 
+        components.push({
+          type: "HEADER",
+          format: form.headerType.toUpperCase(),
+          example: { header_handle: [headerHandle] }
         });
       }
 
@@ -121,8 +130,8 @@ const CreateTemplate = () => {
 
       // Buttons
       if (form.buttons.length > 0) {
-        components.push({ 
-          type: "BUTTONS", 
+        components.push({
+          type: "BUTTONS",
           buttons: form.buttons.map(b => ({
             type: b.type,
             text: b.text,
@@ -156,7 +165,7 @@ const CreateTemplate = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <Input 
+          <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="text-2xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0 placeholder:opacity-30"
@@ -166,8 +175,8 @@ const CreateTemplate = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate("/dashboard/templates")}>Cancel</Button>
-          <Button 
-            onClick={() => createMutation.mutate()} 
+          <Button
+            onClick={() => createMutation.mutate()}
             disabled={!form.name || !form.body || createMutation.isPending}
             className="shadow-lg px-6"
           >
@@ -181,27 +190,27 @@ const CreateTemplate = () => {
         <div className="lg:col-span-3 space-y-6">
           {/* CONFIGURATION */}
           <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-muted-foreground uppercase">Category</Label>
-                <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
-                  <SelectTrigger className="h-10 rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MARKETING">Marketing</SelectItem>
-                    <SelectItem value="UTILITY">Utility</SelectItem>
-                  </SelectContent>
-                </Select>
-             </div>
-             <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-muted-foreground uppercase">Language</Label>
-                <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
-                  <SelectTrigger className="h-10 rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map(l => (
-                      <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-             </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Category</Label>
+              <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                <SelectTrigger className="h-10 rounded-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MARKETING">Marketing</SelectItem>
+                  <SelectItem value="UTILITY">Utility</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Language</Label>
+              <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                <SelectTrigger className="h-10 rounded-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map(l => (
+                    <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <Card className="border-none shadow-sm overflow-hidden">
@@ -214,7 +223,7 @@ const CreateTemplate = () => {
               {/* Header */}
               <div className="space-y-3">
                 <Label className="text-sm font-bold">Header (Optional)</Label>
-                <RadioGroup value={form.headerType} onValueChange={v => setForm({...form, headerType: v})} className="flex flex-wrap gap-4">
+                <RadioGroup value={form.headerType} onValueChange={v => setForm({ ...form, headerType: v })} className="flex flex-wrap gap-4">
                   {['none', 'text', 'image', 'video', 'document'].map(t => (
                     <div key={t} className="flex items-center space-x-2">
                       <RadioGroupItem value={t} id={`ht-${t}`} />
@@ -222,16 +231,16 @@ const CreateTemplate = () => {
                     </div>
                   ))}
                 </RadioGroup>
-                
+
                 {form.headerType === 'text' && (
-                  <Input 
-                    value={form.headerText} 
-                    onChange={e => setForm({...form, headerText: e.target.value})} 
-                    placeholder="Enter header text (e.g. Order Confirmed)" 
+                  <Input
+                    value={form.headerText}
+                    onChange={e => setForm({ ...form, headerText: e.target.value })}
+                    placeholder="Enter header text (e.g. Order Confirmed)"
                     className="h-10 rounded-lg"
                   />
                 )}
-                
+
                 {['image', 'video', 'document'].includes(form.headerType) && (
                   <div className="border-2 border-dashed rounded-xl p-6 text-center space-y-2 bg-muted/20 relative group">
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} />
@@ -251,10 +260,10 @@ const CreateTemplate = () => {
                   <span className="text-[10px] text-muted-foreground font-mono">{form.body.length}/1024</span>
                 </div>
                 <div className="relative">
-                  <Textarea 
-                    value={form.body} 
-                    onChange={e => setForm({...form, body: e.target.value})} 
-                    placeholder="Hi {{1}}, thank you for choosing us! Your code is {{2}}." 
+                  <Textarea
+                    value={form.body}
+                    onChange={e => setForm({ ...form, body: e.target.value })}
+                    placeholder="Hi {{1}}, thank you for choosing us! Your code is {{2}}."
                     className="min-h-[140px] rounded-xl resize-none pb-12 focus-visible:ring-1"
                   />
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
@@ -273,19 +282,19 @@ const CreateTemplate = () => {
               {extractedVars.length > 0 && (
                 <div className="p-4 rounded-xl border bg-primary/5 space-y-3 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-2">
-                     <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">!</div>
-                     <p className="text-xs font-bold">Variable Samples (Required by Meta)</p>
+                    <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">!</div>
+                    <p className="text-xs font-bold">Variable Samples (Required by Meta)</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {extractedVars.map(v => (
                       <div key={v} className="flex items-center gap-2">
-                         <span className="text-[10px] font-mono text-muted-foreground shrink-0">{`{{${v}}}`}</span>
-                         <Input 
-                           value={variableSamples[v] || ""} 
-                           onChange={e => setVariableSamples({...variableSamples, [v]: e.target.value})} 
-                           placeholder={`Sample for {{${v}}}`}
-                           className="h-8 text-xs rounded-lg"
-                         />
+                        <span className="text-[10px] font-mono text-muted-foreground shrink-0">{`{{${v}}}`}</span>
+                        <Input
+                          value={variableSamples[v] || ""}
+                          onChange={e => setVariableSamples({ ...variableSamples, [v]: e.target.value })}
+                          placeholder={`Sample for {{${v}}}`}
+                          className="h-8 text-xs rounded-lg"
+                        />
                       </div>
                     ))}
                   </div>
@@ -294,27 +303,27 @@ const CreateTemplate = () => {
 
               {/* Footer */}
               <div className="space-y-2">
-                 <Label className="text-sm font-bold">Footer (Optional)</Label>
-                 <Input 
-                   value={form.footer} 
-                   onChange={e => setForm({...form, footer: e.target.value})} 
-                   placeholder="e.g. Reply STOP to opt-out" 
-                   maxLength={60}
-                   className="h-10 rounded-lg"
-                 />
+                <Label className="text-sm font-bold">Footer (Optional)</Label>
+                <Input
+                  value={form.footer}
+                  onChange={e => setForm({ ...form, footer: e.target.value })}
+                  placeholder="e.g. Reply STOP to opt-out"
+                  maxLength={60}
+                  className="h-10 rounded-lg"
+                />
               </div>
 
               {/* Buttons */}
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
-                   <Label className="text-sm font-bold">Buttons (Optional)</Label>
-                   <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => addButton('QUICK_REPLY')} className="text-[10px] h-7">+ Quick Reply</Button>
-                      <Button variant="outline" size="sm" onClick={() => addButton('URL')} className="text-[10px] h-7">+ Website</Button>
-                      <Button variant="outline" size="sm" onClick={() => addButton('PHONE_NUMBER')} className="text-[10px] h-7">+ Phone</Button>
-                   </div>
+                  <Label className="text-sm font-bold">Buttons (Optional)</Label>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => addButton('QUICK_REPLY')} className="text-[10px] h-7">+ Quick Reply</Button>
+                    <Button variant="outline" size="sm" onClick={() => addButton('URL')} className="text-[10px] h-7">+ Website</Button>
+                    <Button variant="outline" size="sm" onClick={() => addButton('PHONE_NUMBER')} className="text-[10px] h-7">+ Phone</Button>
+                  </div>
                 </div>
-                
+
                 <div className="grid gap-3">
                   {form.buttons.map((btn, i) => (
                     <div key={i} className="p-3 border rounded-xl flex items-start gap-3 bg-muted/10 relative group">
@@ -358,8 +367,8 @@ const CreateTemplate = () => {
                     <div className="bg-gray-50 flex flex-col items-center justify-center border-b min-h-[100px] overflow-hidden">
                       {headerPreviewUrl ? (
                         form.headerType === 'image' ? <img src={headerPreviewUrl} className="w-full h-full object-cover" /> :
-                        form.headerType === 'video' ? <div className="p-8 text-primary/50"><Video className="h-8 w-8" /></div> :
-                        <div className="p-8 text-primary/50"><FileText className="h-8 w-8" /></div>
+                          form.headerType === 'video' ? <div className="p-8 text-primary/50"><Video className="h-8 w-8" /></div> :
+                            <div className="p-8 text-primary/50"><FileText className="h-8 w-8" /></div>
                       ) : (
                         <div className="p-8 flex flex-col items-center gap-2 text-gray-300">
                           {form.headerType === 'text' ? <p className="text-[11px] font-bold text-black p-2">{form.headerText || "TEXT HEADER"}</p> : <Type className="h-10 w-10" />}
@@ -370,7 +379,7 @@ const CreateTemplate = () => {
                   )}
 
                   <div className="p-3 space-y-1">
-                    <p className="text-[13px] text-foreground whitespace-pre-wrap leading-relaxed">
+                    <p className="text-[13px] text-black whitespace-pre-wrap leading-relaxed">
                       {form.body || <span className="text-muted-foreground/30 italic">Start typing to craft your message...</span>}
                     </p>
                     {form.footer && <p className="text-[11px] text-gray-400 mt-2 border-t pt-1">{form.footer}</p>}
@@ -383,23 +392,23 @@ const CreateTemplate = () => {
 
                 {/* Preview Buttons */}
                 <div className="space-y-1.5 max-w-[92%]">
-                   {form.buttons.map((btn, i) => (
-                      <div key={i} className="bg-white rounded-lg shadow-sm py-2 px-3 text-center text-[12px] font-semibold text-[#00a5f4] flex items-center justify-center gap-2">
-                        {btn.type === 'URL' ? <ExternalLink className="w-3 h-3" /> : btn.type === 'PHONE_NUMBER' ? <Phone className="w-3 h-3" /> : null}
-                        {btn.text || "Button Text"}
-                      </div>
-                   ))}
+                  {form.buttons.map((btn, i) => (
+                    <div key={i} className="bg-white rounded-lg shadow-sm py-2 px-3 text-center text-[12px] font-semibold text-[#00a5f4] flex items-center justify-center gap-2">
+                      {btn.type === 'URL' ? <ExternalLink className="w-3 h-3" /> : btn.type === 'PHONE_NUMBER' ? <Phone className="w-3 h-3" /> : null}
+                      {btn.text || "Button Text"}
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
             <div className="p-6 bg-white border-t rounded-b-[2.5rem]">
-               <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Info className="h-5 w-5" /></div>
-                  <div>
-                    <p className="text-[11px] font-bold text-gray-900 leading-tight">Professional Preview</p>
-                    <p className="text-[9px] text-muted-foreground">This is how your customers will see your message.</p>
-                  </div>
-               </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Info className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-[11px] font-bold text-gray-900 leading-tight">Professional Preview</p>
+                  <p className="text-[9px] text-muted-foreground">This is how your customers will see your message.</p>
+                </div>
+              </div>
             </div>
           </Card>
         </div>
