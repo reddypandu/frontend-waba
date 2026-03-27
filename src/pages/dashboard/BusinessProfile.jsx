@@ -9,12 +9,13 @@ import { Building2, Phone, Globe, Mail, MapPin, RefreshCw, Pencil, Check, X } fr
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, apiUpload } from "@/lib/api";
 
 const BusinessProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = React.useState(false);
+  const fileInputRef = React.useRef(null);
   
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["whatsapp-profile"],
@@ -64,6 +65,32 @@ const BusinessProfile = () => {
     }
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiUpload("/api/admin/whatsapp-profile-picture", formData);
+    },
+    onSuccess: () => {
+      toast({ title: "Logo updated successfully on Meta" });
+      refetch();
+    },
+    onError: (err) => {
+      toast({ title: "Failed to update logo", description: err.message, variant: "destructive" });
+    }
+  });
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "File too large", description: "Maximum size is 5MB", variant: "destructive" });
+        return;
+      }
+      uploadMutation.mutate(file);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -111,8 +138,9 @@ const BusinessProfile = () => {
               </div>
               {isEditing && (
                 <div className="absolute inset-x-0 bottom-[-48px] flex justify-center">
-                  <Button size="xs" variant="secondary" className="h-7 text-[10px] px-2 shadow-sm" onClick={() => toast({ title: "Logo upload coming soon", description: "Currently updated via Meta Dashboard" })}>
-                    Update Logo
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png" onChange={handleLogoUpload} />
+                  <Button size="xs" variant="secondary" className="h-7 text-[10px] px-2 shadow-sm" onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
+                    {uploadMutation.isPending ? "Uploading..." : "Update Logo"}
                   </Button>
                 </div>
               )}

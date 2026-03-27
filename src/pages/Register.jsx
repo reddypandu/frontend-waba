@@ -6,6 +6,7 @@ import { MessageSquare, Check } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { apiPost } from "@/lib/api";
 import { motion } from "framer-motion";
 
 const benefits = [
@@ -21,11 +22,54 @@ const Register = () => {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: "", email: "", password: "", company: "" });
   const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  const handleSendOtp = async () => {
+    if (!form.email) {
+      toast({ title: "Please enter your email first", variant: "destructive" });
+      return;
+    }
+    setSendingOtp(true);
+    try {
+      await apiPost("/api/auth/send-otp", { email: form.email });
+      setOtpSent(true);
+      toast({ title: "OTP sent to your email!" });
+    } catch (error) {
+      toast({ title: "Failed to send OTP", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      toast({ title: "Please enter the OTP", variant: "destructive" });
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      await apiPost("/api/auth/verify-otp", { email: form.email, otp });
+      setOtpVerified(true);
+      toast({ title: "OTP verified successfully!" });
+    } catch (error) {
+      toast({ title: "Failed to verify OTP", description: error.message, variant: "destructive" });
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    if (!otpVerified) {
+      toast({ title: "Please verify your email first", variant: "destructive" });
       return;
     }
     if (form.password.length < 6) {
@@ -124,15 +168,63 @@ const Register = () => {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Work Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="h-11 border-border/60 focus:border-primary/60 transition-colors"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={form.email}
+                  onChange={(e) => {
+                     setForm({ ...form, email: e.target.value });
+                     setOtpSent(false);
+                     setOtpVerified(false);
+                  }}
+                  disabled={otpVerified}
+                  className="h-11 flex-1 border-border/60 focus:border-primary/60 transition-colors"
+                />
+                {!otpVerified && (
+                  <Button 
+                    type="button" 
+                    onClick={handleSendOtp} 
+                    disabled={sendingOtp || !form.email}
+                    className="h-11 px-4"
+                  >
+                    {sendingOtp ? "Sending..." : (otpSent ? "Resend" : "Send OTP")}
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {otpSent && !otpVerified && (
+              <div className="space-y-1.5 animate-in fade-in zoom-in-95">
+                <Label htmlFor="otp">Verification Code *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="h-11 flex-1 border-border/60 focus:border-primary/60 transition-colors"
+                    maxLength={6}
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleVerifyOtp} 
+                    disabled={verifyingOtp || otp.length !== 6}
+                    className="h-11 px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {verifyingOtp ? "Verifying..." : "Verify OTP"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {otpVerified && (
+              <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium py-1">
+                <Check className="h-4 w-4" /> OTP Verified Successfully
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="password">Password *</Label>
               <Input
@@ -147,7 +239,7 @@ const Register = () => {
             <Button
               type="submit"
               className="w-full h-12 rounded-xl text-base font-semibold shadow-md active:scale-[0.98] transition-all duration-200 mt-2"
-              disabled={loading}
+              disabled={loading || !otpVerified}
             >
               {loading ? "Creating account..." : "Create Account"}
             </Button>
