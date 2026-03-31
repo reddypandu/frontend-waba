@@ -1,4 +1,4 @@
-import { Bell, Menu, Wallet, Search } from "lucide-react";
+import { Bell, Menu, Wallet, Search, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import MobileSidebar from "./MobileSidebar";
@@ -35,6 +35,13 @@ const DashboardHeader = () => {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard/designs")}
+            className="h-10 px-5 rounded-xl font-semibold border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Palette className="h-4 w-4" />
+          </Button>
           {/* Wallet badge */}
           <Button
             variant="outline"
@@ -59,7 +66,7 @@ const DashboardHeader = () => {
           </div>
         </div>
       </header>
-      <MobileSidebar open={mobileOpen} onOpenChange={setMobileOpen} />
+      <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );
 };

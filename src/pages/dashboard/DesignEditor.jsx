@@ -6,11 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import * as fabric from "fabric";
 import EditorSidebar from "@/components/dashboard/designs/EditorSidebar";
 import CanvasToolbar from "@/components/dashboard/designs/CanvasToolbar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DesignEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const canvasRef = React.useRef(null);
   const fabricRef = React.useRef(null);
   const containerRef = React.useRef(null);
@@ -18,6 +20,7 @@ const DesignEditor = () => {
   const [history, setHistory] = React.useState([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const [designName, setDesignName] = React.useState("Untitled Design");
+  const [isTemplate, setIsTemplate] = React.useState(false);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
 
@@ -97,6 +100,7 @@ const DesignEditor = () => {
           .then(r => r.json())
           .then(design => {
             if (design?.name) setDesignName(design.name);
+            if (design?.type === 'template') setIsTemplate(true);
             if (design?.data) {
               canvas.loadFromJSON(design.data).then(() => canvas.renderAll());
             }
@@ -191,6 +195,14 @@ const DesignEditor = () => {
           }}>
             <Download className="h-3.5 w-3.5" /> PNG
           </Button>
+
+          {user?.role === 'admin' && (
+            <label className="flex items-center gap-1.5 text-xs font-bold text-primary mx-2 cursor-pointer bg-primary/10 px-2 py-1 rounded-md">
+              <input type="checkbox" checked={isTemplate} onChange={(e) => setIsTemplate(e.target.checked)} className="accent-primary" />
+              Save as Global Template
+            </label>
+          )}
+
           <Button size="sm" className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={async () => {
             try {
               const isNew = id === "new";
@@ -203,7 +215,9 @@ const DesignEditor = () => {
                 body: JSON.stringify({
                   name: designName,
                   data: fabricRef.current.toJSON(),
-                  thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 })
+                  thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
+                  type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
+                  is_public: isTemplate && user?.role === 'admin'
                 })
               });
               const saved = await res.json();

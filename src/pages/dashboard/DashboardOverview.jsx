@@ -78,13 +78,13 @@ const DashboardOverview = () => {
           <p className="text-muted-foreground mt-1 text-sm">Here's your messaging overview.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => navigate("/dashboard/designs")}
             className="h-10 px-5 rounded-xl font-semibold border-primary/30 text-primary hover:bg-primary/10"
           >
             <Palette className="mr-2 h-4 w-4" /> Create Design
-          </Button>
+          </Button> */}
           <Button
             onClick={() => navigate("/dashboard/campaigns/create")}
             className="h-10 px-5 rounded-xl font-semibold shadow-md transition-all duration-200"

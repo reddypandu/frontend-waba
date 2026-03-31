@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
+import Logo from "@/assets/yestickai.png";
 
 const navGroups = [
   {
@@ -79,12 +80,9 @@ const MobileSidebar = ({ open, onClose }) => {
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-border/60 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
-                  <MessageSquare className="w-5 h-5" />
+                <div className="w-40 h-8 rounded-xl flex items-center justify-center text-primary-foreground">
+                  <img src={Logo} alt="Logo" className="w-full h-full" />
                 </div>
-                <span className="text-lg font-extrabold text-foreground tracking-tight">
-                  Yestick AI
-                </span>
               </div>
               <button
                 onClick={onClose}

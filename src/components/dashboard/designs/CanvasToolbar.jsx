@@ -24,10 +24,11 @@ const FONT_FAMILIES = [
 const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
     if (!selectedObject || !fabricRef.current) return null;
 
-    const isText = selectedObject.type === "i-text" || selectedObject.type === "text";
-    const isImage = selectedObject.type === "image";
-    const isShape = ["rect", "circle", "triangle"].includes(selectedObject.type);
-    const isGroup = selectedObject.type === "group" || selectedObject.type === "activeSelection";
+    const type = selectedObject.type?.toLowerCase() || "";
+    const isText = type === "i-text" || type === "text" || type === "textbox" || type === "itext";
+    const isImage = type === "image" || type === "fabricimage";
+    const isShape = ["rect", "circle", "triangle"].includes(type);
+    const isGroup = type === "group" || type === "activeselection";
 
     const updateProp = (prop, value) => {
         const active = fabricRef.current.getActiveObject();
@@ -56,7 +57,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
     const bringForward = () => {
         const active = fabricRef.current.getActiveObject();
         if (!active) return;
-        fabricRef.current.bringObjectForward(active);
+        fabricRef.current.bringObjectForward(active, true);
         fabricRef.current.renderAll();
         onUpdate();
     };
@@ -64,7 +65,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
     const sendBackward = () => {
         const active = fabricRef.current.getActiveObject();
         if (!active) return;
-        fabricRef.current.sendObjectBackwards(active);
+        fabricRef.current.sendObjectBackwards(active, true);
         fabricRef.current.renderAll();
         onUpdate();
     };
