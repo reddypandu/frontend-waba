@@ -16,7 +16,7 @@ const BusinessProfile = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = React.useState(false);
   const fileInputRef = React.useRef(null);
-  
+
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["whatsapp-profile"],
     queryFn: () => apiGet("/api/admin/whatsapp-profile"),
@@ -101,14 +101,14 @@ const BusinessProfile = () => {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Business Profile</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage your WhatsApp Business presence</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => syncMutation.mutate()} disabled={isLoading || syncMutation.isPending}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${(isLoading || syncMutation.isPending) ? "animate-spin" : ""}`} /> 
+            <RefreshCw className={`h-4 w-4 mr-2 ${(isLoading || syncMutation.isPending) ? "animate-spin" : ""}`} />
             Sync from Meta
           </Button>
           {!isEditing ? (
@@ -181,21 +181,21 @@ const BusinessProfile = () => {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Vertical / Industry</Label>
-                    <Input value={form.vertical} onChange={e => setForm({...form, vertical: e.target.value})} />
+                    <Input value={form.vertical} onChange={e => setForm({ ...form, vertical: e.target.value })} />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Address</Label>
-                  <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+                  <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Public Email</Label>
-                    <Input value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                    <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Website</Label>
-                    <Input value={form.websites?.[0] || ""} onChange={e => setForm({...form, websites: [e.target.value]})} />
+                    <Input value={form.websites?.[0] || ""} onChange={e => setForm({ ...form, websites: [e.target.value] })} />
                   </div>
                 </div>
               </div>
@@ -223,12 +223,12 @@ const BusinessProfile = () => {
               <div className="grid gap-4">
                 <div className="space-y-1.5">
                   <Label>About Tagline (Status)</Label>
-                  <Input value={form.about} onChange={e => setForm({...form, about: e.target.value})} maxLength={139} />
+                  <Input value={form.about} onChange={e => setForm({ ...form, about: e.target.value })} maxLength={139} />
                   <p className="text-[10px] text-muted-foreground">Max 139 characters</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Detailed Description</Label>
-                  <Textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={4} maxLength={512} />
+                  <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={4} maxLength={512} />
                   <p className="text-[10px] text-muted-foreground">Max 512 characters</p>
                 </div>
               </div>

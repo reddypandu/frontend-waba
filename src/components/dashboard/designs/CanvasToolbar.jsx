@@ -123,7 +123,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
     };
 
     return (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-card/95 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="absolute top-[-5px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-card/95 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-2xl animate-in fade-in zoom-in duration-200">
 
             {/* Grouping */}
             <div className="flex items-center gap-1">
@@ -148,7 +148,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                         value={selectedObject.fontFamily}
                         onValueChange={(v) => updateProp("fontFamily", v)}
                     >
-                        <SelectTrigger className="w-[120px] h-9 text-xs border-none bg-secondary/50 hover:bg-secondary">
+                        <SelectTrigger className="w-[80px] h-9 text-xs border-none bg-secondary/50 hover:bg-secondary">
                             <SelectValue placeholder="Font" />
                         </SelectTrigger>
                         <SelectContent>

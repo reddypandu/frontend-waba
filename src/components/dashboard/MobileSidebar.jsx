@@ -38,7 +38,7 @@ const navGroups = [
     items: [
       { title: "WhatsApp Setup", path: "/dashboard/whatsapp-setup", icon: Phone },
       { title: "Business Profile", path: "/dashboard/business-profile", icon: Building2 },
-      { title: "Wallet", path: "/dashboard/wallet", icon: Wallet },
+      // { title: "Wallet", path: "/dashboard/wallet", icon: Wallet },
       { title: "Billing", path: "/dashboard/billing", icon: CreditCard },
       { title: "Invoices", path: "/dashboard/invoices", icon: Receipt },
       { title: "Reports", path: "/dashboard/reports", icon: BarChart3 },

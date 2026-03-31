@@ -152,9 +152,9 @@ const DesignEditor = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden font-jakarta">
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border shadow-sm bg-card z-10 transition-all">
-        <div className="flex items-center gap-4">
+    <div className="min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] flex flex-col bg-background md:overflow-hidden font-jakarta">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 border-b border-border shadow-sm bg-card z-10 gap-3 md:gap-0 shrink-0">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/designs")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -168,7 +168,7 @@ const DesignEditor = () => {
             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Connectly Creative Editor</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
             if (historyIndex > 0) {
               const prev = historyIndex - 1;
@@ -187,7 +187,7 @@ const DesignEditor = () => {
           }} disabled={historyIndex >= history.length - 1}>
             <Redo className="h-3.5 w-3.5" /> Redo
           </Button>
-          <div className="w-px h-6 bg-border mx-2" />
+          <div className="w-px h-6 bg-border mx-2 hidden md:block" />
           <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-dashed" onClick={() => {
             fabricRef.current.clear();
             fabricRef.current.backgroundColor = "#ffffff";
@@ -205,7 +205,7 @@ const DesignEditor = () => {
           </Button>
 
           {user?.role === 'admin' && (
-            <label className="flex items-center gap-1.5 text-xs font-bold text-primary mx-2 cursor-pointer bg-primary/10 px-2 py-1 rounded-md">
+            <label className="flex items-center gap-1.5 text-xs font-bold text-primary mx-1 md:mx-2 cursor-pointer bg-primary/10 px-2 py-1 rounded-md">
               <input type="checkbox" checked={isTemplate} onChange={(e) => setIsTemplate(e.target.checked)} className="accent-primary" />
               Save as Global Template
             </label>
@@ -244,10 +244,10 @@ const DesignEditor = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden">
         <EditorSidebar fabricRef={fabricRef} setSelectedObject={setSelectedObject} />
 
-        <div ref={containerRef} className="flex-1 bg-[#f8f9fa] relative flex items-center justify-center p-8 overflow-auto custom-scrollbar" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+        <div ref={containerRef} className="h-[50vh] md:h-auto md:flex-1 shrink-0 bg-[#f8f9fa] relative flex items-center justify-center p-4 md:p-8 overflow-hidden" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
 
           {isLoaded && fabricRef.current && (
             <CanvasToolbar

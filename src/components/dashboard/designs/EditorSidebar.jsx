@@ -250,7 +250,7 @@ const EditorSidebar = ({ fabricRef, setSelectedObject }) => {
   };
 
   return (
-    <div className="w-80 shrink-0 border-r border-border bg-card flex flex-col h-full shadow-lg z-20">
+    <div className="w-full md:w-80 h-[45vh] md:h-full shrink-0 border-t md:border-t-0 md:border-r border-border bg-card flex flex-col shadow-lg z-20 overflow-hidden">
       <div className="flex border-b border-border bg-muted/30 p-1 m-2 rounded-lg">
         {tabs.map((tab) => (
           <button
