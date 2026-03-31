@@ -19,11 +19,38 @@ const AdminPanel = () => {
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [activeAdminTab, setActiveAdminTab] = React.useState("users");
 
-  // Mock data for Admin check and user list
-  const isAdmin = true;
-  const users = [];
-  const stats = { total_users: 0, total_free: 0, total_starter: 0, total_pro: 0 };
-  const isLoading = false;
+  const isAdmin = user?.role === 'admin';
+
+  const { data: usersData, isLoading: loadingUsers } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return res.json();
+    },
+    enabled: isAdmin && activeAdminTab === 'users'
+  });
+
+  const { data: designsData, isLoading: loadingDesigns } = useQuery({
+    queryKey: ['admin-designs'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/designs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch designs');
+      return res.json();
+    },
+    enabled: isAdmin && activeAdminTab === 'designs'
+  });
+
+  const users = usersData?.users || [];
+  const stats = usersData?.stats || { total_users: 0, total_free: 0, total_starter: 0, total_pro: 0 };
+  const designs = designsData || [];
+  const isLoading = activeAdminTab === 'users' ? loadingUsers : loadingDesigns;
 
   const filtered = users.filter(u =>
     !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -86,70 +113,130 @@ const AdminPanel = () => {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users ({filtered.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/30">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">WhatsApp</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Plan</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Usage</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((u) => (
-                  <tr key={u.user_id} className="border-b border-border last:border-0 hover:bg-secondary/20 cursor-pointer" onClick={() => setSelectedUser(u)}>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                          {u.full_name?.[0]?.toUpperCase() || "U"}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground truncate">{u.full_name || "—"}</p>
-                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {u.wa_connected ? (
-                        <div className="flex items-center gap-1.5 text-emerald-600">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span className="text-xs">{u.wa_phone}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Not connected</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant="outline" className="capitalize">{u.plan}</Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="w-24 space-y-1">
-                        <Progress value={20} className="h-1" />
-                        <p className="text-[10px] text-muted-foreground">20% used</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
-                    </td>
+      {activeAdminTab === "users" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>All Users ({filtered.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/30">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">WhatsApp</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Plan</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Usage</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-muted-foreground">No users found match criteria.</td>
+                </thead>
+                <tbody>
+                  {filtered.map((u) => (
+                    <tr key={u.user_id || u._id} className="border-b border-border last:border-0 hover:bg-secondary/20 cursor-pointer" onClick={() => navigate(`/dashboard/admin/users/${u._id || u.user_id}`)}>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                            {u.full_name?.[0]?.toUpperCase() || "U"}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground truncate">{u.full_name || "—"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {u.wa_connected ? (
+                          <div className="flex items-center gap-1.5 text-emerald-600">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span className="text-xs">{u.wa_phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not connected</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className="capitalize">{u.subscription?.plan || "free"}</Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="w-24 space-y-1">
+                          <Progress value={20} className="h-1" />
+                          <p className="text-[10px] text-muted-foreground">20% used</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && !isLoading && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">No users found match criteria.</td>
+                    </tr>
+                  )}
+                  {isLoading && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">Loading users...</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>System Designs ({designs.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/30">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Type</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Category</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Creator</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                </thead>
+                <tbody>
+                  {designs.map((d) => (
+                    <tr key={d._id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-foreground">{d.name}</div>
+                        <div className="text-xs text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className="capitalize">{d.type}</Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-xs capitalize">{d.category || "Uncategorized"}</span>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground text-xs">
+                        {d.user_id?.full_name || "System"}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/dashboard/designs/editor/${d._id}`, "_blank")}><Eye className="h-4 w-4" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {designs.length === 0 && !isLoading && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">No designs found.</td>
+                    </tr>
+                  )}
+                  {isLoading && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">Loading designs...</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -27,6 +27,7 @@ import Wallet from "./pages/dashboard/Wallet";
 import Reports from "./pages/dashboard/Reports";
 import Settings from "./pages/dashboard/Settings";
 import AdminPanel from "./pages/dashboard/AdminPanel";
+import AdminUserDetails from "./pages/dashboard/AdminUserDetails";
 import AutoReplies from "./pages/dashboard/AutoReplies";
 import Workflows from "./pages/dashboard/Workflows";
 import Invoices from "./pages/dashboard/Invoices";
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="admin/users/:id" element={<AdminUserDetails />} />
               <Route path="auto-replies" element={<AutoReplies />} />
               <Route path="workflows" element={<Workflows />} />
               <Route path="invoices" element={<Invoices />} />
