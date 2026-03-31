@@ -43,7 +43,7 @@ const DashboardHeader = () => {
             <Palette className="h-4 w-4" />
           </Button>
           {/* Wallet badge */}
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             className="gap-2 text-sm font-semibold h-9 rounded-lg border-border/60 hover:bg-primary/5 transition-all duration-200"
@@ -52,7 +52,7 @@ const DashboardHeader = () => {
             <Wallet className="h-4 w-4" />
             <span className="text-foreground">₹{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
             <div className="w-px h-4 bg-border/60" />
-          </Button>
+          </Button> */}
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">

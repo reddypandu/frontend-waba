@@ -21,6 +21,7 @@ const DesignEditor = () => {
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const [designName, setDesignName] = React.useState("Untitled Design");
   const [isTemplate, setIsTemplate] = React.useState(false);
+  const [isOwner, setIsOwner] = React.useState(true);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
 
@@ -101,6 +102,13 @@ const DesignEditor = () => {
           .then(design => {
             if (design?.name) setDesignName(design.name);
             if (design?.type === 'template') setIsTemplate(true);
+
+            const currentUserId = user?._id || user?.id;
+            // If the design belongs to someone else (e.g., an Admin Global Template), mark as a clone
+            if (design?.user_id && currentUserId && design.user_id !== currentUserId) {
+              setIsOwner(false);
+            }
+
             if (design?.data) {
               canvas.loadFromJSON(design.data).then(() => canvas.renderAll());
             }
@@ -205,7 +213,7 @@ const DesignEditor = () => {
 
           <Button size="sm" className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={async () => {
             try {
-              const isNew = id === "new";
+              const isNew = id === "new" || !isOwner;
               const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs${isNew ? '' : `/${id}`}`, {
                 method: isNew ? "POST" : "PUT",
                 headers: {
