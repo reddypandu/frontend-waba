@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare } from "lucide-react";
+import Logo from "@/assets/yestickai.png";
 
 const Login = () => {
   const [email, setEmail] = React.useState("");
@@ -43,8 +44,8 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-              <MessageSquare className="h-8 w-8 text-primary-foreground" />
+            <div className="h-12 w-50 rounded-xl flex items-center justify-center">
+              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>

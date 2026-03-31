@@ -7,7 +7,7 @@ const features = [
     title: "Bulk Messaging",
     description: "Send thousands of personalized WhatsApp messages with template support, scheduling, and real-time queue delivery.",
     gradient: "from-green-500 to-emerald-600",
-    glow: "hsl(142 71% 45% / 0.15)",
+    glow: "hsl(93 69% 41% / 0.15)",
   },
   {
     icon: Users,
@@ -89,7 +89,7 @@ const FeaturesSection = () => {
       <div className="absolute inset-0 dot-grid opacity-30 pointer-events-none" />
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] blur-3xl opacity-10 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, hsl(142 71% 45%), transparent)" }}
+        style={{ background: "radial-gradient(ellipse, hsl(93 69% 41%), transparent)" }}
       />
 
       <div className="container mx-auto px-4 relative">

@@ -83,7 +83,7 @@ const MobileSidebar = ({ open, onClose }) => {
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <span className="text-lg font-extrabold text-foreground tracking-tight">
-                  WazzUp
+                  Yestick AI
                 </span>
               </div>
               <button
@@ -115,8 +115,8 @@ const MobileSidebar = ({ open, onClose }) => {
                             onClick={onClose}
                             end={item.path === "/dashboard"}
                             className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                                ? "bg-primary/20 text-primary border border-primary/20 shadow-sm"
-                                : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"
+                              ? "bg-primary/20 text-primary border border-primary/20 shadow-sm"
+                              : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"
                               }`}
                           >
                             <div className="flex items-center gap-3">

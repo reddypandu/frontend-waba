@@ -26,7 +26,7 @@ const HeroSection = () => {
 
       {/* Glowing orbs */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(circle, hsl(142 71% 45%), transparent)" }} />
+        style={{ background: "radial-gradient(circle, hsl(93 69% 41%), transparent)" }} />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full opacity-10 blur-3xl"
         style={{ background: "radial-gradient(circle, hsl(210 100% 60%), transparent)" }} />
 

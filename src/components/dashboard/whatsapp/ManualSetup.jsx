@@ -55,9 +55,9 @@ const ManualSetup = ({ business, waAccount }) => {
         meta_business_id: formData.metaBusinessId,
       });
     },
-    onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] }); 
-      toast({ title: "Business details saved" }); 
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      toast({ title: "Business details saved" });
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
@@ -66,7 +66,7 @@ const ManualSetup = ({ business, waAccount }) => {
     mutationFn: async () => {
       const payload = {
         phone_number: formData.phoneNumber,
-        phone_number_id: formData.phoneNumberId, 
+        phone_number_id: formData.phoneNumberId,
         waba_id: formData.wabaId,
       };
       if (formData.accessToken) {
@@ -74,9 +74,9 @@ const ManualSetup = ({ business, waAccount }) => {
       }
       return await apiPost("/api/admin/whatsapp-accounts", payload);
     },
-    onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ["whatsapp-account"] }); 
-      toast({ title: "WhatsApp details saved" }); 
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-account"] });
+      toast({ title: "WhatsApp details saved" });
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
@@ -101,7 +101,7 @@ const ManualSetup = ({ business, waAccount }) => {
   };
 
   const webhookUrl = `${import.meta.env.VITE_API_BASE_URL}/api/webhook`;
-  const verifyToken = `wazzup_${user?.id?.toString().slice(0, 8)}`;
+  const verifyToken = `Yestick AI_${user?.id?.toString().slice(0, 8)}`;
 
   const renderStep = () => {
     switch (currentStep) {
@@ -247,10 +247,9 @@ const ManualSetup = ({ business, waAccount }) => {
             <div key={step.title} className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentStep(i)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  i === currentStep ? "bg-primary text-black" :
-                  i < currentStep ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${i === currentStep ? "bg-primary text-black" :
+                    i < currentStep ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
+                  }`}
               >
                 {i < currentStep ? <Check className="w-4 h-4" /> : <step.icon className="w-4 h-4" />}
                 <span className="hidden sm:inline">{step.title}</span>

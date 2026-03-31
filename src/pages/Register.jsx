@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
 import { motion } from "framer-motion";
+import Logo from "@/assets/yestickai.png";
 
 const benefits = [
   "14-day free trial, no credit card needed",
@@ -94,15 +95,12 @@ const Register = () => {
       {/* Left Panel */}
       <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden items-center justify-center p-12 bg-muted/30">
         <div className="absolute inset-0 opacity-30" />
-        
+
         <div className="relative z-10 max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-12">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-btn text-primary-foreground">
-              <MessageSquare className="h-6 w-6" />
+            <div className="w-50 h-10 rounded-xl flex items-center justify-center shadow-btn text-primary-foreground">
+              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-extrabold text-foreground">
-              WazzUp
-            </span>
           </Link>
 
           <h2 className="text-4xl font-extrabold text-foreground mb-4 leading-tight">
@@ -175,17 +173,17 @@ const Register = () => {
                   placeholder="you@company.com"
                   value={form.email}
                   onChange={(e) => {
-                     setForm({ ...form, email: e.target.value });
-                     setOtpSent(false);
-                     setOtpVerified(false);
+                    setForm({ ...form, email: e.target.value });
+                    setOtpSent(false);
+                    setOtpVerified(false);
                   }}
                   disabled={otpVerified}
                   className="h-11 flex-1 border-border/60 focus:border-primary/60 transition-colors"
                 />
                 {!otpVerified && (
-                  <Button 
-                    type="button" 
-                    onClick={handleSendOtp} 
+                  <Button
+                    type="button"
+                    onClick={handleSendOtp}
                     disabled={sendingOtp || !form.email}
                     className="h-11 px-4"
                   >
@@ -208,9 +206,9 @@ const Register = () => {
                     className="h-11 flex-1 border-border/60 focus:border-primary/60 transition-colors"
                     maxLength={6}
                   />
-                  <Button 
-                    type="button" 
-                    onClick={handleVerifyOtp} 
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
                     disabled={verifyingOtp || otp.length !== 6}
                     className="h-11 px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
                   >

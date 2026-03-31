@@ -16,57 +16,58 @@
     --popover: 222 25% 10%;
     --popover-foreground: 210 40% 96%;
 
-    /* Brand Green - WhatsApp Emerald */
-    --primary: 142 71% 45%;
+    /* Brand Green - YesTick AI */
+    --primary: 93 69% 41%;
+    /* #62b020 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 222 22% 16%;
-    --secondary-foreground: 210 40% 88%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 20% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 222 25% 12%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 160 64% 48%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 222 25% 15%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 222 20% 18%;
-    --input: 222 20% 18%;
-    --ring: 142 71% 45%;
+    --border: 222 25% 14%;
+    --input: 222 25% 14%;
+    --ring: 93 69% 41%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
     --sidebar-background: 222 30% 5%;
-    --sidebar-foreground: 210 20% 75%;
-    --sidebar-primary: 142 71% 45%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 93 69% 41%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 25% 12%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 222 20% 14%;
-    --sidebar-ring: 142 71% 45%;
+    --sidebar-accent: 222 25% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 25% 14%;
+    --sidebar-ring: 93 69% 41%;
 
     /* Custom tokens */
     --hero-bg: 222 30% 5%;
     --hero-foreground: 0 0% 100%;
-    --success: 142 71% 45%;
+    --success: 93 69% 41%;
     --warning: 38 92% 55%;
     --info: 210 100% 60%;
     --surface: 222 25% 8%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(160, 64%, 48%));
+    --gradient-primary: linear-gradient(135deg, hsl(93, 69%, 41%), hsl(93, 69%, 31%));
     --gradient-hero: linear-gradient(135deg, hsl(222, 30%, 5%) 0%, hsl(225, 28%, 12%) 50%, hsl(222, 30%, 5%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(222, 25%, 12%), hsl(222, 22%, 9%));
-    --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(142 71% 45% / 0.25), transparent);
+    --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(93 69% 41% / 0.25), transparent);
 
     /* Shadows */
     --shadow-card: 0 0 0 1px hsl(222 20% 18%), 0 4px 16px hsl(222 30% 3% / 0.6);
-    --shadow-elevated: 0 0 0 1px hsl(142 71% 45% / 0.2), 0 8px 40px hsl(142 71% 45% / 0.12), 0 20px 60px hsl(222 30% 3% / 0.8);
-    --shadow-glow: 0 0 30px hsl(142 71% 45% / 0.35), 0 0 80px hsl(142 71% 45% / 0.15);
-    --shadow-btn: 0 4px 20px hsl(142 71% 45% / 0.4);
+    --shadow-elevated: 0 0 0 1px hsl(93 69% 41% / 0.2), 0 8px 40px hsl(93 69% 41% / 0.12), 0 20px 60px hsl(222 30% 3% / 0.8);
+    --shadow-glow: 0 0 30px hsl(93 69% 41% / 0.35), 0 0 80px hsl(93 69% 41% / 0.15);
+    --shadow-btn: 0 4px 20px hsl(93 69% 41% / 0.4);
   }
 }
 
@@ -86,7 +87,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -97,26 +103,32 @@
   ::-webkit-scrollbar {
     width: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background: hsl(var(--background));
   }
+
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
     border-radius: 99px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.6);
   }
 }
 
 @layer utilities {
+
   /* Gradients */
   .gradient-primary {
     background: var(--gradient-primary);
   }
+
   .gradient-hero {
     background: var(--gradient-hero);
   }
+
   .gradient-card {
     background: var(--gradient-card);
   }
@@ -125,12 +137,15 @@
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
+
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
+
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
+
   .shadow-btn {
     box-shadow: var(--shadow-btn);
   }
@@ -142,6 +157,7 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
   .text-gradient-blue {
     background: linear-gradient(135deg, hsl(210 100% 65%), hsl(180 80% 55%));
     -webkit-background-clip: text;
@@ -156,6 +172,7 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid hsl(222 20% 25% / 0.5);
   }
+
   .glass-light {
     background: hsl(0 0% 100% / 0.04);
     backdrop-filter: blur(16px);
@@ -165,16 +182,18 @@
 
   /* Glow effects */
   .glow-primary {
-    text-shadow: 0 0 30px hsl(142 71% 45% / 0.6);
+    text-shadow: 0 0 30px hsl(93 69% 41% / 0.6);
   }
+
   .glow-border {
-    box-shadow: 0 0 0 1px hsl(142 71% 45% / 0.4), 0 0 20px hsl(142 71% 45% / 0.15);
+    box-shadow: 0 0 0 1px hsl(93 69% 41% / 0.4), 0 0 20px hsl(93 69% 41% / 0.15);
   }
 
   /* Noise texture overlay */
   .noise {
     position: relative;
   }
+
   .noise::before {
     content: '';
     position: absolute;
@@ -194,13 +213,14 @@
 
   /* Hero glow blob */
   .hero-glow {
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, hsl(142 71% 45% / 0.2), transparent 70%);
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, hsl(93 69% 41% / 0.2), transparent 70%);
   }
 
   /* Card hover states */
   .card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-elevated);
@@ -209,10 +229,11 @@
   /* Badge/chip styles */
   .badge-primary {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
-    background: hsl(142 71% 45% / 0.12);
-    color: hsl(142 71% 65%);
-    border: 1px solid hsl(142 71% 45% / 0.25);
+    background: hsl(93 69% 41% / 0.12);
+    color: hsl(93 69% 61%);
+    border: 1px solid hsl(93 69% 41% / 0.25);
   }
+
   .badge-secondary {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
     background: hsl(222 20% 16%);
@@ -236,29 +257,78 @@
 
   /* Soft floating animation */
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-  @keyframes float-slow {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-16px) rotate(2deg); }
-  }
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(142 71% 45% / 0.3); }
-    50% { box-shadow: 0 0 40px hsl(142 71% 45% / 0.6); }
-  }
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  @keyframes orbit {
-    from { transform: rotate(0deg) translateX(80px) rotate(0deg); }
-    to { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
-  .animate-float { animation: float 4s ease-in-out infinite; }
-  .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
-  .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
-  .animate-shimmer { animation: shimmer 3s linear infinite; }
-  .animate-orbit { animation: orbit 8s linear infinite; }
+  @keyframes float-slow {
+
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-16px) rotate(2deg);
+    }
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px hsl(93 69% 41% / 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 40px hsl(93 69% 41% / 0.6);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes orbit {
+    from {
+      transform: rotate(0deg) translateX(80px) rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg) translateX(80px) rotate(-360deg);
+    }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2.5s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s linear infinite;
+  }
+
+  .animate-orbit {
+    animation: orbit 8s linear infinite;
+  }
 }

@@ -65,7 +65,7 @@ const PricingSection = () => {
       <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] blur-3xl opacity-5 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, hsl(142 71% 45%), transparent)" }}
+        style={{ background: "radial-gradient(ellipse, hsl(93 69% 41%), transparent)" }}
       />
 
       <div className="container mx-auto px-4 relative">

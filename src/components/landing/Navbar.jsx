@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Logo from "../../assets/yestickai.png"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -26,19 +27,16 @@ const Navbar = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-background/80 backdrop-blur-md border-b border-border shadow-sm"
-          : "bg-transparent border-transparent"
+        ? "bg-background/80 backdrop-blur-md border-b border-border shadow-sm"
+        : "bg-transparent border-transparent"
         }`}
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-            <MessageSquare className="h-5 w-5 text-white" />
+          <div className="w-50 h-10  rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+            <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-xl font-extrabold text-foreground tracking-tight">
-            Wazz<span className="text-gradient">Up</span>
-          </span>
         </Link>
 
         {/* Desktop Nav Links */}
@@ -97,10 +95,10 @@ const Navbar = () => {
               ))}
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" asChild>
-                   <Link to="/login" onClick={() => setMobileOpen(false)}>Sign In</Link>
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>Sign In</Link>
                 </Button>
                 <Button className="flex-1 gradient-primary text-white border-none" asChild>
-                   <Link to="/register" onClick={() => setMobileOpen(false)}>Get Started</Link>
+                  <Link to="/register" onClick={() => setMobileOpen(false)}>Get Started</Link>
                 </Button>
               </div>
             </div>

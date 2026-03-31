@@ -7,6 +7,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useState } from "react";
+import Logo from "../../assets/yestickai.png"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,12 +79,9 @@ const DashboardSidebar = () => {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border/60 shrink-0">
-        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md">
-          <MessageSquare className="w-5 h-5 text-primary-foreground" />
+        <div className="w-30 rounded-xl  flex items-center justify-center shadow-md">
+          <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
         </div>
-        <span className="text-lg font-extrabold text-foreground">
-          WazzUp
-        </span>
       </div>
 
       {/* Nav */}
@@ -105,8 +103,8 @@ const DashboardSidebar = () => {
                       to={item.path}
                       end={item.path === "/dashboard"}
                       className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                          ? "bg-primary/20 text-primary border border-primary/20 shadow-sm"
-                          : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-primary/20 text-primary border border-primary/20 shadow-sm"
+                        : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
                     >
                       <div className="flex items-center gap-3">
