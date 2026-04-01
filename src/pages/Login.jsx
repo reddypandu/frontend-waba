@@ -86,9 +86,9 @@ const Login = () => {
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/register" className="text-primary hover:underline">
+              {/* <Link to="/register" className="text-primary hover:underline">
                 Sign up
-              </Link>
+              </Link> */}
             </div>
           </CardFooter>
         </form>
