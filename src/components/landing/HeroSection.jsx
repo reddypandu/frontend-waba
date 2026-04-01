@@ -10,11 +10,25 @@ const floatingMessages = [
 ];
 
 const stats = [
-  { icon: Users, value: "50K+", label: "Businesses", color: "text-green-400" },
-  { icon: MessageSquare, value: "100M+", label: "Messages Sent", color: "text-blue-400" },
-  { icon: BarChart3, value: "98%", label: "Delivery Rate", color: "text-yellow-400" },
-  { icon: Zap, value: "2x", label: "Faster Growth", color: "text-purple-400" },
+  { icon: Users, value: "....", label: "Businesses", color: "text-green-400" },
+  { icon: MessageSquare, value: "....", label: "Messages Sent", color: "text-blue-400" },
+  { icon: BarChart3, value: "....", label: "Delivery Rate", color: "text-yellow-400" },
+  { icon: Zap, value: "....", label: "Faster Growth", color: "text-purple-400" },
 ];
+
+const AnimatedDots = () => (
+  <span className="inline-flex tracking-widest">
+    {[0, 1, 2, 3].map((i) => (
+      <motion.span
+        key={i}
+        animate={{ opacity: [0.2, 1, 0.2] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+      >
+        .
+      </motion.span>
+    ))}
+  </span>
+);
 
 const HeroSection = () => {
   return (
@@ -197,7 +211,9 @@ const HeroSection = () => {
               className="text-center"
             >
               <s.icon className={`w-5 h-5 ${s.color} mx-auto mb-2`} />
-              <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+              <p className={`text-2xl font-extrabold flex items-center justify-center ${s.color}`}>
+                {s.value === "...." ? <AnimatedDots /> : s.value}
+              </p>
               <p className="text-sm text-muted-foreground">{s.label}</p>
             </motion.div>
           ))}

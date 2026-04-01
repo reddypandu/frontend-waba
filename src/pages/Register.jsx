@@ -98,7 +98,7 @@ const Register = () => {
 
         <div className="relative z-10 max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-12">
-            <div className="w-50 h-10 rounded-xl flex items-center justify-center shadow-btn text-primary-foreground">
+            <div className="w-50 h-12 rounded-xl flex items-center justify-center text-primary-foreground">
               <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
           </Link>

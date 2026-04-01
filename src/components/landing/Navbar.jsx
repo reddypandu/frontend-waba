@@ -34,7 +34,7 @@ const Navbar = () => {
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-50 h-10  rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+          <div className="w-50 h-12  rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
             <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
         </Link>

@@ -79,7 +79,7 @@ const DashboardSidebar = () => {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border/60 shrink-0">
-        <div className="w-30 rounded-xl  flex items-center justify-center shadow-md">
+        <div className="w-30 h-12 rounded-xl  flex items-center justify-center shadow-md">
           <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
         </div>
       </div>

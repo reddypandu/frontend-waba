@@ -80,7 +80,7 @@ const MobileSidebar = ({ open, onClose }) => {
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-border/60 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-40 h-8 rounded-xl flex items-center justify-center text-primary-foreground">
+                <div className="w-40 h-10 rounded-xl flex items-center justify-center text-primary-foreground">
                   <img src={Logo} alt="Logo" className="w-full h-full" />
                 </div>
               </div>

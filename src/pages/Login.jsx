@@ -43,11 +43,11 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-secondary/50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
+          <Link to="/" className="flex justify-center mb-4">
             <div className="h-12 w-50 rounded-xl flex items-center justify-center">
               <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
-          </div>
+          </Link>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
