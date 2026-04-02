@@ -118,8 +118,8 @@ const WhatsAppSetup = () => {
           <InfoCard label="Verification Status" value={waAccount?.verification_status} badge />
         </div>
 
-        {/* Webhook Notice (Only for Admins) */}
-        {user?.role === "admin" && (
+        {/* Webhook Notice (Only for Admins when not yet verified) */}
+        {user?.role === "admin" && !waAccount?.webhook_verified && (
           <Card className="shadow-sm border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -130,14 +130,15 @@ const WhatsAppSetup = () => {
             <CardContent className="space-y-3">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Admin: Configure your webhook in Meta App Dashboard</AlertTitle>
+                <AlertTitle>One-time setup: Configure webhook in Meta App Dashboard</AlertTitle>
                 <AlertDescription className="text-xs mt-1">
+                  This is a <strong>one-time platform-level setup</strong>. Once configured, all users are covered automatically.<br /><br />
                   Webhook URL: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary">{(import.meta.env.VITE_API_BASE_URL || "http://localhost:5005").replace(/\/$/, '')}/api/webhook</code><br />
                   Verify Token: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-primary font-bold">{(import.meta.env.VITE_WEBHOOK_VERIFY_TOKEN || "Set in .env")}</code>
                 </AlertDescription>
               </Alert>
               <p className="text-[10px] text-muted-foreground mt-2">
-                Note: Webhook verification is handled automatically by the platform once configured in Meta.
+                This notice disappears automatically once Meta verifies the webhook.
               </p>
               <Button variant="outline" size="sm" className="rounded-xl" onClick={() => window.open("https://developers.facebook.com/apps", "_blank")}>
                 <ExternalLink className="h-4 w-4 mr-2" /> Open Meta Developer Console
@@ -145,6 +146,7 @@ const WhatsAppSetup = () => {
             </CardContent>
           </Card>
         )}
+
 
         {/* Branding & QR Code (For Users) */}
         {isStep3Visible && (
