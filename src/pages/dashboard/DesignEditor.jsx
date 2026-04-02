@@ -79,20 +79,34 @@ const DesignEditor = () => {
       canvas.on("selection:cleared", updateToolbar);
 
       const saveHistory = () => {
+        if (!canvas) return;
         try {
           const json = canvas.toJSON();
           setHistory((prev) => {
-            const newHistory = prev.slice(0, Math.max(0, historyIndex + 1));
+            const newHistory = prev.slice(0, historyIndex + 1);
+            // Limit history to 50 steps
+            if (newHistory.length > 50) newHistory.shift();
             return [...newHistory, json];
           });
-          setHistoryIndex((prev) => prev + 1);
+          setHistoryIndex((prev) => Math.min(prev + 1, 49));
         } catch (e) {
           console.error("History Error", e);
         }
       };
 
-      canvas.on("object:added", saveHistory);
-      canvas.on("object:modified", saveHistory);
+      // Auto-save logic (Point 10)
+      const saveState = () => {
+        // We trigger selection update on every modification
+        const active = canvas.getActiveObject();
+        setSelectedObject(active ? { ...active.toObject(['id', 'name']), _ts: Date.now() } : null);
+        saveHistory();
+      };
+
+      canvas.on("object:added", saveState);
+      canvas.on("object:modified", saveState);
+      canvas.on("object:removed", saveState);
+      canvas.on("selection:created", () => setSelectedObject(canvas.getActiveObject()?.toObject(['id', 'name'])));
+      canvas.on("selection:cleared", () => setSelectedObject(null));
 
       if (id && id !== "new") {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs/${id}`, {
@@ -104,13 +118,18 @@ const DesignEditor = () => {
             if (design?.type === 'template') setIsTemplate(true);
 
             const currentUserId = user?._id || user?.id;
-            // If the design belongs to someone else (e.g., an Admin Global Template), mark as a clone
-            if (design?.user_id && currentUserId && design.user_id !== currentUserId) {
+            if (design?.user_id && currentUserId && String(design.user_id) !== String(currentUserId)) {
               setIsOwner(false);
             }
 
             if (design?.data) {
-              canvas.loadFromJSON(design.data).then(() => canvas.renderAll());
+              // Ensure we load with crossOrigin for export later
+              canvas.loadFromJSON(design.data).then(() => {
+                canvas.renderAll();
+                // Add initial state to history
+                setHistory([canvas.toJSON()]);
+                setHistoryIndex(0);
+              });
             }
           })
           .catch(err => console.error("Load Error", err));

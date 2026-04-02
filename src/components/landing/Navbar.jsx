@@ -59,7 +59,7 @@ const Navbar = () => {
             <Link to="/login">Sign In</Link>
           </Button>
           <Button asChild size="sm" className="gradient-primary border-none text-white font-bold">
-            <Link to="/register">Start Free Trial</Link>
+            <Link to="/">Start Free Trial</Link>
           </Button>
         </div>
 

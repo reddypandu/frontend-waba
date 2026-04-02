@@ -165,8 +165,8 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                         >-</Button>
                         <Input
                             className="w-10 h-7 text-center text-xs p-0 border-none bg-transparent"
-                            defaultValue={selectedObject.fontSize}
-                            onBlur={(e) => updateProp("fontSize", parseInt(e.target.value))}
+                            value={selectedObject.fontSize || 20}
+                            onChange={(e) => updateProp("fontSize", parseInt(e.target.value) || 1)}
                         />
                         <Button
                             variant="ghost" size="icon" className="h-7 w-7"

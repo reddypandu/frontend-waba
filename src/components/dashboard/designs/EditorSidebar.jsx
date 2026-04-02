@@ -147,24 +147,24 @@ const EditorSidebar = ({ fabricRef, setSelectedObject }) => {
       fill: "#3b82f6",
       stroke: "#1d4ed8",
       strokeWidth: 0,
-      width: 100,
-      height: 100,
     };
     switch (type) {
       case "rect":
-        shape = new fabric.Rect(common);
+        shape = new fabric.Rect({ ...common, width: 100, height: 100, rx: 8, ry: 8 });
         break;
       case "circle":
         shape = new fabric.Circle({ ...common, radius: 50 });
         break;
       case "triangle":
-        shape = new fabric.Triangle(common);
+        shape = new fabric.Triangle({ ...common, width: 100, height: 100 });
         break;
     }
-    fabricRef.current.add(shape);
-    fabricRef.current.setActiveObject(shape);
-    fabricRef.current.centerObject(shape);
-    fabricRef.current.renderAll();
+    if (shape) {
+      fabricRef.current.add(shape);
+      fabricRef.current.setActiveObject(shape);
+      fabricRef.current.centerObject(shape);
+      fabricRef.current.renderAll();
+    }
   };
 
   const handleFileUpload = async (e) => {
@@ -242,10 +242,12 @@ const EditorSidebar = ({ fabricRef, setSelectedObject }) => {
   const onEmojiClick = (emojiData) => {
     if (!fabricRef.current) return;
     const emojiText = new fabric.IText(emojiData.emoji, {
-      fontSize: 50,
+      fontSize: 80,
+      fontFamily: "Apple Color Emoji, Segoe UI Emoji, Arial",
     });
     fabricRef.current.add(emojiText);
     fabricRef.current.centerObject(emojiText);
+    fabricRef.current.setActiveObject(emojiText);
     fabricRef.current.renderAll();
   };
 
