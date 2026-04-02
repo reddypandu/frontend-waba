@@ -1,10 +1,11 @@
 import * as React from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Search, MessageSquare, ArrowLeft, Paperclip, LayoutTemplate, Check, Info } from "lucide-react";
+import { Send, Search, MessageSquare, ArrowLeft, Paperclip, LayoutTemplate, Check, Info, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,10 @@ const Inbox = () => {
   const [message, setMessage] = React.useState("");
   const [search, setSearch] = React.useState("");
   const messagesEndRef = React.useRef(null);
+
+  const [activeTemplate, setActiveTemplate] = React.useState(null);
+  const [templateMappings, setTemplateMappings] = React.useState({});
+  const [sendingTemplate, setSendingTemplate] = React.useState(false);
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
 
@@ -175,8 +180,132 @@ const Inbox = () => {
     return conversations.find((c) => c._id === selectedConv);
   }, [selectedConv, conversations, contacts, newChatPhone]);
 
+  const handleSendTemplate = (tpl, mappings = {}) => {
+    setSendingTemplate(true);
+    let to = newChatPhone;
+    if (selectedConv && selectedConv !== "new") {
+      if (selectedConv.startsWith("contact-")) {
+        const c = contacts.find(con => `contact-${con._id}` === selectedConv);
+        to = c?.phone_number;
+      } else {
+        const conv = conversations.find(c => c._id === selectedConv);
+        to = conv?.contact_id?.phone_number || conv?.phone_number;
+      }
+    }
+
+    const vars = tpl.vars || [];
+    const components = [];
+    
+    // Add header parameters if media is required
+    if (tpl.headerFormat) {
+      const mediaType = tpl.headerFormat.toLowerCase();
+      components.push({
+        type: "header",
+        parameters: [{
+          type: mediaType,
+          [mediaType]: { link: mappings.header_url || "" }
+        }]
+      });
+    }
+
+    // Add body parameters
+    if (vars.length > 0) {
+      components.push({
+        type: "body",
+        parameters: vars.map(v => ({ type: "text", text: mappings[v] || "" }))
+      });
+    }
+
+    apiPost("/api/whatsapp", { 
+      action: "send_template", 
+      to, 
+      template_name: tpl.name,
+      components 
+    })
+      .then((res) => {
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
+        if (res.conversation_id) {
+          queryClient.invalidateQueries({ queryKey: ["messages", res.conversation_id] });
+          setSelectedConv(res.conversation_id);
+        }
+        toast({ title: "Template sent!" });
+        setActiveTemplate(null);
+      })
+      .catch(err => toast({ title: "Error", description: err.message, variant: "destructive" }))
+      .finally(() => setSendingTemplate(false));
+  };
+
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-0 rounded-xl overflow-hidden border border-border bg-background">
+      {activeTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md shadow-2xl border-primary/20 overflow-hidden text-card-foreground">
+            <div className="p-4 border-b border-border bg-muted/30">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <LayoutTemplate className="w-4 h-4 text-primary" />
+                Template Variables: {activeTemplate.name}
+              </h3>
+            </div>
+            <CardContent className="p-6 space-y-6">
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                <p className="text-[10px] font-bold text-primary uppercase mb-2">Message Preview</p>
+                {activeTemplate.headerFormat && (
+                  <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-3">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{activeTemplate.headerFormat} placeholder</p>
+                  </div>
+                )}
+                <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                  {activeTemplate.bodyText.replace(/\{\{(\d+)\}\}/g, (match, p1) => {
+                    return templateMappings[p1] ? `[${templateMappings[p1]}]` : match;
+                  })}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {activeTemplate.headerFormat && (
+                   <div className="space-y-1.5">
+                     <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase">
+                       <Paperclip className="w-3 h-3" />
+                       Header {activeTemplate.headerFormat} URL
+                     </Label>
+                     <Input 
+                       placeholder={`https://example.com/file.${activeTemplate.headerFormat.toLowerCase() === 'image' ? 'jpg' : activeTemplate.headerFormat.toLowerCase() === 'video' ? 'mp4' : 'pdf'}`}
+                       value={templateMappings.header_url || ""}
+                       onChange={e => setTemplateMappings(prev => ({ ...prev, header_url: e.target.value }))}
+                       className="h-10 rounded-xl border-primary/20 focus:border-primary"
+                     />
+                   </div>
+                )}
+                {activeTemplate.vars.map(v => (
+                  <div key={v} className="space-y-1.5">
+                    <Label className="text-xs font-bold">Variable {"{{"}{v}{"}}"}</Label>
+                    <Input 
+                      placeholder={`Value for ${v}...`}
+                      value={templateMappings[v] || ""}
+                      onChange={e => setTemplateMappings(prev => ({ ...prev, [v]: e.target.value }))}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setActiveTemplate(null)}>Cancel</Button>
+                <Button 
+                  className="flex-1 rounded-xl font-bold" 
+                  disabled={sendingTemplate || activeTemplate.vars.some(v => !templateMappings[v]) || (activeTemplate.headerFormat && !templateMappings.header_url)}
+                  onClick={() => handleSendTemplate(activeTemplate, templateMappings)}
+                >
+                  {sendingTemplate ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send Template
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Sidebar - conversations list */}
       <div className={`w-full md:w-80 lg:w-96 border-r border-border flex flex-col ${selectedConv ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-border">
@@ -307,28 +436,26 @@ const Inbox = () => {
                       <DropdownMenuItem 
                         key={String(t._id || t.id)} 
                         onClick={() => {
-                           toast({ title: "Sending Template", description: `Sending ${t.name}...` });
-                           let to = newChatPhone;
-                           if (selectedConv && selectedConv !== "new") {
-                             if (selectedConv.startsWith("contact-")) {
-                               const c = contacts.find(con => `contact-${con._id}` === selectedConv);
-                               to = c?.phone_number;
-                             } else {
-                               const conv = conversations.find(c => c._id === selectedConv);
-                               to = conv?.contact_id?.phone_number || conv?.phone_number;
-                             }
+                           const bodyText = (Array.isArray(t.components)
+                             ? t.components.find(c => c.type === 'BODY')?.text
+                             : t.body_text) || "";
+                           
+                           const headerComp = Array.isArray(t.components)
+                             ? t.components.find(c => c.type === 'HEADER')
+                             : null;
+                           const headerFormat = headerComp?.format || null; // "IMAGE", "VIDEO", "DOCUMENT"
+
+                           const vars = (bodyText.match(/\{\{(\d+)\}\}/g) || [])
+                             .map(v => parseInt(v.replace(/[{}]/g, "")))
+                             .filter((v, i, a) => a.indexOf(v) === i)
+                             .sort((a, b) => a - b);
+
+                           if (vars.length > 0 || headerFormat) {
+                             setActiveTemplate({ ...t, bodyText, vars, headerFormat });
+                             setTemplateMappings({});
+                           } else {
+                             handleSendTemplate(t);
                            }
-                           apiPost("/api/whatsapp", { action: "send_template", to, template_name: t.name })
-                             .then((res) => {
-                                queryClient.invalidateQueries({ queryKey: ["conversations"] });
-                                queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
-                                if (res.conversation_id) {
-                                  queryClient.invalidateQueries({ queryKey: ["messages", res.conversation_id] });
-                                  setSelectedConv(res.conversation_id);
-                                }
-                                toast({ title: "Template sent!" });
-                             })
-                             .catch(err => toast({ title: "Error", description: err.message, variant: "destructive" }));
                         }}
                       >
                         {t.name}

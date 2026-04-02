@@ -38,8 +38,16 @@ const WhatsAppSetup = () => {
   const handleManualSave = async () => {
     setSaving(true);
     try {
+      // Trim all fields to prevent copy-paste whitespace errors
+      const cleanedData = {
+        phone_number_id: manualForm.phone_number_id?.trim(),
+        waba_id: manualForm.waba_id?.trim(),
+        access_token: manualForm.access_token?.trim(),
+        phone_number: manualForm.phone_number?.trim(),
+      };
+
       await apiPost("/api/admin/businesses", { name: user?.full_name || "My Business" });
-      await apiPost("/api/admin/whatsapp-accounts", manualForm);
+      await apiPost("/api/admin/whatsapp-accounts", cleanedData);
       toast({ title: "WhatsApp account saved successfully!" });
       queryClient.invalidateQueries({ queryKey: ["wa-setup-status"] });
       setView("status");

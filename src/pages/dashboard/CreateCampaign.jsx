@@ -97,6 +97,11 @@ const CreateCampaign = () => {
     .filter((v, i, a) => a.indexOf(v) === i)
     .sort((a, b) => a - b);
 
+  const headerComp = Array.isArray(selectedTemplate?.components)
+    ? selectedTemplate?.components?.find(c => c.type === 'HEADER')
+    : null;
+  const headerFormat = headerComp?.format || null;
+
   const handleExcelUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -134,6 +139,32 @@ const CreateCampaign = () => {
         finalContacts = res.ids;
       }
 
+      // Convert mappings to Meta components structure
+      const components = [];
+      
+      // Add Header Parameters
+      if (headerFormat) {
+        const mediaType = headerFormat.toLowerCase();
+        components.push({
+          type: "header",
+          parameters: [{
+            type: mediaType,
+            [mediaType]: { link: variableMappings.header_url || "" }
+          }]
+        });
+      }
+
+      // Add Body Parameters
+      if (templateVars.length > 0) {
+        components.push({
+          type: "body",
+          parameters: templateVars.map(v => ({
+            type: "text",
+            text: variableMappings[v] || ""
+          }))
+        });
+      }
+
       const payload = {
         name: campaignName,
         template_name: selectedTemplate?.name,
@@ -142,7 +173,10 @@ const CreateCampaign = () => {
         scheduled_at: scheduleType === 'scheduled' ? `${scheduledDate}T${scheduledTime}` : null,
         contacts: finalContacts,
         requires_follow_up: requiresFollowUp,
-        interactive_params: interactiveParams.header_image_url || interactiveParams.offer_code ? interactiveParams : null,
+        interactive_params: (interactiveParams.header_image_url || interactiveParams.offer_code) && !headerFormat 
+          ? interactiveParams 
+          : (interactiveParams.offer_code ? { offer_code: interactiveParams.offer_code } : null),
+        components // Added for variables
       };
 
       return await apiPost("/api/whatsapp/campaigns", payload);
@@ -191,7 +225,7 @@ const CreateCampaign = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName}>Save Draft</Button>
-          <Button variant="default" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName || !templateId || totalRecipients === 0}>
+          <Button variant="default" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName || !templateId || totalRecipients === 0 || templateVars.some(v => !variableMappings[v]) || (headerFormat && !variableMappings.header_url)}>
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Go Live"}
           </Button>
         </div>
@@ -258,8 +292,42 @@ const CreateCampaign = () => {
                   <div className="rounded-xl border border-border bg-card p-3 space-y-4">
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Body Text</p>
-                      <p className="text-xs whitespace-pre-wrap">{templateBody}</p>
+                      <p className="text-xs whitespace-pre-wrap leading-relaxed">{templateBody}</p>
                     </div>
+
+                    {headerFormat && (
+                      <div className="space-y-3 pt-3 border-t border-border">
+                        <p className="text-[10px] font-bold text-primary uppercase">Header Media ({headerFormat})</p>
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">Media URL</Label>
+                          <Input 
+                            placeholder={`https://.../file.${headerFormat.toLowerCase() === 'image' ? 'jpg' : headerFormat.toLowerCase() === 'video' ? 'mp4' : 'pdf'}`}
+                            className="h-8 text-xs"
+                            value={variableMappings.header_url || ""}
+                            onChange={e => setVariableMappings(prev => ({ ...prev, header_url: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {templateVars.length > 0 && (
+                      <div className="space-y-3 pt-3 border-t border-border">
+                        <p className="text-[10px] font-bold text-primary uppercase">Template Variables</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {templateVars.map(v => (
+                            <div key={v} className="space-y-1">
+                              <Label className="text-[10px]">Variable {"{{"}{v}{"}}"}</Label>
+                              <Input
+                                placeholder={`Enter value for ${v}...`}
+                                className="h-8 text-xs"
+                                value={variableMappings[v] || ""}
+                                onChange={e => setVariableMappings(prev => ({ ...prev, [v]: e.target.value }))}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-3 pt-3 border-t border-border">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Rich Template Settings (Optional)</p>
@@ -393,8 +461,15 @@ const CreateCampaign = () => {
               </div>
               <div className="p-3 space-y-3 bg-[#e5ddd5] h-full overflow-y-auto">
                 <div className="max-w-[85%] bg-white rounded-xl p-3 shadow-sm relative animate-in slide-in-from-left duration-300">
+                  {headerFormat && (
+                    <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-2">
+                       <p className="text-[9px] text-muted-foreground uppercase font-bold">{headerFormat} PREVIEW</p>
+                    </div>
+                  )}
                   <p className="text-[11px] leading-relaxed text-black whitespace-pre-wrap">
-                    {templateBody || "Select a template to preview your message here..."}
+                    {(templateBody || "Select a template...").replace(/\{\{(\d+)\}\}/g, (match, p1) => {
+                       return variableMappings[p1] ? <strong key={p1} className="text-primary">{variableMappings[p1]}</strong> : match;
+                    }) || "Select a template to preview your message here..."}
                   </p>
                   <p className="text-[9px] text-muted-foreground text-right mt-1">10:45 AM</p>
                 </div>
@@ -424,10 +499,26 @@ const CreateCampaign = () => {
                       <Button size="sm" className="flex-1 text-xs" disabled={sendingTest || !testPhone} onClick={async () => {
                         setSendingTest(true);
                         try {
+                          const components = [];
+                          if (headerFormat) {
+                            const mediaType = headerFormat.toLowerCase();
+                            components.push({
+                              type: "header",
+                              parameters: [{ type: mediaType, [mediaType]: { link: variableMappings.header_url || "" } }]
+                            });
+                          }
+                          if (templateVars.length > 0) {
+                            components.push({
+                              type: "body",
+                              parameters: templateVars.map(v => ({ type: "text", text: variableMappings[v] || "" }))
+                            });
+                          }
+
                           await apiPost("/api/whatsapp", {
                             action: "send_template",
                             to: testPhone,
-                            template_name: selectedTemplate.name
+                            template_name: selectedTemplate.name,
+                            components
                           });
                           toast({ title: "Test Sent!" });
                           setShowTestDialog(false);
