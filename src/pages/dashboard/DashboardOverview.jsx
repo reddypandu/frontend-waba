@@ -15,7 +15,7 @@ const DashboardOverview = () => {
   const navigate = useNavigate();
 
   const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", user?.id],
     queryFn: () => apiGet("/api/admin/me"),
     enabled: !!user,
   });

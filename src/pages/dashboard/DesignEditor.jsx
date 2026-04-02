@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, RotateCcw, Save, Undo, Redo, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiGet, apiPost, apiPut } from "@/lib/api";
 import * as fabric from "fabric";
 import EditorSidebar from "@/components/dashboard/designs/EditorSidebar";
 import CanvasToolbar from "@/components/dashboard/designs/CanvasToolbar";
@@ -13,6 +15,7 @@ const DesignEditor = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const canvasRef = React.useRef(null);
   const fabricRef = React.useRef(null);
   const containerRef = React.useRef(null);
@@ -24,6 +27,29 @@ const DesignEditor = () => {
   const [isOwner, setIsOwner] = React.useState(true);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
+
+  const { data: design, isLoading: isDesignLoading } = useQuery({
+    queryKey: ["design-detail", user?.id, id],
+    queryFn: () => apiGet(`/api/designs/${id}`),
+    enabled: !!user && !!id && id !== "new",
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (data) => {
+      const isNew = id === "new" || !isOwner;
+      return isNew ? apiPost("/api/designs", data) : apiPut(`/api/designs/${id}`, data);
+    },
+    onSuccess: (saved) => {
+      queryClient.invalidateQueries({ queryKey: ["designs", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["design-detail", user?.id, id] });
+      const isNew = id === "new" || !isOwner;
+      if (isNew && saved?._id) navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
+      toast({ title: "Design saved successfully!" });
+    },
+    onError: (err) => {
+      toast({ title: "Save Error", description: err.message, variant: "destructive" });
+    }
+  });
 
   // Global Error Handler for this component
   React.useEffect(() => {
@@ -108,31 +134,22 @@ const DesignEditor = () => {
       canvas.on("selection:created", () => setSelectedObject(canvas.getActiveObject()?.toObject(['id', 'name'])));
       canvas.on("selection:cleared", () => setSelectedObject(null));
 
-      if (id && id !== "new") {
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-        })
-          .then(r => r.json())
-          .then(design => {
-            if (design?.name) setDesignName(design.name);
-            if (design?.type === 'template') setIsTemplate(true);
+      if (id && id !== "new" && design) {
+        if (design?.name) setDesignName(design.name);
+        if (design?.type === 'template') setIsTemplate(true);
 
-            const currentUserId = user?._id || user?.id;
-            if (design?.user_id && currentUserId && String(design.user_id) !== String(currentUserId)) {
-              setIsOwner(false);
-            }
+        const currentUserId = user?._id || user?.id;
+        if (design?.user_id && currentUserId && String(design.user_id) !== String(currentUserId)) {
+          setIsOwner(false);
+        }
 
-            if (design?.data) {
-              // Ensure we load with crossOrigin for export later
-              canvas.loadFromJSON(design.data).then(() => {
-                canvas.renderAll();
-                // Add initial state to history
-                setHistory([canvas.toJSON()]);
-                setHistoryIndex(0);
-              });
-            }
-          })
-          .catch(err => console.error("Load Error", err));
+        if (design?.data) {
+          canvas.loadFromJSON(design.data).then(() => {
+            canvas.renderAll();
+            setHistory([canvas.toJSON()]);
+            setHistoryIndex(0);
+          });
+        }
       }
 
       const resizeHandler = () => {
@@ -230,35 +247,22 @@ const DesignEditor = () => {
             </label>
           )}
 
-          <Button size="sm" className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={async () => {
-            try {
-              const isNew = id === "new" || !isOwner;
-              const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs${isNew ? '' : `/${id}`}`, {
-                method: isNew ? "POST" : "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("token")}`
-                },
-                body: JSON.stringify({
-                  name: designName,
-                  data: fabricRef.current.toJSON(),
-                  thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
-                  type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
-                  is_public: isTemplate && user?.role === 'admin'
-                })
+          <Button 
+            size="sm" 
+            className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" 
+            disabled={saveMutation.isPending}
+            onClick={() => {
+              saveMutation.mutate({
+                name: designName,
+                data: fabricRef.current.toJSON(),
+                thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
+                type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
+                is_public: isTemplate && user?.role === 'admin'
               });
-              const saved = await res.json();
-              if (res.ok) {
-                if (isNew && saved?._id) navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
-                toast({ title: "Design saved successfully!" });
-              } else {
-                throw new Error(saved.error || "Save failed");
-              }
-            } catch (err) {
-              toast({ title: "Save Error", description: err.message, variant: "destructive" });
-            }
-          }}>
-            <Save className="h-3.5 w-3.5" /> Save Design
+            }}
+          >
+            {saveMutation.isPending ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            Save Design
           </Button>
         </div>
       </div>

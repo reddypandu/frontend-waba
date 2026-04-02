@@ -33,7 +33,7 @@ const Contacts = () => {
   const [deleteId, setDeleteId] = React.useState(null);
 
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ["contacts"],
+    queryKey: ["contacts", user?.id],
     queryFn: () => apiGet("/api/admin/contacts"),
     enabled: !!user,
   });
@@ -45,7 +45,7 @@ const Contacts = () => {
       tags: contact.tags.split(",").map(t => t.trim()).filter(Boolean)
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", user?.id] });
       setDialogOpen(false);
       setNewContact({ name: "", phone: "", tags: "" });
       toast({ title: "Contact added successfully" });
@@ -58,7 +58,7 @@ const Contacts = () => {
   const deleteMutation = useMutation({
     mutationFn: (id) => apiDelete(`/api/admin/contacts/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", user?.id] });
       setDeleteId(null);
       toast({ title: "Contact deleted" });
     },

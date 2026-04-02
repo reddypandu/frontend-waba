@@ -18,7 +18,7 @@ const BusinessProfile = () => {
   const fileInputRef = React.useRef(null);
 
   const { data: profile, isLoading, refetch } = useQuery({
-    queryKey: ["whatsapp-profile"],
+    queryKey: ["whatsapp-profile", user?.id],
     queryFn: () => apiGet("/api/admin/whatsapp-profile"),
     enabled: !!user,
   });
@@ -27,7 +27,7 @@ const BusinessProfile = () => {
   const syncMutation = useMutation({
     mutationFn: () => apiGet("/api/admin/whatsapp-profile?sync=true"),
     onSuccess: (data) => {
-      queryClient.setQueryData(["whatsapp-profile"], data);
+      queryClient.setQueryData(["whatsapp-profile", user?.id], data);
       toast({ title: "Synced with Meta successfully" });
     },
     onError: (err) => {

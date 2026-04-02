@@ -22,7 +22,7 @@ const AutoReplies = () => {
   const [form, setForm] = React.useState({ keyword: "", match_type: "contains", response: "" });
 
   const { data: rules = [], isLoading } = useQuery({
-    queryKey: ["auto-replies"],
+    queryKey: ["auto-replies", user?.id],
     queryFn: () => apiGet("/api/admin/auto-replies"),
     enabled: !!user,
   });
@@ -31,7 +31,7 @@ const AutoReplies = () => {
     mutationFn: (data) => apiPost("/api/admin/auto-replies", data),
     onSuccess: () => {
       toast({ title: "Auto-reply created!" });
-      queryClient.invalidateQueries({ queryKey: ["auto-replies"] });
+      queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
       resetForm();
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -41,7 +41,7 @@ const AutoReplies = () => {
     mutationFn: ({ id, ...data }) => apiPut(`/api/admin/auto-replies/${id}`, data),
     onSuccess: () => {
       toast({ title: "Auto-reply updated!" });
-      queryClient.invalidateQueries({ queryKey: ["auto-replies"] });
+      queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
       resetForm();
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -49,14 +49,14 @@ const AutoReplies = () => {
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }) => apiPut(`/api/admin/auto-replies/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["auto-replies"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => apiDelete(`/api/admin/auto-replies/${id}`),
     onSuccess: () => {
       toast({ title: "Deleted" });
-      queryClient.invalidateQueries({ queryKey: ["auto-replies"] });
+      queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
     },
   });
 

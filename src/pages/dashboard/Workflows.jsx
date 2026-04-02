@@ -32,7 +32,7 @@ const Workflows = () => {
   });
 
   const { data: workflows = [], isLoading } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: ["workflows", user?.id],
     queryFn: () => apiGet("/api/admin/workflows"),
     enabled: !!user,
   });
@@ -41,7 +41,7 @@ const Workflows = () => {
     mutationFn: (data) => apiPost("/api/admin/workflows", { ...data, actions: [{ type: "send_message", message: "" }] }),
     onSuccess: () => {
       toast({ title: "Workflow created!" });
-      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
       resetForm();
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -51,21 +51,21 @@ const Workflows = () => {
     mutationFn: ({ id, ...data }) => apiPut(`/api/admin/workflows/${id}`, data),
     onSuccess: () => {
       toast({ title: "Workflow updated!" });
-      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
       resetForm();
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }) => apiPut(`/api/admin/workflows/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workflows"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => apiDelete(`/api/admin/workflows/${id}`),
     onSuccess: () => {
       toast({ title: "Workflow deleted" });
-      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
     },
   });
 

@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Sparkles, Pencil, Plus, Trash2, Layout, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiGet, apiDelete } from "@/lib/api";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -18,12 +21,12 @@ import {
 import { Label } from "@/components/ui/label";
 
 const Designs = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [search, setSearch] = React.useState("");
   const [tab, setTab] = React.useState("templates");
-  const [designs, setDesigns] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
   const [customDim, setCustomDim] = React.useState({ width: 1080, height: 1080, name: "Untitled Design" });
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
@@ -34,50 +37,30 @@ const Designs = () => {
     { name: "Standard square", width: 500, height: 500 },
   ];
 
-  React.useEffect(() => {
-    fetchDesigns();
-  }, []);
+  const { data: designs = [], isLoading: loading } = useQuery({
+    queryKey: ["designs", user?.id],
+    queryFn: async () => {
+      const data = await apiGet("/api/designs");
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!user,
+  });
 
-  const fetchDesigns = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-
-      // CRITICAL: Ensure data is an array
-      if (Array.isArray(data)) {
-        setDesigns(data);
-      } else {
-        console.error("API returned non-array data:", data);
-        setDesigns([]);
-      }
-    } catch (err) {
-      console.error("Fetch designs error:", err);
-      toast({ title: "Error", description: "Failed to fetch designs", variant: "destructive" });
-      setDesigns([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id, e) => {
-    e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this design?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Delete failed");
-
-      setDesigns(designs.filter(d => d._id !== id));
+  const deleteMutation = useMutation({
+    mutationFn: (id) => apiDelete(`/api/designs/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["designs", user?.id] });
       toast({ title: "Success", description: "Design deleted" });
-    } catch (err) {
+    },
+    onError: () => {
       toast({ title: "Error", description: "Failed to delete design", variant: "destructive" });
     }
+  });
+
+  const handleDelete = (id, e) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this design?")) return;
+    deleteMutation.mutate(id);
   };
 
   const handleCreateCustom = () => {

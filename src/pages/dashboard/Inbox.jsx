@@ -36,14 +36,14 @@ const Inbox = () => {
   const [newChatPhone, setNewChatPhone] = React.useState(null);
 
   const { data: convsData, isLoading: convsLoading } = useQuery({
-    queryKey: ["conversations"],
+    queryKey: ["conversations", user?.id],
     queryFn: () => apiGet("/api/whatsapp/conversations"),
     enabled: !!user,
     refetchInterval: 5000,
   });
 
   const { data: contactsData, isLoading: contactsLoading } = useQuery({
-    queryKey: ["contacts"],
+    queryKey: ["contacts", user?.id],
     queryFn: () => apiGet("/api/admin/contacts"),
     enabled: !!user,
   });
@@ -54,7 +54,7 @@ const Inbox = () => {
   const isLoading = (convsLoading || contactsLoading) && conversations.length === 0 && contacts.length === 0;
 
   const { data: templates = [] } = useQuery({
-    queryKey: ["templates-inbox"],
+    queryKey: ["templates-inbox", user?.id],
     queryFn: async () => {
       const ts = [];
       // Try to sync from Meta (optional)
@@ -123,12 +123,12 @@ const Inbox = () => {
   }, [searchParams, conversations]);
 
   const { data: msgsData, isLoading: msgsLoading } = useQuery({
-    queryKey: ["messages", selectedConv],
+    queryKey: ["messages", user?.id, selectedConv],
     queryFn: () => {
       if (!selectedConv || selectedConv === "new" || selectedConv.startsWith("contact-")) return { messages: [] };
       return apiGet(`/api/whatsapp/messages/${selectedConv}`);
     },
-    enabled: !!selectedConv && selectedConv !== "new" && !selectedConv.startsWith("contact-"),
+    enabled: !!user && !!selectedConv && selectedConv !== "new" && !selectedConv.startsWith("contact-"),
     refetchInterval: 3000,
   });
 
@@ -159,10 +159,10 @@ const Inbox = () => {
     },
     onSuccess: (data) => {
       setMessage("");
-      queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
+      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["messages", user?.id, selectedConv] });
       if (data.conversation_id) {
-        queryClient.invalidateQueries({ queryKey: ["messages", data.conversation_id] });
+        queryClient.invalidateQueries({ queryKey: ["messages", user?.id, data.conversation_id] });
         setSelectedConv(data.conversation_id);
       }
     },
@@ -223,10 +223,10 @@ const Inbox = () => {
       components 
     })
       .then((res) => {
-        queryClient.invalidateQueries({ queryKey: ["conversations"] });
-        queryClient.invalidateQueries({ queryKey: ["messages", selectedConv] });
+        queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messages", user?.id, selectedConv] });
         if (res.conversation_id) {
-          queryClient.invalidateQueries({ queryKey: ["messages", res.conversation_id] });
+          queryClient.invalidateQueries({ queryKey: ["messages", user?.id, res.conversation_id] });
           setSelectedConv(res.conversation_id);
         }
         toast({ title: "Template sent!" });

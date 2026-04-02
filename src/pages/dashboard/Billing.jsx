@@ -44,7 +44,7 @@ const Billing = () => {
   const [upgrading, setUpgrading] = React.useState(null);
 
   const { data: dashData } = useQuery({
-    queryKey: ["wa-setup-status"],
+    queryKey: ["wa-setup-status", user?.id],
     queryFn: () => apiGet("/api/admin/me"),
     enabled: !!user,
   });

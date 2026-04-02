@@ -35,7 +35,7 @@ const Templates = () => {
   const [deleteId, setDeleteId] = React.useState(null);
 
   const { data: templatesData, isLoading, refetch } = useQuery({
-    queryKey: ["whatsapp-templates"],
+    queryKey: ["whatsapp-templates", user?.id],
     queryFn: () => apiPost("/api/whatsapp", { action: "sync_templates" }),
     enabled: !!user,
   });

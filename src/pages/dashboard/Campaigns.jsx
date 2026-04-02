@@ -43,7 +43,7 @@ const Campaigns = () => {
   const [deleteId, setDeleteId] = useState(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
-    queryKey: ["campaigns"],
+    queryKey: ["campaigns", user?.id],
     queryFn: async () => {
       const data = await apiGet("/api/whatsapp/campaigns");
       return data.campaigns || [];
@@ -52,7 +52,7 @@ const Campaigns = () => {
   });
 
   const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts-summary"],
+    queryKey: ["contacts-summary", user?.id],
     queryFn: async () => {
       const data = await apiPost("/api/whatsapp", { action: "get_contacts" });
       return data.contacts || [];
@@ -63,7 +63,7 @@ const Campaigns = () => {
   // Fetch real stats for each campaign
   const campaignIds = campaigns.map((c) => c._id);
   const { data: allStats = {} } = useQuery({
-    queryKey: ["campaigns-real-stats", campaignIds],
+    queryKey: ["campaigns-real-stats", user?.id, campaignIds],
     queryFn: async () => {
       const statsMap = {};
       for (const cid of campaignIds) {
@@ -74,7 +74,7 @@ const Campaigns = () => {
       }
       return statsMap;
     },
-    enabled: campaignIds.length > 0,
+    enabled: !!user && campaignIds.length > 0,
     refetchInterval: 10000, // Refresh every 10s for live feel
   });
 

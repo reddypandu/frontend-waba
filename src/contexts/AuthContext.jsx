@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { queryClient } from "../App";
 
 const AuthContext = createContext(null);
 const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5005";
@@ -79,8 +80,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signOut = async () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    queryClient.clear();
+    localStorage.clear();
+    sessionStorage.clear();
     setToken(null);
     setUser(null);
   };

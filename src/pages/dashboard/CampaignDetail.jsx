@@ -17,6 +17,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -63,6 +64,7 @@ const statusStyles = {
 
 const CampaignDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -81,34 +83,34 @@ const CampaignDetail = () => {
   const countdownRef = useRef(null);
 
   const { data: campaign, isLoading, refetch } = useQuery({
-    queryKey: ["campaign-detail", id],
+    queryKey: ["campaign-detail", user?.id, id],
     queryFn: () => apiGet(`/api/whatsapp/campaigns/${id}`),
     select: (data) => data.campaign,
-    enabled: !!id,
+    enabled: !!user && !!id,
   });
 
   const { data: statsData, refetch: refetchStats } = useQuery({
-    queryKey: ["campaign-stats", id],
+    queryKey: ["campaign-stats", user?.id, id],
     queryFn: () => apiGet(`/api/whatsapp/campaigns/${id}/stats`),
-    enabled: !!id,
+    enabled: !!user && !!id,
     refetchInterval: (c) => (campaign?.status === 'running' ? 3000 : false),
   });
 
   const { data: messageLogs = [], refetch: refetchLogs } = useQuery({
-    queryKey: ["campaign-message-logs", id],
+    queryKey: ["campaign-message-logs", user?.id, id],
     queryFn: () => apiGet(`/api/whatsapp/messages-by-campaign/${id}`),
     select: (data) => data.messages,
-    enabled: !!id,
+    enabled: !!user && !!id,
   });
 
   const templateName = campaign?.template_name;
   const { data: template } = useQuery({
-    queryKey: ["campaign-template", templateName],
+    queryKey: ["campaign-template", user?.id, templateName],
     queryFn: async () => {
       const { templates } = await apiPost("/api/whatsapp", { action: "get_templates" });
       return templates.find(t => t.name === templateName);
     },
-    enabled: !!templateName,
+    enabled: !!user && !!templateName,
   });
 
   // Go Live send mutation

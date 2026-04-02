@@ -26,7 +26,7 @@ const WhatsAppSetup = () => {
   const [saving, setSaving] = React.useState(false);
 
   const { data: dashData, isLoading, refetch } = useQuery({
-    queryKey: ["wa-setup-status"],
+    queryKey: ["wa-setup-status", user?.id],
     queryFn: () => apiGet("/api/admin/me"),
     enabled: !!user,
   });
@@ -49,7 +49,7 @@ const WhatsAppSetup = () => {
       await apiPost("/api/admin/businesses", { name: user?.full_name || "My Business" });
       await apiPost("/api/admin/whatsapp-accounts", cleanedData);
       toast({ title: "WhatsApp account saved successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["wa-setup-status"] });
+      queryClient.invalidateQueries({ queryKey: ["wa-setup-status", user?.id] });
       setView("status");
     } catch (err) {
       toast({ title: "Failed to save", description: err.message, variant: "destructive" });
@@ -61,7 +61,7 @@ const WhatsAppSetup = () => {
   const handleDisconnect = async () => {
     try {
       toast({ title: "Disconnected", description: "Please reconnect your account." });
-      queryClient.invalidateQueries({ queryKey: ["wa-setup-status"] });
+      queryClient.invalidateQueries({ queryKey: ["wa-setup-status", user?.id] });
     } catch (err) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
