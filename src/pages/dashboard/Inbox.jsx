@@ -436,11 +436,26 @@ const Inbox = () => {
                              <div className="flex flex-col gap-1">
                                <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">Template</span>
                                <span>{msg.content || `[Sent template: ${msg.template_name}]`}</span>
+                               {msg.media_url && (
+                                 <div className="mt-2 rounded-lg overflow-hidden border border-border/20 max-w-xs">
+                                   {(msg.media_url.match(/\.(mp4|webm|ogg)$/i) || msg.template_name?.toLowerCase().includes('video')) ? (
+                                     <video src={msg.media_url} controls className="w-full h-auto max-h-48 object-cover" />
+                                   ) : (
+                                     <img src={msg.media_url} className="w-full h-auto max-h-48 object-cover" alt="Template Media" onError={(e) => e.target.style.display='none'} />
+                                   )}
+                                 </div>
+                               )}
                              </div>
                           ) : (
                              msg.content
                           )}
                         </div>
+                        {msg.status === 'failed' && msg.error_details && (
+                          <div className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1">
+                            <RefreshCw className="w-2.5 h-2.5" />
+                            Failed: {msg.error_details}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
