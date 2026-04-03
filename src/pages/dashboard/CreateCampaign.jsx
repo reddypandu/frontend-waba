@@ -101,6 +101,27 @@ const CreateCampaign = () => {
     ? selectedTemplate?.components?.find(c => c.type === 'HEADER')
     : null;
   const headerFormat = headerComp?.format || null;
+  const headerText = headerComp?.text || "";
+
+  const headerVars = (headerText.match(/\{\{(\d+)\}\}/g) || [])
+    .map(v => parseInt(v.replace(/[{}]/g, "")))
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort((a, b) => a - b);
+
+  const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
+  const isMediaHeader = mediaFormats.includes(headerFormat);
+
+  // Auto-fill template media URL if available
+  React.useEffect(() => {
+    if (selectedTemplate) {
+      const hComp = Array.isArray(selectedTemplate.components)
+        ? selectedTemplate.components.find(c => c.type === 'HEADER')
+        : null;
+      if (hComp?.local_url) {
+        setVariableMappings(prev => ({ ...prev, header_url: hComp.local_url }));
+      }
+    }
+  }, [templateId, selectedTemplate]);
 
   const handleExcelUpload = (e) => {
     const file = e.target.files?.[0];
@@ -144,14 +165,21 @@ const CreateCampaign = () => {
       
       // Add Header Parameters
       if (headerFormat) {
-        const mediaType = headerFormat.toLowerCase();
-        components.push({
-          type: "header",
-          parameters: [{
-            type: mediaType,
-            [mediaType]: { link: variableMappings.header_url || "" }
-          }]
-        });
+        if (isMediaHeader) {
+          const mediaType = headerFormat.toLowerCase();
+          components.push({
+            type: "header",
+            parameters: [{
+              type: mediaType,
+              [mediaType]: { link: variableMappings.header_url || "" }
+            }]
+          });
+        } else if (headerFormat === "TEXT" && headerVars.length > 0) {
+          components.push({
+            type: "header",
+            parameters: headerVars.map(v => ({ type: "text", text: variableMappings[`h${v}`] || "" }))
+          });
+        }
       }
 
       // Add Body Parameters
@@ -225,7 +253,19 @@ const CreateCampaign = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName}>Save Draft</Button>
-          <Button variant="default" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName || !templateId || totalRecipients === 0 || templateVars.some(v => !variableMappings[v]) || (headerFormat && !variableMappings.header_url)}>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => createMutation.mutate()} 
+            disabled={
+              !campaignName || 
+              !templateId || 
+              totalRecipients === 0 || 
+              templateVars.some(v => !variableMappings[v]) || 
+              (isMediaHeader && !variableMappings.header_url) ||
+              (headerFormat === "TEXT" && headerVars.some(v => !variableMappings[`h${v}`]))
+            }
+          >
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Go Live"}
           </Button>
         </div>
@@ -297,16 +337,35 @@ const CreateCampaign = () => {
 
                     {headerFormat && (
                       <div className="space-y-3 pt-3 border-t border-border">
-                        <p className="text-[10px] font-bold text-primary uppercase">Header Media ({headerFormat})</p>
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">Media URL</Label>
-                          <Input 
-                            placeholder={`https://.../file.${headerFormat.toLowerCase() === 'image' ? 'jpg' : headerFormat.toLowerCase() === 'video' ? 'mp4' : 'pdf'}`}
-                            className="h-8 text-xs"
-                            value={variableMappings.header_url || ""}
-                            onChange={e => setVariableMappings(prev => ({ ...prev, header_url: e.target.value }))}
-                          />
-                        </div>
+                        <p className="text-[10px] font-bold text-primary uppercase">Header {isMediaHeader ? `Media (${headerFormat})` : 'Text'}</p>
+                        
+                        {isMediaHeader && (
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">Media URL</Label>
+                            <Input 
+                              placeholder={`https://.../file.${headerFormat.toLowerCase() === 'image' ? 'jpg' : headerFormat.toLowerCase() === 'video' ? 'mp4' : 'pdf'}`}
+                              className="h-8 text-xs"
+                              value={variableMappings.header_url || ""}
+                              onChange={e => setVariableMappings(prev => ({ ...prev, header_url: e.target.value }))}
+                            />
+                          </div>
+                        )}
+
+                        {headerFormat === "TEXT" && headerVars.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {headerVars.map(v => (
+                              <div key={`h${v}`} className="space-y-1">
+                                <Label className="text-[10px]">Header Var {"{{"}{v}{"}}"}</Label>
+                                <Input
+                                  placeholder={`Value for h${v}...`}
+                                  className="h-8 text-xs"
+                                  value={variableMappings[`h${v}`] || ""}
+                                  onChange={e => setVariableMappings(prev => ({ ...prev, [`h${v}`]: e.target.value }))}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -467,6 +526,13 @@ const CreateCampaign = () => {
                     </div>
                   )}
                   <p className="text-[11px] leading-relaxed text-black whitespace-pre-wrap">
+                    {headerFormat === 'TEXT' && headerText && (
+                      <strong className="block border-b border-border/10 pb-1 mb-1">
+                        {headerText.replace(/\{\{(\d+)\}\}/g, (match, p1) => {
+                          return variableMappings[`h${p1}`] || match;
+                        })}
+                      </strong>
+                    )}
                     {(templateBody || "Select a template...").replace(/\{\{(\d+)\}\}/g, (match, p1) => {
                        return variableMappings[p1] ? <strong key={p1} className="text-primary">{variableMappings[p1]}</strong> : match;
                     }) || "Select a template to preview your message here..."}
@@ -501,11 +567,18 @@ const CreateCampaign = () => {
                         try {
                           const components = [];
                           if (headerFormat) {
-                            const mediaType = headerFormat.toLowerCase();
-                            components.push({
-                              type: "header",
-                              parameters: [{ type: mediaType, [mediaType]: { link: variableMappings.header_url || "" } }]
-                            });
+                            if (isMediaHeader) {
+                              const mediaType = headerFormat.toLowerCase();
+                              components.push({
+                                type: "header",
+                                parameters: [{ type: mediaType, [mediaType]: { link: variableMappings.header_url || "" } }]
+                              });
+                            } else if (headerFormat === "TEXT" && headerVars.length > 0) {
+                              components.push({
+                                type: "header",
+                                parameters: headerVars.map(v => ({ type: "text", text: variableMappings[`h${v}`] || "" }))
+                              });
+                            }
                           }
                           if (templateVars.length > 0) {
                             components.push({

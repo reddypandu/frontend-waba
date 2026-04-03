@@ -94,12 +94,14 @@ const CreateTemplate = () => {
   const createMutation = useMutation({
     mutationFn: async () => {
       let headerHandle = null;
+      let localUrl = null;
       if (['image', 'video', 'document'].includes(form.headerType)) {
         if (!headerFile) throw new Error(`Please upload a sample ${form.headerType} file`);
         const formData = new FormData();
         formData.append('file', headerFile);
         const uploadRes = await apiUpload("/api/whatsapp/upload_media", formData);
         headerHandle = uploadRes.handle;
+        localUrl = uploadRes.localPath;
       }
 
       const components = [];
@@ -111,7 +113,8 @@ const CreateTemplate = () => {
         components.push({
           type: "HEADER",
           format: form.headerType.toUpperCase(),
-          example: { header_handle: [headerHandle] }
+          example: { header_handle: [headerHandle] },
+          local_url: localUrl
         });
       }
 

@@ -196,16 +196,26 @@ const Inbox = () => {
     const vars = tpl.vars || [];
     const components = [];
     
-    // Add header parameters if media is required
+    // Add header parameters if required
     if (tpl.headerFormat) {
-      const mediaType = tpl.headerFormat.toLowerCase();
-      components.push({
-        type: "header",
-        parameters: [{
-          type: mediaType,
-          [mediaType]: { link: mappings.header_url || "" }
-        }]
-      });
+      const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
+      const isMediaHeader = mediaFormats.includes(tpl.headerFormat);
+      
+      if (isMediaHeader) {
+        const mediaType = tpl.headerFormat.toLowerCase();
+        components.push({
+          type: "header",
+          parameters: [{
+            type: mediaType,
+            [mediaType]: { link: mappings.header_url || "" }
+          }]
+        });
+      } else if (tpl.headerFormat === "TEXT" && (tpl.headerVars || []).length > 0) {
+        components.push({
+          type: "header",
+          parameters: tpl.headerVars.map(v => ({ type: "text", text: mappings[`h${v}`] || "" }))
+        });
+      }
     }
 
     // Add body parameters
@@ -250,10 +260,17 @@ const Inbox = () => {
             <CardContent className="p-6 space-y-6">
               <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
                 <p className="text-[10px] font-bold text-primary uppercase mb-2">Message Preview</p>
-                {activeTemplate.headerFormat && (
+                {activeTemplate.isMediaHeader && (
                   <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-3">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{activeTemplate.headerFormat} placeholder</p>
                   </div>
+                )}
+                {activeTemplate.headerFormat === "TEXT" && activeTemplate.headerText && (
+                  <p className="text-xs font-bold text-foreground/90 border-b border-border pb-2 mb-2">
+                    {activeTemplate.headerText.replace(/\{\{(\d+)\}\}/g, (match, p1) => {
+                      return templateMappings[`h${p1}`] ? `[${templateMappings[`h${p1}`]}]` : match;
+                    })}
+                  </p>
                 )}
                 <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
                   {activeTemplate.bodyText.replace(/\{\{(\d+)\}\}/g, (match, p1) => {
@@ -263,7 +280,7 @@ const Inbox = () => {
               </div>
 
               <div className="space-y-4">
-                {activeTemplate.headerFormat && (
+                {activeTemplate.isMediaHeader && (
                    <div className="space-y-1.5">
                      <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase">
                        <Paperclip className="w-3 h-3" />
@@ -277,11 +294,22 @@ const Inbox = () => {
                      />
                    </div>
                 )}
+                {activeTemplate.headerFormat === "TEXT" && (activeTemplate.headerVars || []).map(v => (
+                  <div key={`h${v}`} className="space-y-1.5">
+                    <Label className="text-xs font-bold text-primary">Header Variable {"{{"}{v}{"}}"}</Label>
+                    <Input 
+                      placeholder={`Value for header variable ${v}...`}
+                      value={templateMappings[`h${v}`] || ""}
+                      onChange={e => setTemplateMappings(prev => ({ ...prev, [`h${v}`]: e.target.value }))}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                ))}
                 {activeTemplate.vars.map(v => (
                   <div key={v} className="space-y-1.5">
-                    <Label className="text-xs font-bold">Variable {"{{"}{v}{"}}"}</Label>
+                    <Label className="text-xs font-bold">Body Variable {"{{"}{v}{"}}"}</Label>
                     <Input 
-                      placeholder={`Value for ${v}...`}
+                      placeholder={`Body variable ${v}...`}
                       value={templateMappings[v] || ""}
                       onChange={e => setTemplateMappings(prev => ({ ...prev, [v]: e.target.value }))}
                       className="h-10 rounded-xl"
@@ -294,7 +322,12 @@ const Inbox = () => {
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setActiveTemplate(null)}>Cancel</Button>
                 <Button 
                   className="flex-1 rounded-xl font-bold" 
-                  disabled={sendingTemplate || activeTemplate.vars.some(v => !templateMappings[v]) || (activeTemplate.headerFormat && !templateMappings.header_url)}
+                  disabled={
+                    sendingTemplate || 
+                    activeTemplate.vars.some(v => !templateMappings[v]) || 
+                    (activeTemplate.headerVars || []).some(v => !templateMappings[`h${v}`]) ||
+                    (activeTemplate.isMediaHeader && !templateMappings.header_url)
+                  }
                   onClick={() => handleSendTemplate(activeTemplate, templateMappings)}
                 >
                   {sendingTemplate ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
@@ -443,18 +476,28 @@ const Inbox = () => {
                            const headerComp = Array.isArray(t.components)
                              ? t.components.find(c => c.type === 'HEADER')
                              : null;
-                           const headerFormat = headerComp?.format || null; // "IMAGE", "VIDEO", "DOCUMENT"
+                           const headerFormat = headerComp?.format || null; // "IMAGE", "VIDEO", "DOCUMENT", "TEXT"
+                           const headerText = headerComp?.text || "";
+                           const localUrl = headerComp?.local_url || "";
+
+                           const headerVars = (headerText.match(/\{\{(\d+)\}\}/g) || [])
+                             .map(v => parseInt(v.replace(/[{}]/g, "")))
+                             .filter((v, i, a) => a.indexOf(v) === i)
+                             .sort((a, b) => a - b);
 
                            const vars = (bodyText.match(/\{\{(\d+)\}\}/g) || [])
                              .map(v => parseInt(v.replace(/[{}]/g, "")))
                              .filter((v, i, a) => a.indexOf(v) === i)
                              .sort((a, b) => a - b);
 
-                           if (vars.length > 0 || headerFormat) {
-                             setActiveTemplate({ ...t, bodyText, vars, headerFormat });
-                             setTemplateMappings({});
+                           const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
+                           const isMediaHeader = mediaFormats.includes(headerFormat);
+
+                           if (vars.length > 0 || headerVars.length > 0 || isMediaHeader) {
+                             setActiveTemplate({ ...t, bodyText, vars, headerFormat, headerText, headerVars, isMediaHeader });
+                             setTemplateMappings({ header_url: localUrl });
                            } else {
-                             handleSendTemplate(t);
+                             handleSendTemplate({ ...t, bodyText, vars, headerFormat, headerText, headerVars, isMediaHeader });
                            }
                         }}
                       >

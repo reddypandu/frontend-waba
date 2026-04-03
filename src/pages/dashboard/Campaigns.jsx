@@ -154,7 +154,7 @@ const Campaigns = () => {
             </TableHeader>
             <TableBody>
               {campaigns.map((c) => {
-                const stats = allStats[c._id] || { sent: 0, delivered: 0, read: 0 };
+                const stats = c.stats || { sent: 0, delivered: 0, read: 0 };
                 return (
                   <TableRow
                     key={c._id}
@@ -171,9 +171,15 @@ const Campaigns = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">{c.total_contacts || 0}</TableCell>
-                    <TableCell className="text-center">{stats.sent}</TableCell>
-                    <TableCell className="text-center">{deliveryRate(stats.sent, stats.delivered)}</TableCell>
-                    <TableCell className="text-center">{readRate(stats.sent, stats.read)}</TableCell>
+                    <TableCell className="text-center font-bold">{stats.sent}</TableCell>
+                    <TableCell className="text-center font-bold text-emerald-600">
+                      {stats.delivered}
+                      {stats.sent > 0 && <span className="text-[10px] ml-1 opacity-60 font-normal">({Math.round((stats.delivered/stats.sent)*100)}%)</span>}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-primary">
+                      {stats.read}
+                      {stats.sent > 0 && <span className="text-[10px] ml-1 opacity-60 font-normal">({Math.round((stats.read/stats.sent)*100)}%)</span>}
+                    </TableCell>
                     <TableCell className="text-center text-sm text-muted-foreground">
                       {new Date(c.createdAt).toLocaleDateString("en-GB")}
                     </TableCell>
