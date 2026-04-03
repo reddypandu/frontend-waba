@@ -196,8 +196,7 @@ const CampaignDetail = () => {
   const failReasonsGrouped = [];
   const reasonMap = new Map();
   failedLogs.forEach(l => {
-    let reason = l.error_details || "Meta Policy or Connection Error";
-    if (reason === "undefined") reason = "Meta Policy or Media Error";
+    const reason = l.error_details || "Meta Policy or Connection Error";
     reasonMap.set(reason, (reasonMap.get(reason) || 0) + 1);
   });
   reasonMap.forEach((count, reason) => failReasonsGrouped.push({ reason, count }));
@@ -303,15 +302,6 @@ const CampaignDetail = () => {
             {stats.map((s) => (
               <Card key={s.label} className="border-border hover:shadow-md transition-all group">
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{campaign.template_name}</span>
-                    {template?.needs_media_update && !template?.local_url && (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold border border-orange-200">
-                        <AlertCircle className="w-3 h-3" />
-                        MEDIA UPDATE REQUIRED
-                      </div>
-                    )}
-                  </div>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</p>
                     <Info className="w-3 h-3 text-muted-foreground/30" />
