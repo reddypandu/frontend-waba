@@ -149,7 +149,8 @@ const CreateTemplate = () => {
         name: form.name.toLowerCase().replace(/\s+/g, '_'),
         category: form.category,
         language: form.language,
-        components
+        components,
+        local_url: localUrl
       });
     },
     onSuccess: () => {

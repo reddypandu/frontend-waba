@@ -261,8 +261,14 @@ const Inbox = () => {
               <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
                 <p className="text-[10px] font-bold text-primary uppercase mb-2">Message Preview</p>
                 {activeTemplate.isMediaHeader && (
-                  <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-3">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{activeTemplate.headerFormat} placeholder</p>
+                  <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-3 overflow-hidden">
+                    {templateMappings.header_url ? (
+                      activeTemplate.headerFormat === 'IMAGE' ? <img src={templateMappings.header_url} className="w-full h-full object-cover" alt="Header" /> :
+                      activeTemplate.headerFormat === 'VIDEO' ? <video src={templateMappings.header_url} className="w-full h-full object-cover" /> :
+                      <div className="flex flex-col items-center gap-1 opacity-40"><Paperclip className="w-6 h-6" /><p className="text-[8px]">DOCUMENT</p></div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{activeTemplate.headerFormat} placeholder</p>
+                    )}
                   </div>
                 )}
                 {activeTemplate.headerFormat === "TEXT" && activeTemplate.headerText && (
@@ -478,7 +484,11 @@ const Inbox = () => {
                              : null;
                            const headerFormat = headerComp?.format || null; // "IMAGE", "VIDEO", "DOCUMENT", "TEXT"
                            const headerText = headerComp?.text || "";
-                           const localUrl = headerComp?.local_url || "";
+                           const localUrl = t.local_url || 
+                                            headerComp?.local_url || 
+                                            headerComp?.example?.header_handle?.[0] || 
+                                            headerComp?.example?.header_url || 
+                                            "";
 
                            const headerVars = (headerText.match(/\{\{(\d+)\}\}/g) || [])
                              .map(v => parseInt(v.replace(/[{}]/g, "")))

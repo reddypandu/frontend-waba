@@ -29,6 +29,14 @@ const CreateCampaign = () => {
   const [openSection, setOpenSection] = useState("type");
   const [campaignType, setCampaignType] = useState("");
   const [templateId, setTemplateId] = useState("");
+  
+  // Handle template selection change
+  const handleTemplateChange = (val) => {
+    setTemplateId(val);
+    setVariableMappings({}); // Reset all variables when switching templates
+    setInteractiveParams({ header_image_url: "", offer_code: "" });
+  };
+
   const [dataSource, setDataSource] = useState("");
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [excelContacts, setExcelContacts] = useState([]);
@@ -117,9 +125,17 @@ const CreateCampaign = () => {
       const hComp = Array.isArray(selectedTemplate.components)
         ? selectedTemplate.components.find(c => c.type === 'HEADER')
         : null;
-      if (hComp?.local_url) {
-        setVariableMappings(prev => ({ ...prev, header_url: hComp.local_url }));
-      }
+      
+      const hUrl = selectedTemplate.local_url || 
+                   hComp?.local_url || 
+                   hComp?.example?.header_handle?.[0] || 
+                   hComp?.example?.header_url || 
+                   "";
+      
+      setVariableMappings(prev => ({ 
+        ...prev, 
+        header_url: hUrl || prev.header_url || "" 
+      }));
     }
   }, [templateId, selectedTemplate]);
 
@@ -302,7 +318,7 @@ const CreateCampaign = () => {
           {openSection === "template" && (
             <Card className="border-none shadow-none bg-muted/20">
               <CardContent className="p-4 pt-0 space-y-4">
-                <Select value={templateId} onValueChange={setTemplateId}>
+                <Select value={templateId} onValueChange={handleTemplateChange}>
                   <SelectTrigger className="bg-card"><SelectValue placeholder="Select template..." /></SelectTrigger>
                   <SelectContent>
                     {templates.length === 0 ? (
@@ -391,15 +407,17 @@ const CreateCampaign = () => {
                     <div className="space-y-3 pt-3 border-t border-border">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Rich Template Settings (Optional)</p>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">Header Image URL</Label>
-                          <Input
-                            placeholder="https://..."
-                            className="h-8 text-xs"
-                            value={interactiveParams.header_image_url}
-                            onChange={e => setInteractiveParams(p => ({ ...p, header_image_url: e.target.value }))}
-                          />
-                        </div>
+                        {!isMediaHeader && (
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">Header Image URL</Label>
+                            <Input
+                              placeholder="https://..."
+                              className="h-8 text-xs"
+                              value={interactiveParams.header_image_url}
+                              onChange={e => setInteractiveParams(p => ({ ...p, header_image_url: e.target.value }))}
+                            />
+                          </div>
+                        )}
                         <div className="space-y-1">
                           <Label className="text-[10px]">Offer/Coupon Code</Label>
                           <Input
@@ -521,8 +539,14 @@ const CreateCampaign = () => {
               <div className="p-3 space-y-3 bg-[#e5ddd5] h-full overflow-y-auto">
                 <div className="max-w-[85%] bg-white rounded-xl p-3 shadow-sm relative animate-in slide-in-from-left duration-300">
                   {headerFormat && (
-                    <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-2">
-                       <p className="text-[9px] text-muted-foreground uppercase font-bold">{headerFormat} PREVIEW</p>
+                    <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-2 overflow-hidden">
+                       {variableMappings.header_url ? (
+                         headerFormat === 'IMAGE' ? <img src={variableMappings.header_url} className="w-full h-full object-cover" alt="Header Preview" /> :
+                         headerFormat === 'VIDEO' ? <video src={variableMappings.header_url} className="w-full h-full object-cover" /> :
+                         <div className="flex flex-col items-center gap-1 opacity-40"><Paperclip className="w-6 h-6" /><p className="text-[8px]">DOCUMENT</p></div>
+                       ) : (
+                         <p className="text-[9px] text-muted-foreground uppercase font-bold">{headerFormat} PREVIEW</p>
+                       )}
                     </div>
                   )}
                   <p className="text-[11px] leading-relaxed text-black whitespace-pre-wrap">
