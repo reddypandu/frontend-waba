@@ -113,8 +113,7 @@ const CreateTemplate = () => {
         components.push({
           type: "HEADER",
           format: form.headerType.toUpperCase(),
-          example: { header_handle: [headerHandle] },
-          local_url: localUrl
+          example: { header_handle: [headerHandle] }
         });
       }
 
