@@ -53,12 +53,34 @@ const EditorSidebar = ({ fabricRef, setSelectedObject }) => {
   const [activeTab, setActiveTab] = useState("templates");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploads, setUploads] = useState([]);
+  const [templates, setTemplates] = useState(MOCK_TEMPLATES);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const fileRef = useRef(null);
+  const token = localStorage.getItem("token");
 
   React.useEffect(() => {
     fetchUploads();
+    fetchTemplates();
   }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/designs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const remoteTemplates = data.filter(d => d.type === 'template');
+        if (remoteTemplates.length > 0) {
+          // Merge with mock templates or replace them
+          setTemplates(remoteTemplates);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch templates", err);
+    }
+  };
+
 
   const fetchUploads = async () => {
     try {
@@ -287,13 +309,13 @@ const EditorSidebar = ({ fabricRef, setSelectedObject }) => {
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Templates</h3>
             <div className="grid grid-cols-2 gap-3">
-              {MOCK_TEMPLATES.map(t => (
+              {templates.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map(t => (
                 <button
-                  key={t.id}
+                  key={t.id || t._id}
                   onClick={() => applyTemplate(t)}
                   className="group relative aspect-square rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all shadow-sm"
                 >
-                  <img src={t.thumbnail} alt={t.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <img src={t.thumbnail || t.thumbnail_url} alt={t.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-[10px] text-white font-medium">{t.name}</span>
                   </div>

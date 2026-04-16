@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, RotateCcw, Save, Undo, Redo, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, RotateCcw, Save, Undo, Redo, AlertCircle, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
@@ -27,6 +27,9 @@ const DesignEditor = () => {
   const [isOwner, setIsOwner] = React.useState(true);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = React.useState("Saved"); 
+  const autoSaveTimerRef = React.useRef(null);
+  const guidesRef = React.useRef({ v: null, h: null });
 
   const { data: design, isLoading: isDesignLoading } = useQuery({
     queryKey: ["design-detail", user?.id, id],
@@ -44,7 +47,6 @@ const DesignEditor = () => {
       queryClient.invalidateQueries({ queryKey: ["design-detail", user?.id, id] });
       const isNew = id === "new" || !isOwner;
       if (isNew && saved?._id) navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
-      toast({ title: "Design saved successfully!" });
     },
     onError: (err) => {
       toast({ title: "Save Error", description: err.message, variant: "destructive" });
@@ -61,9 +63,9 @@ const DesignEditor = () => {
     return () => window.removeEventListener("error", handleError);
   }, []);
 
-  // Initialize Canvas
+  // 1. Initialize Canvas Instance (Mount Only)
   React.useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || fabricRef.current) return;
 
     let width = 500;
     let height = 500;
@@ -89,15 +91,10 @@ const DesignEditor = () => {
       });
 
       fabricRef.current = canvas;
-      setIsLoaded(true);
-
+      
       const updateToolbar = () => {
         const active = canvas.getActiveObject();
-        if (active) {
-          setSelectedObject({ ...active.toObject(['id', 'name']), _ts: Date.now() });
-        } else {
-          setSelectedObject(null);
-        }
+        setSelectedObject(active ? { ...active.toObject(['id', 'name']), _ts: Date.now() } : null);
       };
 
       canvas.on("selection:created", updateToolbar);
@@ -105,52 +102,77 @@ const DesignEditor = () => {
       canvas.on("selection:cleared", updateToolbar);
 
       const saveHistory = () => {
-        if (!canvas) return;
         try {
           const json = canvas.toJSON();
           setHistory((prev) => {
-            const newHistory = prev.slice(0, historyIndex + 1);
-            // Limit history to 50 steps
+            const newHistory = prev.slice(0, (historyIndex || 0) + 1);
             if (newHistory.length > 50) newHistory.shift();
             return [...newHistory, json];
           });
-          setHistoryIndex((prev) => Math.min(prev + 1, 49));
+          setHistoryIndex((prev) => Math.min((prev || 0) + 1, 49));
         } catch (e) {
           console.error("History Error", e);
         }
       };
 
-      // Auto-save logic (Point 10)
       const saveState = () => {
-        // We trigger selection update on every modification
-        const active = canvas.getActiveObject();
-        setSelectedObject(active ? { ...active.toObject(['id', 'name']), _ts: Date.now() } : null);
+        updateToolbar();
         saveHistory();
       };
 
-      canvas.on("object:added", saveState);
-      canvas.on("object:modified", saveState);
-      canvas.on("object:removed", saveState);
-      canvas.on("selection:created", () => setSelectedObject(canvas.getActiveObject()?.toObject(['id', 'name'])));
-      canvas.on("selection:cleared", () => setSelectedObject(null));
+      canvas.on("object:added", () => { saveState(); triggerAutoSave(); });
+      canvas.on("object:modified", () => { saveState(); triggerAutoSave(); });
+      canvas.on("object:removed", () => { saveState(); triggerAutoSave(); });
 
-      if (id && id !== "new" && design) {
-        if (design?.name) setDesignName(design.name);
-        if (design?.type === 'template') setIsTemplate(true);
-
-        const currentUserId = user?._id || user?.id;
-        if (design?.user_id && currentUserId && String(design.user_id) !== String(currentUserId)) {
-          setIsOwner(false);
+      // Smart Guides Logic
+      canvas.on("object:moving", (e) => {
+        const obj = e.target;
+        if (!obj) return;
+        const centerX = canvas.getCenter().left;
+        const centerY = canvas.getCenter().top;
+        const snapThreshold = 10;
+        
+        if (Math.abs(obj.left + (obj.width * obj.scaleX) / 2 - centerX) < snapThreshold) {
+          obj.set({ left: centerX - (obj.width * obj.scaleX) / 2 });
+          guidesRef.current.v = centerX;
+        } else {
+          guidesRef.current.v = null;
         }
 
-        if (design?.data) {
-          canvas.loadFromJSON(design.data).then(() => {
-            canvas.renderAll();
-            setHistory([canvas.toJSON()]);
-            setHistoryIndex(0);
-          });
+        if (Math.abs(obj.top + (obj.height * obj.scaleY) / 2 - centerY) < snapThreshold) {
+          obj.set({ top: centerY - (obj.height * obj.scaleY) / 2 });
+          guidesRef.current.h = centerY;
+        } else {
+          guidesRef.current.h = null;
         }
-      }
+        canvas.renderAll();
+      });
+
+      canvas.on("before:render", () => {
+        canvas.clearContext(canvas.contextTop);
+      });
+
+      canvas.on("after:render", () => {
+        const ctx = canvas.getContext();
+        ctx.save();
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        
+        if (guidesRef.current.v !== null) {
+          ctx.beginPath();
+          ctx.moveTo(guidesRef.current.v, 0);
+          ctx.lineTo(guidesRef.current.v, canvas.height);
+          ctx.stroke();
+        }
+        if (guidesRef.current.h !== null) {
+          ctx.beginPath();
+          ctx.moveTo(0, guidesRef.current.h);
+          ctx.lineTo(canvas.width, guidesRef.current.h);
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
 
       const resizeHandler = () => {
         if (!containerRef.current) return;
@@ -165,16 +187,110 @@ const DesignEditor = () => {
 
       window.addEventListener("resize", resizeHandler);
       setTimeout(resizeHandler, 200);
+      setIsLoaded(true);
 
       return () => {
         canvas.dispose();
+        fabricRef.current = null;
         window.removeEventListener("resize", resizeHandler);
       };
     } catch (err) {
       console.error("Canvas Init Error", err);
       setErrorInfo(err.message);
     }
-  }, [id]);
+  }, []);
+
+  // 2. Load Design Data (When design data changes or becomes available)
+  const isInitialLoadRef = React.useRef(true);
+  React.useEffect(() => {
+    if (!fabricRef.current || !isLoaded) return;
+    
+    if (id === "new") {
+      setDesignName("Untitled Design");
+      setIsInitialLoadRef.current = false;
+      return;
+    }
+
+    if (design && isInitialLoadRef.current) {
+      if (design?.name) setDesignName(design.name);
+      if (design?.type === 'template') setIsTemplate(true);
+      
+      const currentUserId = user?._id || user?.id;
+      const ownerId = design?.user_id?._id || design?.user_id;
+      
+      // If there's no ownerId (global template) or IDs don't match, user is NOT owner
+      if (!ownerId || (currentUserId && String(ownerId) !== String(currentUserId))) {
+        setIsOwner(false);
+      }
+
+      if (design?.data) {
+        fabricRef.current.loadFromJSON(design.data).then(() => {
+          fabricRef.current.renderAll();
+          setHistory([fabricRef.current.toJSON()]);
+          setHistoryIndex(0);
+        });
+      }
+      isInitialLoadRef.current = false;
+    }
+  }, [id, design, isLoaded, user]);
+
+
+  const triggerAutoSave = () => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    setAutoSaveStatus("Saving...");
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave(true);
+    }, 3000);
+  };
+
+  const handleSave = async (isAuto = false) => {
+    if (!fabricRef.current) return;
+    try {
+      await saveMutation.mutateAsync({
+        name: designName,
+        data: fabricRef.current.toJSON(),
+        thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
+        type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
+        is_public: isTemplate && user?.role === 'admin'
+      });
+      setAutoSaveStatus("Saved");
+      if (!isAuto) toast({ title: "Design saved successfully!" });
+    } catch (e) {
+      setAutoSaveStatus("Error");
+    }
+  };
+
+  const sendToWhatsApp = async () => {
+    if (!fabricRef.current) return;
+    try {
+      toast({ title: "Preparing export..." });
+      const dataUrl = fabricRef.current.toDataURL({ format: "png", multiplier: 2 });
+      
+      // Upload to Cloudinary for a public URL
+      const blob = await (await fetch(dataUrl)).blob();
+      const filename = `design-${Date.now()}.png`;
+      const file = new File([blob], filename, { type: "image/png" });
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cloudinary`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent("Check out my design: " + data.url)}`;
+      window.open(waUrl, "_blank");
+      toast({ title: "Redirecting to WhatsApp..." });
+    } catch (err) {
+      toast({ title: "Export Failed", description: err.message, variant: "destructive" });
+    }
+  };
+
 
   if (errorInfo) {
     return (
@@ -248,18 +364,24 @@ const DesignEditor = () => {
           )}
 
           <Button 
+            variant="ghost" 
             size="sm" 
-            className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" 
+            className="h-8 text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" 
+            onClick={sendToWhatsApp}
+          >
+            <Plus className="h-3.5 w-3.5" /> Send to WhatsApp
+          </Button>
+
+          <div className="flex items-center gap-1.5 px-2">
+             <span className={`w-2 h-2 rounded-full ${autoSaveStatus === 'Saved' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+             <span className="text-[10px] text-muted-foreground font-bold uppercase">{autoSaveStatus}</span>
+          </div>
+
+          <Button 
+            size="sm" 
+            className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95" 
             disabled={saveMutation.isPending}
-            onClick={() => {
-              saveMutation.mutate({
-                name: designName,
-                data: fabricRef.current.toJSON(),
-                thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
-                type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
-                is_public: isTemplate && user?.role === 'admin'
-              });
-            }}
+            onClick={() => handleSave()}
           >
             {saveMutation.isPending ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             Save Design

@@ -5,7 +5,11 @@ import { Label } from "@/components/ui/label";
 import {
     Bold, Italic, AlignLeft, AlignCenter, AlignRight,
     ChevronUp, ChevronDown, Trash2, Copy, MoveUp, MoveDown,
-    Type, Palette, Layers, Sparkles, Layout, Plus
+    Type, Palette, Layers, Sparkles, Layout, Plus,
+    Underline, Lock, Unlock,
+    ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine,
+    AlignVerticalJustifyCenter, AlignHorizontalJustifyCenter,
+    Moon, Sun, Ghost
 } from "lucide-react";
 import {
     Select,
@@ -90,7 +94,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
     const deleteObject = () => {
         const active = fabricRef.current.getActiveObject();
-        if (!active) return;
+        if (!active || active.lockMovementX) return; // Prevent deleting locked objects
         if (active.type === "activeSelection") {
             active.forEachObject((obj) => fabricRef.current.remove(obj));
         } else {
@@ -98,6 +102,40 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
         }
         fabricRef.current.discardActiveObject();
         fabricRef.current.renderAll();
+        onUpdate();
+    };
+
+    const toggleLock = () => {
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        const isLocked = !active.lockMovementX;
+        active.set({
+            lockMovementX: isLocked,
+            lockMovementY: isLocked,
+            lockRotation: isLocked,
+            lockScalingX: isLocked,
+            lockScalingY: isLocked,
+            hasControls: !isLocked,
+        });
+        fabricRef.current.renderAll();
+        onUpdate();
+    };
+
+    const alignToCanvas = (type) => {
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        const canvas = fabricRef.current;
+
+        switch (type) {
+            case "left": active.set("left", 0); break;
+            case "right": active.set("left", canvas.width - active.width * active.scaleX); break;
+            case "top": active.set("top", 0); break;
+            case "bottom": active.set("top", canvas.height - active.height * active.scaleY); break;
+            case "h-center": canvas.centerObjectH(active); break;
+            case "v-center": canvas.centerObjectV(active); break;
+        }
+        active.setCoords();
+        canvas.renderAll();
         onUpdate();
     };
 
@@ -183,13 +221,43 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                             <Bold className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant={selectedObject.fontStyle === "italic" ? "secondary" : "ghost"}
+                            variant={selectedObject.underline ? "secondary" : "ghost"}
                             size="icon" className="h-8 w-8"
-                            onClick={() => updateProp("fontStyle", selectedObject.fontStyle === "italic" ? "normal" : "italic")}
+                            onClick={() => updateProp("underline", !selectedObject.underline)}
                         >
-                            <Italic className="h-4 w-4" />
+                            <Underline className="h-4 w-4" />
                         </Button>
                     </div>
+
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Sparkles className="h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-4 space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Letter Spacing</Label>
+                                <Input 
+                                    type="number" 
+                                    value={selectedObject.charSpacing || 0} 
+                                    onChange={(e) => updateProp("charSpacing", parseInt(e.target.value) || 0)} 
+                                    className="h-8 text-xs"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Line Height</Label>
+                                <Input 
+                                    type="number" 
+                                    step="0.1"
+                                    value={selectedObject.lineHeight || 1.16} 
+                                    onChange={(e) => updateProp("lineHeight", parseFloat(e.target.value) || 1)} 
+                                    className="h-8 text-xs"
+                                />
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
 
                     <div className="flex items-center gap-0.5">
                         <Button
@@ -255,6 +323,80 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                 </Popover>
             )}
 
+            {/* Global Properties (Opacity, Shadow, Radius) */}
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Sun className="h-4 w-4" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Opacity</Label>
+                        <Input 
+                            type="range" min="0" max="1" step="0.01"
+                            value={selectedObject.opacity || 1} 
+                            onChange={(e) => updateProp("opacity", parseFloat(e.target.value))} 
+                        />
+                    </div>
+                    {type === 'rect' && (
+                        <div className="space-y-2">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Corner Radius</Label>
+                            <Input 
+                                type="number" 
+                                value={selectedObject.rx || 0} 
+                                onChange={(e) => {
+                                    updateProp("rx", parseInt(e.target.value) || 0);
+                                    updateProp("ry", parseInt(e.target.value) || 0);
+                                }} 
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                    )}
+                    <div className="space-y-2 border-t pt-2">
+                        <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-2 block">Shadow</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Input placeholder="Blur" type="number" className="h-8 text-xs" onChange={(e) => {
+                                const active = fabricRef.current.getActiveObject();
+                                if (active) {
+                                    active.set("shadow", new fabric.Shadow({ blur: parseInt(e.target.value) || 0, color: "rgba(0,0,0,0.3)", offsetX: 5, offsetY: 5 }));
+                                    fabricRef.current.renderAll();
+                                    onUpdate();
+                                }
+                            }} />
+                            <Input placeholder="Color" type="color" className="h-8 text-xs p-0 border-none" onChange={(e) => {
+                                const active = fabricRef.current.getActiveObject();
+                                if (active && active.shadow) {
+                                    active.shadow.color = e.target.value;
+                                    fabricRef.current.renderAll();
+                                    onUpdate();
+                                }
+                            }} />
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <AlignHorizontalJustifyCenter className="h-4 w-4" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-40 p-2">
+                   <div className="grid grid-cols-3 gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('left')} title="Align Left"><ArrowLeftToLine className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('h-center')} title="Center Horizontal"><AlignHorizontalJustifyCenter className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('right')} title="Align Right"><ArrowRightToLine className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('top')} title="Align Top"><ArrowUpToLine className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('v-center')} title="Center Vertical"><AlignVerticalJustifyCenter className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => alignToCanvas('bottom')} title="Align Bottom"><ArrowDownToLine className="h-4 w-4" /></Button>
+                   </div>
+                </PopoverContent>
+            </Popover>
+
+
+
             <div className="w-px h-6 bg-border mx-1" />
 
             {/* Layering & Actions */}
@@ -271,13 +413,17 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={sendToBack} title="Send to Back">
                     <ChevronDown className="h-4 w-4" />
                 </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleLock} title={selectedObject.lockMovementX ? "Unlock" : "Lock"}>
+                    {selectedObject.lockMovementX ? <Lock className="h-4 w-4 text-amber-500" /> : <Unlock className="h-4 w-4" />}
+                </Button>
                 <div className="w-px h-6 bg-border mx-1" />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cloneObject} title="Clone">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cloneObject} title="Clone" disabled={selectedObject.lockMovementX}>
                     <Copy className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={deleteObject} title="Delete">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={deleteObject} title="Delete" disabled={selectedObject.lockMovementX}>
                     <Trash2 className="h-4 w-4" />
                 </Button>
+
             </div>
 
         </div>
