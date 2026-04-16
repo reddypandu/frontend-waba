@@ -107,7 +107,7 @@ const WhatsAppSetup = () => {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => setView("connect")} className="rounded-xl">
+                <Button variant="outline" size="sm" onClick={() => setView("selector")} className="rounded-xl">
                   <Settings2 className="h-4 w-4 mr-1.5" /> Reconnect
                 </Button>
                 <Button variant="destructive" size="sm" onClick={handleDisconnect} className="rounded-xl">
@@ -196,7 +196,7 @@ const WhatsAppSetup = () => {
       </div>
 
       {/* Method Selector */}
-      {view === "status" && (
+      {(view === "status" || view === "selector") && (
         <div className="grid sm:grid-cols-2 gap-5">
           {/* Auto / Facebook Login */}
           <button
