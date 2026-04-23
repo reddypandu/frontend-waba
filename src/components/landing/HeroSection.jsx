@@ -85,7 +85,7 @@ const HeroSection = () => {
                 asChild
                 className="text-base px-8 h-14 rounded-xl font-bold shadow-btn hover:shadow-glow hover:scale-105 transition-all duration-200"
               >
-                <Link to="/register">
+                <Link to="/login">
                   Start Free — No Card Needed <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>

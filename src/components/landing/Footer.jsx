@@ -60,7 +60,7 @@ const Footer = () => (
           Join 50,000+ businesses already using Yestick AI to drive sales and engagement.
         </p>
         <Link
-          to="/register"
+          to="/login"
           className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white gradient-primary shadow-btn hover:shadow-glow hover:scale-105 transition-all duration-200"
         >
           Start Free — No Card Needed <ArrowUpRight className="h-4 w-4" />

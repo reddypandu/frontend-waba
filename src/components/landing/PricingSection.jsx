@@ -78,7 +78,7 @@ const PricingSection = () => {
           className="text-center mb-20"
         >
           <span className="badge-primary mb-4 inline-flex px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
-             Transparent Pricing
+            Transparent Pricing
           </span>
           <h2 className="text-4xl md:text-5xl font-extrabold text-foreground mt-4 mb-6">
             Simple Plans,
@@ -100,15 +100,15 @@ const PricingSection = () => {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
               className={`relative rounded-3xl p-8 border transition-all duration-300 ${plan.popular
-                  ? "border-primary bg-card shadow-xl scale-105"
-                  : "border-border bg-card/60 hover:border-primary/50"
+                ? "border-primary bg-card shadow-xl scale-105"
+                : "border-border bg-card/60 hover:border-primary/50"
                 }`}
             >
               {/* Popular badge */}
               {plan.popular && (
                 <div className="absolute top-4 right-4">
                   <span className="bg-primary text-primary-foreground text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter">
-                     Most Popular
+                    Most Popular
                   </span>
                 </div>
               )}
@@ -132,7 +132,7 @@ const PricingSection = () => {
                 className={`w-full h-11 rounded-xl font-bold mb-8 ${plan.popular ? "gradient-primary text-white shadow-lg" : ""}`}
                 variant={plan.popular ? "default" : "outline"}
               >
-                <Link to="/register">{plan.cta}</Link>
+                <Link to="/login">{plan.cta}</Link>
               </Button>
 
               {/* Features */}

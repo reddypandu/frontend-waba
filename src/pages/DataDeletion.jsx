@@ -9,7 +9,7 @@ const DataDeletion = () => (
         If you wish to request deletion of your data processed through our WhatsApp business messaging service, please follow the steps below:
       </p>
       <ol className="list-decimal pl-6 text-foreground/80 space-y-1">
-        <li>Send an email to <a href="mailto:pothulapandurangareddy@gmail.com" className="text-primary hover:underline">pothulapandurangareddy@gmail.com</a></li>
+        <li>Send an email to <a href="mailto:thepatternsmarketing@gmail.com" className="text-primary hover:underline">thepatternsmarketing@gmail.com</a></li>
         <li>Use the subject line: <strong>"User Data Deletion Request"</strong></li>
         <li>Mention your WhatsApp phone number in the email</li>
       </ol>
