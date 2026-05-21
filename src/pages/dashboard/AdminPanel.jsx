@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 
 const AdminPanel = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [search, setSearch] = React.useState("");
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [activeAdminTab, setActiveAdminTab] = React.useState("users");
