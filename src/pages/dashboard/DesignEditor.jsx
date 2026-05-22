@@ -1,7 +1,17 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, RotateCcw, Save, Undo, Redo, AlertCircle, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  RotateCcw,
+  RotateCw,
+  Save,
+  Undo,
+  Redo,
+  AlertCircle,
+  Plus,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
@@ -27,7 +37,7 @@ const DesignEditor = () => {
   const [isOwner, setIsOwner] = React.useState(true);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
-  const [autoSaveStatus, setAutoSaveStatus] = React.useState("Saved"); 
+  const [autoSaveStatus, setAutoSaveStatus] = React.useState("Saved");
   const autoSaveTimerRef = React.useRef(null);
   const guidesRef = React.useRef({ v: null, h: null });
 
@@ -40,17 +50,26 @@ const DesignEditor = () => {
   const saveMutation = useMutation({
     mutationFn: (data) => {
       const isNew = id === "new" || !isOwner;
-      return isNew ? apiPost("/api/designs", data) : apiPut(`/api/designs/${id}`, data);
+      return isNew
+        ? apiPost("/api/designs", data)
+        : apiPut(`/api/designs/${id}`, data);
     },
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["designs", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["design-detail", user?.id, id] });
+      queryClient.invalidateQueries({
+        queryKey: ["design-detail", user?.id, id],
+      });
       const isNew = id === "new" || !isOwner;
-      if (isNew && saved?._id) navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
+      if (isNew && saved?._id)
+        navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
     },
     onError: (err) => {
-      toast({ title: "Save Error", description: err.message, variant: "destructive" });
-    }
+      toast({
+        title: "Save Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Global Error Handler for this component
@@ -83,6 +102,19 @@ const DesignEditor = () => {
     }
 
     try {
+      // Global configuration for Fabric objects to show rotation handles "direct" on elements
+      // We use FabricObject for Fabric 6+ or Object for earlier versions
+      const BaseObject = fabric.FabricObject || fabric.Object;
+      if (BaseObject) {
+        BaseObject.prototype.transparentCorners = false;
+        BaseObject.prototype.cornerColor = "#3b82f6";
+        BaseObject.prototype.cornerStyle = "circle";
+        BaseObject.prototype.cornerSize = 12;
+        BaseObject.prototype.borderColor = "#3b82f6";
+        BaseObject.prototype.padding = 10;
+        BaseObject.prototype.rotatingPointOffset = 40; // The "stick" length for the rotation handle
+      }
+
       const canvas = new fabric.Canvas(canvasRef.current, {
         width: width,
         height: height,
@@ -91,10 +123,14 @@ const DesignEditor = () => {
       });
 
       fabricRef.current = canvas;
-      
+
       const updateToolbar = () => {
         const active = canvas.getActiveObject();
-        setSelectedObject(active ? { ...active.toObject(['id', 'name']), _ts: Date.now() } : null);
+        setSelectedObject(
+          active
+            ? { ...active.toObject(["id", "name"]), _ts: Date.now() }
+            : null,
+        );
       };
 
       canvas.on("selection:created", updateToolbar);
@@ -120,9 +156,18 @@ const DesignEditor = () => {
         saveHistory();
       };
 
-      canvas.on("object:added", () => { saveState(); triggerAutoSave(); });
-      canvas.on("object:modified", () => { saveState(); triggerAutoSave(); });
-      canvas.on("object:removed", () => { saveState(); triggerAutoSave(); });
+      canvas.on("object:added", () => {
+        saveState();
+        triggerAutoSave();
+      });
+      canvas.on("object:modified", () => {
+        saveState();
+        triggerAutoSave();
+      });
+      canvas.on("object:removed", () => {
+        saveState();
+        triggerAutoSave();
+      });
 
       // Smart Guides Logic
       canvas.on("object:moving", (e) => {
@@ -131,15 +176,21 @@ const DesignEditor = () => {
         const centerX = canvas.getCenter().left;
         const centerY = canvas.getCenter().top;
         const snapThreshold = 10;
-        
-        if (Math.abs(obj.left + (obj.width * obj.scaleX) / 2 - centerX) < snapThreshold) {
+
+        if (
+          Math.abs(obj.left + (obj.width * obj.scaleX) / 2 - centerX) <
+          snapThreshold
+        ) {
           obj.set({ left: centerX - (obj.width * obj.scaleX) / 2 });
           guidesRef.current.v = centerX;
         } else {
           guidesRef.current.v = null;
         }
 
-        if (Math.abs(obj.top + (obj.height * obj.scaleY) / 2 - centerY) < snapThreshold) {
+        if (
+          Math.abs(obj.top + (obj.height * obj.scaleY) / 2 - centerY) <
+          snapThreshold
+        ) {
           obj.set({ top: centerY - (obj.height * obj.scaleY) / 2 });
           guidesRef.current.h = centerY;
         } else {
@@ -158,7 +209,7 @@ const DesignEditor = () => {
         ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
-        
+
         if (guidesRef.current.v !== null) {
           ctx.beginPath();
           ctx.moveTo(guidesRef.current.v, 0);
@@ -178,7 +229,7 @@ const DesignEditor = () => {
         if (!containerRef.current) return;
         const zoom = Math.min(
           (containerRef.current.offsetWidth - 100) / width,
-          (containerRef.current.offsetHeight - 100) / height
+          (containerRef.current.offsetHeight - 100) / height,
         );
         canvas.setZoom(zoom);
         canvas.setWidth(width * zoom);
@@ -204,7 +255,7 @@ const DesignEditor = () => {
   const isInitialLoadRef = React.useRef(true);
   React.useEffect(() => {
     if (!fabricRef.current || !isLoaded) return;
-    
+
     if (id === "new") {
       setDesignName("Untitled Design");
       setIsInitialLoadRef.current = false;
@@ -213,13 +264,16 @@ const DesignEditor = () => {
 
     if (design && isInitialLoadRef.current) {
       if (design?.name) setDesignName(design.name);
-      if (design?.type === 'template') setIsTemplate(true);
-      
+      if (design?.type === "template") setIsTemplate(true);
+
       const currentUserId = user?._id || user?.id;
       const ownerId = design?.user_id?._id || design?.user_id;
-      
+
       // If there's no ownerId (global template) or IDs don't match, user is NOT owner
-      if (!ownerId || (currentUserId && String(ownerId) !== String(currentUserId))) {
+      if (
+        !ownerId ||
+        (currentUserId && String(ownerId) !== String(currentUserId))
+      ) {
         setIsOwner(false);
       }
 
@@ -233,7 +287,6 @@ const DesignEditor = () => {
       isInitialLoadRef.current = false;
     }
   }, [id, design, isLoaded, user]);
-
 
   const triggerAutoSave = () => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -249,9 +302,13 @@ const DesignEditor = () => {
       await saveMutation.mutateAsync({
         name: designName,
         data: fabricRef.current.toJSON(),
-        thumbnail_url: fabricRef.current.toDataURL({ format: "png", quality: 0.2, multiplier: 0.5 }),
-        type: isTemplate && user?.role === 'admin' ? 'template' : 'user',
-        is_public: isTemplate && user?.role === 'admin'
+        thumbnail_url: fabricRef.current.toDataURL({
+          format: "png",
+          quality: 0.2,
+          multiplier: 0.5,
+        }),
+        type: isTemplate && user?.role === "admin" ? "template" : "user",
+        is_public: isTemplate && user?.role === "admin",
       });
       setAutoSaveStatus("Saved");
       if (!isAuto) toast({ title: "Design saved successfully!" });
@@ -260,26 +317,43 @@ const DesignEditor = () => {
     }
   };
 
+  const rotateSelected = () => {
+    if (!fabricRef.current) return;
+    const activeObject = fabricRef.current.getActiveObject();
+    if (activeObject) {
+      const currentAngle = activeObject.angle || 0;
+      activeObject.set("angle", (currentAngle + 90) % 360);
+      fabricRef.current.renderAll();
+      triggerAutoSave();
+    }
+  };
+
   const sendToWhatsApp = async () => {
     if (!fabricRef.current) return;
     try {
       toast({ title: "Preparing export..." });
-      const dataUrl = fabricRef.current.toDataURL({ format: "png", multiplier: 2 });
-      
+      const dataUrl = fabricRef.current.toDataURL({
+        format: "png",
+        multiplier: 2,
+      });
+
       // Upload to Cloudinary for a public URL
       const blob = await (await fetch(dataUrl)).blob();
       const filename = `design-${Date.now()}.png`;
       const file = new File([blob], filename, { type: "image/png" });
-      
+
       const formData = new FormData();
       formData.append("file", file);
-      
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cloudinary`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        body: formData
-      });
-      
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/cloudinary`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          body: formData,
+        },
+      );
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
@@ -287,10 +361,13 @@ const DesignEditor = () => {
       window.open(waUrl, "_blank");
       toast({ title: "Redirecting to WhatsApp..." });
     } catch (err) {
-      toast({ title: "Export Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Export Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
-
 
   if (errorInfo) {
     return (
@@ -304,103 +381,176 @@ const DesignEditor = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] flex flex-col bg-background md:overflow-hidden font-jakarta">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 border-b border-border shadow-sm bg-card z-10 gap-3 md:gap-0 shrink-0">
+    <div className="h-screen min-h-screen flex flex-col bg-[#0f1117] md:overflow-hidden font-jakarta text-white">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 bg-gradient-to-r from-[#10b8c4] via-[#3b73df] to-[#8b2be8] shadow-lg z-10 gap-3 md:gap-0 shrink-0">
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/designs")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/15 hover:text-white"
+            onClick={() => navigate("/dashboard/designs")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex flex-col">
             <input
               value={designName}
               onChange={(e) => setDesignName(e.target.value)}
-              className="text-sm font-bold bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-primary/20 rounded px-1 -ml-1 w-full max-w-[200px]"
+              className="text-sm font-bold bg-transparent border-none text-white placeholder:text-white/70 focus:outline-none focus:ring-1 focus:ring-white/30 rounded px-1 -ml-1 w-full max-w-[220px]"
               placeholder="Design Name"
             />
-            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Connectly Creative Editor</p>
+            <p className="text-[10px] text-white/75 font-medium uppercase tracking-tighter">
+              Connectly Creative Editor
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
-            if (historyIndex > 0) {
-              const prev = historyIndex - 1;
-              setHistoryIndex(prev);
-              fabricRef.current.loadFromJSON(history[prev]).then(() => fabricRef.current.renderAll());
-            }
-          }} disabled={historyIndex <= 0}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs gap-1.5 text-white hover:bg-white/15 hover:text-white disabled:text-white/40"
+            onClick={() => {
+              if (historyIndex > 0) {
+                const prev = historyIndex - 1;
+                setHistoryIndex(prev);
+                fabricRef.current
+                  .loadFromJSON(history[prev])
+                  .then(() => fabricRef.current.renderAll());
+              }
+            }}
+            disabled={historyIndex <= 0}
+          >
             <Undo className="h-3.5 w-3.5" /> Undo
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
-            if (historyIndex < history.length - 1) {
-              const next = historyIndex + 1;
-              setHistoryIndex(next);
-              fabricRef.current.loadFromJSON(history[next]).then(() => fabricRef.current.renderAll());
-            }
-          }} disabled={historyIndex >= history.length - 1}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs gap-1.5 text-white hover:bg-white/15 hover:text-white disabled:text-white/40"
+            onClick={() => {
+              if (historyIndex < history.length - 1) {
+                const next = historyIndex + 1;
+                setHistoryIndex(next);
+                fabricRef.current
+                  .loadFromJSON(history[next])
+                  .then(() => fabricRef.current.renderAll());
+              }
+            }}
+            disabled={historyIndex >= history.length - 1}
+          >
             <Redo className="h-3.5 w-3.5" /> Redo
           </Button>
-          <div className="w-px h-6 bg-border mx-2 hidden md:block" />
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-dashed" onClick={() => {
-            fabricRef.current.clear();
-            fabricRef.current.backgroundColor = "#ffffff";
-            fabricRef.current.renderAll();
-          }}>
+          <div className="w-px h-6 bg-white/20 mx-2 hidden md:block" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs gap-1.5 text-white hover:bg-white/15 hover:text-white disabled:text-white/40"
+            onClick={rotateSelected}
+            disabled={!selectedObject}
+          >
+            <RotateCw className="h-3.5 w-3.5" /> Rotate
+          </Button>
+          <div className="w-px h-6 bg-white/20 mx-2 hidden md:block" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5 border-white/20 bg-black/15 text-white hover:bg-white/15 hover:text-white"
+            onClick={() => {
+              fabricRef.current.clear();
+              fabricRef.current.backgroundColor = "#ffffff";
+              fabricRef.current.renderAll();
+            }}
+          >
             <RotateCcw className="h-3.5 w-3.5 text-orange-500" /> Reset
           </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
-            const link = document.createElement("a");
-            link.download = `design-${id || "new"}.png`;
-            link.href = fabricRef.current.toDataURL({ format: "png", multiplier: 2 });
-            link.click();
-          }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5 border-white/20 bg-black/15 text-white hover:bg-white/15 hover:text-white"
+            onClick={() => {
+              const link = document.createElement("a");
+              link.download = `design-${id || "new"}.png`;
+              link.href = fabricRef.current.toDataURL({
+                format: "png",
+                multiplier: 2,
+              });
+              link.click();
+            }}
+          >
             <Download className="h-3.5 w-3.5" /> PNG
           </Button>
 
-          {user?.role === 'admin' && (
-            <label className="flex items-center gap-1.5 text-xs font-bold text-primary mx-1 md:mx-2 cursor-pointer bg-primary/10 px-2 py-1 rounded-md">
-              <input type="checkbox" checked={isTemplate} onChange={(e) => setIsTemplate(e.target.checked)} className="accent-primary" />
+          {user?.role === "admin" && (
+            <label className="flex items-center gap-1.5 text-xs font-bold text-white mx-1 md:mx-2 cursor-pointer bg-black/15 px-2 py-1 rounded-md">
+              <input
+                type="checkbox"
+                checked={isTemplate}
+                onChange={(e) => setIsTemplate(e.target.checked)}
+                className="accent-primary"
+              />
               Save as Global Template
             </label>
           )}
 
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs gap-1.5 text-white hover:text-white hover:bg-white/15"
             onClick={sendToWhatsApp}
           >
             <Plus className="h-3.5 w-3.5" /> Send to WhatsApp
           </Button>
 
           <div className="flex items-center gap-1.5 px-2">
-             <span className={`w-2 h-2 rounded-full ${autoSaveStatus === 'Saved' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-             <span className="text-[10px] text-muted-foreground font-bold uppercase">{autoSaveStatus}</span>
+            <span
+              className={`w-2 h-2 rounded-full ${autoSaveStatus === "Saved" ? "bg-emerald-300" : "bg-amber-300 animate-pulse"}`}
+            />
+            <span className="text-[10px] text-white/80 font-bold uppercase">
+              {autoSaveStatus}
+            </span>
           </div>
 
-          <Button 
-            size="sm" 
-            className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95" 
+          <Button
+            size="sm"
+            className="h-9 text-xs gap-1.5 bg-white text-[#16181f] hover:bg-white/90 shadow-lg transition-all active:scale-95"
             disabled={saveMutation.isPending}
             onClick={() => handleSave()}
           >
-            {saveMutation.isPending ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saveMutation.isPending ? (
+              <RotateCcw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
             Save Design
           </Button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden">
-        <EditorSidebar fabricRef={fabricRef} setSelectedObject={setSelectedObject} />
+        <EditorSidebar
+          fabricRef={fabricRef}
+          setSelectedObject={setSelectedObject}
+          selectedObject={selectedObject}
+        />
 
-        <div ref={containerRef} className="h-[50vh] md:h-auto md:flex-1 shrink-0 bg-[#f8f9fa] relative flex items-center justify-center p-4 md:p-8 overflow-hidden" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-
+        <div
+          ref={containerRef}
+          className="h-[50vh] md:h-auto md:flex-1 shrink-0 bg-[#111318] relative flex items-center justify-center p-4 md:p-8 overflow-hidden"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        >
           {isLoaded && fabricRef.current && (
             <CanvasToolbar
               fabricRef={fabricRef}
               selectedObject={selectedObject}
               onUpdate={() => {
                 const active = fabricRef.current.getActiveObject();
-                setSelectedObject(active ? { ...active.toObject(['id', 'name']), _ts: Date.now() } : null);
+                setSelectedObject(
+                  active
+                    ? { ...active.toObject(["id", "name"]), _ts: Date.now() }
+                    : null,
+                );
               }}
             />
           )}

@@ -52,6 +52,14 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route
+              path="/dashboard/designs/editor/:id"
+              element={
+                <ProtectedRoute>
+                  <DesignEditor />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardOverview />} />
               <Route path="whatsapp-setup" element={<WhatsAppSetup />} />
@@ -74,7 +82,6 @@ const App = () => (
               <Route path="workflows" element={<Workflows />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="designs" element={<Designs />} />
-              <Route path="designs/editor/:id" element={<DesignEditor />} />
             </Route>
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />

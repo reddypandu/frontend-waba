@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as fabric from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,7 @@ import {
     Underline, Lock, Unlock,
     ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine,
     AlignVerticalJustifyCenter, AlignHorizontalJustifyCenter,
-    Moon, Sun, Ghost
+    Moon, Sun, Ghost, MessageCircle, MoreHorizontal, FlipHorizontal, Paintbrush
 } from "lucide-react";
 import {
     Select,
@@ -161,7 +162,11 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
     };
 
     return (
-        <div className="absolute top-[-5px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-card/95 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100%-2rem)] items-center gap-1.5 overflow-x-auto bg-[#20222a]/95 text-white backdrop-blur-md p-1.5 rounded-[18px] border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <Button variant="ghost" size="sm" className="h-8 shrink-0 gap-2 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                Edit
+            </Button>
+            <div className="w-px h-6 bg-white/15 mx-1 shrink-0" />
 
             {/* Grouping */}
             <div className="flex items-center gap-1">
@@ -177,7 +182,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                 )}
             </div>
 
-            {(selectedObject.type === "activeSelection" || selectedObject.type === "group") && <div className="w-px h-6 bg-border mx-1" />}
+            {(selectedObject.type === "activeSelection" || selectedObject.type === "group") && <div className="w-px h-6 bg-white/15 mx-1 shrink-0" />}
 
             {/* Text Specific Controls */}
             {isText && (
@@ -186,7 +191,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                         value={selectedObject.fontFamily}
                         onValueChange={(v) => updateProp("fontFamily", v)}
                     >
-                        <SelectTrigger className="w-[80px] h-9 text-xs border-none bg-secondary/50 hover:bg-secondary">
+                        <SelectTrigger className="w-[120px] h-9 text-sm font-bold border border-white/10 bg-[#2a2d36] text-white hover:bg-white/10">
                             <SelectValue placeholder="Font" />
                         </SelectTrigger>
                         <SelectContent>
@@ -196,7 +201,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
                         </SelectContent>
                     </Select>
 
-                    <div className="flex items-center bg-secondary/50 rounded-lg px-1">
+                    <div className="flex items-center bg-[#2a2d36] rounded-lg px-1">
                         <Button
                             variant="ghost" size="icon" className="h-7 w-7"
                             onClick={() => updateProp("fontSize", Math.max(1, selectedObject.fontSize - 1))}
@@ -214,15 +219,15 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
                     <div className="flex items-center gap-0.5 ml-1">
                         <Button
-                            variant={selectedObject.fontWeight === "bold" ? "secondary" : "ghost"}
-                            size="icon" className="h-8 w-8"
+                            variant="ghost"
+                            size="icon" className={`h-8 w-8 text-white hover:bg-white/10 hover:text-white ${selectedObject.fontWeight === "bold" ? "bg-purple-500/50" : ""}`}
                             onClick={() => updateProp("fontWeight", selectedObject.fontWeight === "bold" ? "normal" : "bold")}
                         >
                             <Bold className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant={selectedObject.underline ? "secondary" : "ghost"}
-                            size="icon" className="h-8 w-8"
+                            variant="ghost"
+                            size="icon" className={`h-8 w-8 text-white hover:bg-white/10 hover:text-white ${selectedObject.underline ? "bg-purple-500/50" : ""}`}
                             onClick={() => updateProp("underline", !selectedObject.underline)}
                         >
                             <Underline className="h-4 w-4" />
@@ -231,7 +236,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" title="Effects">
                                 <Sparkles className="h-4 w-4" />
                             </Button>
                         </PopoverTrigger>
@@ -261,22 +266,22 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
                     <div className="flex items-center gap-0.5">
                         <Button
-                            variant={selectedObject.textAlign === "left" ? "secondary" : "ghost"}
-                            size="icon" className="h-8 w-8"
+                            variant="ghost"
+                            size="icon" className={`h-8 w-8 text-white hover:bg-white/10 hover:text-white ${selectedObject.textAlign === "left" ? "bg-white/10" : ""}`}
                             onClick={() => updateProp("textAlign", "left")}
                         >
                             <AlignLeft className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant={selectedObject.textAlign === "center" ? "secondary" : "ghost"}
-                            size="icon" className="h-8 w-8"
+                            variant="ghost"
+                            size="icon" className={`h-8 w-8 text-white hover:bg-white/10 hover:text-white ${selectedObject.textAlign === "center" ? "bg-white/10" : ""}`}
                             onClick={() => updateProp("textAlign", "center")}
                         >
                             <AlignCenter className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant={selectedObject.textAlign === "right" ? "secondary" : "ghost"}
-                            size="icon" className="h-8 w-8"
+                            variant="ghost"
+                            size="icon" className={`h-8 w-8 text-white hover:bg-white/10 hover:text-white ${selectedObject.textAlign === "right" ? "bg-white/10" : ""}`}
                             onClick={() => updateProp("textAlign", "right")}
                         >
                             <AlignRight className="h-4 w-4" />
@@ -289,12 +294,12 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
             {(isText || isShape) && (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 relative group">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 relative group text-white hover:bg-white/10 hover:text-white" title="Color">
                             <div
                                 className="w-5 h-5 rounded-full border border-border shadow-sm group-hover:scale-110 transition-transform"
                                 style={{ backgroundColor: selectedObject.fill }}
                             />
-                            <Palette className="h-3 w-3 absolute -bottom-0.5 -right-0.5 text-muted-foreground bg-card rounded-full" />
+                            <Palette className="h-3 w-3 absolute -bottom-0.5 -right-0.5 text-white bg-[#20222a] rounded-full" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-48 p-3">
@@ -326,7 +331,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
             {/* Global Properties (Opacity, Shadow, Radius) */}
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" title="Style">
                         <Sun className="h-4 w-4" />
                     </Button>
                 </PopoverTrigger>
@@ -379,7 +384,7 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" title="Position">
                         <AlignHorizontalJustifyCenter className="h-4 w-4" />
                     </Button>
                 </PopoverTrigger>
@@ -397,31 +402,53 @@ const CanvasToolbar = ({ fabricRef, selectedObject, onUpdate }) => {
 
 
 
-            <div className="w-px h-6 bg-border mx-1" />
+            {!isText && (
+                <>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={() => updateProp("flipX", !selectedObject.flipX)} title="Flip">
+                        <FlipHorizontal className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 shrink-0 gap-2 text-sm font-bold text-white hover:bg-white/10 hover:text-white" title="Style">
+                        <Paintbrush className="h-4 w-4 text-blue-400" />
+                        Style
+                    </Button>
+                </>
+            )}
+
+            <Button variant="ghost" size="sm" className="h-8 shrink-0 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                Animate
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 shrink-0 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                Position
+            </Button>
+
+            <div className="w-px h-6 bg-white/15 mx-1 shrink-0" />
 
             {/* Layering & Actions */}
             <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={bringToFront} title="Bring to Front">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={bringToFront} title="Bring to Front">
                     <ChevronUp className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={bringForward} title="Bring Forward">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={bringForward} title="Bring Forward">
                     <MoveUp className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={sendBackward} title="Send Backward">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={sendBackward} title="Send Backward">
                     <MoveDown className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={sendToBack} title="Send to Back">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={sendToBack} title="Send to Back">
                     <ChevronDown className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleLock} title={selectedObject.lockMovementX ? "Unlock" : "Lock"}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={toggleLock} title={selectedObject.lockMovementX ? "Unlock" : "Lock"}>
                     {selectedObject.lockMovementX ? <Lock className="h-4 w-4 text-amber-500" /> : <Unlock className="h-4 w-4" />}
                 </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cloneObject} title="Clone" disabled={selectedObject.lockMovementX}>
+                <div className="w-px h-6 bg-white/15 mx-1" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={cloneObject} title="Clone" disabled={selectedObject.lockMovementX}>
                     <Copy className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={deleteObject} title="Delete" disabled={selectedObject.lockMovementX}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-destructive/20 hover:text-white" onClick={deleteObject} title="Delete" disabled={selectedObject.lockMovementX}>
                     <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" title="More">
+                    <MoreHorizontal className="h-4 w-4" />
                 </Button>
 
             </div>

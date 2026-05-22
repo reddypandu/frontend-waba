@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ const INITIAL_MESSAGE = {
 };
 
 const ChatbotWidget = () => {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
@@ -20,6 +22,10 @@ const ChatbotWidget = () => {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  if (location.pathname.includes("/dashboard/designs/editor/")) {
+    return null;
+  }
 
   const handleSend = async () => {
     const text = input.trim();
