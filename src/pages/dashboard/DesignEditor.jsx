@@ -29,6 +29,10 @@ const DesignEditor = () => {
   const canvasRef = React.useRef(null);
   const fabricRef = React.useRef(null);
   const containerRef = React.useRef(null);
+  const canvasDimensionsRef = React.useRef({ width: 500, height: 500 });
+  const sidebarRef = React.useRef(null);
+  const dividerRef = React.useRef(null);
+  const isDraggingRef = React.useRef(false);
   const [selectedObject, setSelectedObject] = React.useState(null);
   const [history, setHistory] = React.useState([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
@@ -38,8 +42,10 @@ const DesignEditor = () => {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState(null);
   const [autoSaveStatus, setAutoSaveStatus] = React.useState("Saved");
+  const [sidebarWidth, setSidebarWidth] = React.useState(320);
   const autoSaveTimerRef = React.useRef(null);
   const guidesRef = React.useRef({ v: null, h: null });
+  const customNameRef = React.useRef(null);
 
   const { data: design, isLoading: isDesignLoading } = useQuery({
     queryKey: ["design-detail", user?.id, id],
@@ -84,6 +90,53 @@ const DesignEditor = () => {
     return () => window.removeEventListener("error", handleError);
   }, []);
 
+  // Draggable Sidebar Handler (Desktop only)
+  React.useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) return;
+
+    const handleMouseMove = (e) => {
+      if (!isDraggingRef.current || !sidebarRef.current) return;
+      const newWidth = Math.max(250, Math.min(600, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      document.body.style.cursor = "auto";
+      document.body.style.userSelect = "auto";
+    };
+
+    const handleMouseDown = (e) => {
+      if (
+        e.target === dividerRef.current ||
+        (dividerRef.current && dividerRef.current.contains(e.target))
+      ) {
+        isDraggingRef.current = true;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      }
+    };
+
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarWidth(window.innerWidth);
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   // 1. Initialize Canvas Instance (Mount Only)
   React.useEffect(() => {
     if (!canvasRef.current || fabricRef.current) return;
@@ -97,11 +150,15 @@ const DesignEditor = () => {
         const dim = JSON.parse(custom);
         width = dim?.width || 500;
         height = dim?.height || 500;
+        if (dim?.name) customNameRef.current = dim.name;
         localStorage.removeItem("custom_dimensions");
       }
     } catch (e) {
       console.error("Dim Parse Error", e);
     }
+
+    // Store the actual canvas dimensions for export
+    canvasDimensionsRef.current = { width, height };
 
     try {
       // Global configuration for Fabric objects to show rotation handles "direct" on elements
@@ -229,10 +286,11 @@ const DesignEditor = () => {
 
       const resizeHandler = () => {
         if (!containerRef.current) return;
-        const zoom = Math.min(
+        let zoom = Math.min(
           (containerRef.current.offsetWidth - 100) / width,
           (containerRef.current.offsetHeight - 100) / height,
         );
+        zoom = Math.max(0.05, zoom); // Prevent negative or zero zoom
         canvas.setZoom(zoom);
         canvas.setWidth(width * zoom);
         canvas.setHeight(height * zoom);
@@ -259,8 +317,8 @@ const DesignEditor = () => {
     if (!fabricRef.current || !isLoaded) return;
 
     if (id === "new") {
-      setDesignName("Untitled Design");
-      setIsInitialLoadRef.current = false;
+      setDesignName(customNameRef.current || "Untitled Design");
+      isInitialLoadRef.current = false;
       return;
     }
 
@@ -301,6 +359,7 @@ const DesignEditor = () => {
   const handleSave = async (isAuto = false) => {
     if (!fabricRef.current) return;
     try {
+      const dims = canvasDimensionsRef.current;
       await saveMutation.mutateAsync({
         name: designName,
         data: fabricRef.current.toJSON(),
@@ -308,6 +367,8 @@ const DesignEditor = () => {
           format: "png",
           quality: 0.2,
           multiplier: 0.5,
+          width: dims.width,
+          height: dims.height,
         }),
         type: isTemplate && user?.role === "admin" ? "template" : "user",
         is_public: isTemplate && user?.role === "admin",
@@ -334,9 +395,12 @@ const DesignEditor = () => {
     if (!fabricRef.current) return;
     try {
       toast({ title: "Preparing export..." });
+      const dims = canvasDimensionsRef.current;
       const dataUrl = fabricRef.current.toDataURL({
         format: "png",
         multiplier: 2,
+        width: dims.width,
+        height: dims.height,
       });
 
       // Upload to Cloudinary for a public URL
@@ -383,8 +447,8 @@ const DesignEditor = () => {
   }
 
   return (
-    <div className="h-screen min-h-screen flex flex-col bg-[#0f1117] md:overflow-hidden font-jakarta text-white">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 bg-gradient-to-r from-[#10b8c4] via-[#3b73df] to-[#8b2be8] shadow-lg z-10 gap-3 md:gap-0 shrink-0">
+    <div className="h-screen min-h-screen flex flex-col bg-background md:overflow-hidden font-jakarta text-foreground">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 bg-gradient-to-r from-primary via-primary/70 to-primary/50 shadow-lg z-10 gap-3 md:gap-0 shrink-0">
         <div className="flex items-center gap-4 w-full md:w-auto">
           <Button
             variant="ghost"
@@ -469,11 +533,14 @@ const DesignEditor = () => {
             size="sm"
             className="h-8 text-xs gap-1.5 border-white/20 bg-black/15 text-white hover:bg-white/15 hover:text-white"
             onClick={() => {
+              const dims = canvasDimensionsRef.current;
               const link = document.createElement("a");
               link.download = `design-${id || "new"}.png`;
               link.href = fabricRef.current.toDataURL({
                 format: "png",
                 multiplier: 2,
+                width: dims.width,
+                height: dims.height,
               });
               link.click();
             }}
@@ -528,17 +595,35 @@ const DesignEditor = () => {
       </div>
 
       <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden">
-        <EditorSidebar
-          fabricRef={fabricRef}
-          setSelectedObject={setSelectedObject}
-          selectedObject={selectedObject}
+        <div
+          ref={sidebarRef}
+          className="w-full md:overflow-y-auto bg-card border-b md:border-b-0 md:border-r border-border"
+          style={{
+            width: `${sidebarWidth}px`,
+            transition: isDraggingRef.current ? "none" : "width 0.2s ease",
+          }}
+        >
+          <EditorSidebar
+            fabricRef={fabricRef}
+            setSelectedObject={setSelectedObject}
+            selectedObject={selectedObject}
+          />
+        </div>
+
+        <div
+          ref={dividerRef}
+          className="w-1 bg-border hover:bg-primary/50 cursor-col-resize transition-colors hidden md:block"
+          style={{
+            opacity: isDraggingRef.current ? 1 : 0.3,
+          }}
         />
 
         <div
           ref={containerRef}
-          className="h-[50vh] md:h-auto md:flex-1 shrink-0 bg-[#111318] relative flex items-center justify-center p-4 md:p-8 overflow-hidden"
+          className="h-[50vh] md:h-auto md:flex-1 shrink-0 bg-muted relative flex items-center justify-center p-2 md:p-8 overflow-hidden"
           style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)",
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",
             backgroundSize: "20px 20px",
           }}
         >
