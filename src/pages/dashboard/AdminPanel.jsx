@@ -7,16 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, Users, Shield, BarChart3, Wallet, Phone, MessageSquare,
-  Building2, CheckCircle2, ChevronRight, Eye, Palette,
+  Building2, CheckCircle2, ChevronRight, Eye, Palette, Trash2,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminPanel = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = React.useState("");
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [activeAdminTab, setActiveAdminTab] = React.useState("users");
@@ -49,6 +52,37 @@ const AdminPanel = () => {
     enabled: isAdmin && activeAdminTab === 'designs'
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (targetUser) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${targetUser._id || targetUser.user_id}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to delete user');
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-designs'] });
+      toast({
+        title: 'User deleted',
+        description: data.message || 'The user and related data were removed.',
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: 'Delete failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const users = usersData?.users || [];
   const stats = usersData?.stats || { total_users: 0, total_free: 0, total_starter: 0, total_pro: 0 };
   const designs = designsData || [];
@@ -58,6 +92,25 @@ const AdminPanel = () => {
     !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleDeleteUser = (targetUser) => {
+    const userId = targetUser._id || targetUser.user_id;
+    if (!userId) return;
+    if (String(userId) === String(user?._id || user?.id)) {
+      toast({
+        title: 'Not allowed',
+        description: 'You cannot delete your own admin account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const label = targetUser.email || targetUser.full_name || userId;
+    const confirmed = window.confirm(
+      `Delete ${label}? This permanently removes the user, MongoDB data, uploads, designs, and Cloudinary assets. This cannot be undone.`,
+    );
+    if (confirmed) deleteUserMutation.mutate(targetUser);
+  };
 
   if (!isAdmin) {
     return (
@@ -166,7 +219,27 @@ const AdminPanel = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" title="View user">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Delete user and all data"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            disabled={
+                              deleteUserMutation.isPending ||
+                              String(u._id || u.user_id) === String(user?._id || user?.id)
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteUser(u);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

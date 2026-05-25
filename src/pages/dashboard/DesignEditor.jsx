@@ -60,8 +60,10 @@ const DesignEditor = () => {
         queryKey: ["design-detail", user?.id, id],
       });
       const isNew = id === "new" || !isOwner;
-      if (isNew && saved?._id)
+      if (isNew && saved?._id) {
+        setIsOwner(true);
         navigate(`/dashboard/designs/editor/${saved._id}`, { replace: true });
+      }
     },
     onError: (err) => {
       toast({

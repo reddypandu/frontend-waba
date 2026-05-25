@@ -32,8 +32,9 @@ const WhatsAppSetup = () => {
   });
 
   const waAccount = dashData?.waAccount || null;
+  const dashboardStatus = dashData?.dashboardStatus || "not_connected";
   const isConnected = !!waAccount?.phone_number_id;
-  const isStep3Visible = isConnected;
+  const isStep3Visible = dashboardStatus === "connected" || dashboardStatus === "sandbox";
 
   const handleManualSave = async () => {
     setSaving(true);
@@ -90,33 +91,69 @@ const WhatsAppSetup = () => {
         </div>
 
         {/* Connected status card */}
-        <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-card shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shadow-inner">
-                  <Phone className="h-7 w-7 text-emerald-600" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-foreground">WhatsApp Connected</h3>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold">LIVE</Badge>
+        {dashboardStatus === "connected" || dashboardStatus === "sandbox" ? (
+          <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shadow-inner">
+                    <Phone className="h-7 w-7 text-emerald-600" />
                   </div>
-                  <p className="text-sm text-muted-foreground font-mono">{waAccount?.phone_number || "Number not registered"}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Status: <span className="font-bold capitalize text-emerald-600">{waAccount?.verification_status || "verified"}</span></p>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-foreground">WhatsApp Connected</h3>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold">
+                        {dashboardStatus === "sandbox" ? "SANDBOX" : "LIVE"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground font-mono">{waAccount?.phone_number || "Number not registered"}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Status: <span className="font-bold capitalize text-emerald-600">{waAccount?.verification_status || "verified"}</span></p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => setView("selector")} className="rounded-xl">
+                    <Settings2 className="h-4 w-4 mr-1.5" /> Reconnect
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={handleDisconnect} className="rounded-xl">
+                    <Trash2 className="h-4 w-4 mr-1.5" /> Disconnect
+                  </Button>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => setView("selector")} className="rounded-xl">
-                  <Settings2 className="h-4 w-4 mr-1.5" /> Reconnect
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleDisconnect} className="rounded-xl">
-                  <Trash2 className="h-4 w-4 mr-1.5" /> Disconnect
-                </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center shadow-inner">
+                    <AlertCircle className="h-7 w-7 text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-foreground">Action Required</h3>
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-bold">
+                        {dashboardStatus === "registration_failed" ? "REGISTRATION FAILED" : "PENDING REGISTRATION"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground font-mono">{waAccount?.phone_number || "Number not registered"}</p>
+                    <p className="text-xs text-amber-600 mt-0.5 font-semibold">
+                      {waAccount?.registration_error || "Your phone number needs to be registered with Meta API. Retrying..."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => setView("selector")} className="rounded-xl">
+                    <Settings2 className="h-4 w-4 mr-1.5" /> Setup Again
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={handleDisconnect} className="rounded-xl">
+                    <Trash2 className="h-4 w-4 mr-1.5" /> Remove
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Account Details */}
         <div className="grid sm:grid-cols-2 gap-4">
