@@ -17,6 +17,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
+import { useSocket } from "@/contexts/SocketContext";
 
 const Inbox = () => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const Inbox = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { socket, connected } = useSocket();
   const [selectedConv, setSelectedConv] = React.useState(null);
   const [message, setMessage] = React.useState("");
   const [search, setSearch] = React.useState("");
@@ -34,17 +36,21 @@ const Inbox = () => {
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
+  const scrollStateRef = React.useRef({ conversationId: null, messageCount: 0 });
 
   const { data: convsData, isLoading: convsLoading } = useQuery({
     queryKey: ["conversations", user?.id],
     queryFn: () => apiGet("/api/whatsapp/conversations"),
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: connected ? false : 5000,
   });
 
   const { data: contactsData, isLoading: contactsLoading } = useQuery({
     queryKey: ["contacts", user?.id],
-    queryFn: () => apiGet("/api/admin/contacts"),
+    queryFn: async () => {
+      const data = await apiGet("/api/contacts");
+      return data.contacts || [];
+    },
     enabled: !!user,
   });
 
@@ -129,14 +135,76 @@ const Inbox = () => {
       return apiGet(`/api/whatsapp/messages/${selectedConv}`);
     },
     enabled: !!user && !!selectedConv && selectedConv !== "new" && !selectedConv.startsWith("contact-"),
-    refetchInterval: 3000,
+    refetchInterval: connected ? false : 3000,
   });
 
   const messages = msgsData?.messages || [];
 
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, selectedConv]);
+    if (!socket || !user) return undefined;
+
+    const upsertConversation = (conversation, contact) => {
+      queryClient.setQueryData(["conversations", user.id], (old) => {
+        if (!old?.conversations || !conversation?._id) return old;
+        const enriched = {
+          ...conversation,
+          contact_id: conversation.contact_id?.name ? conversation.contact_id : contact || conversation.contact_id,
+          isConv: true,
+        };
+        const withoutCurrent = old.conversations.filter((c) => c._id !== enriched._id);
+        return { ...old, conversations: [enriched, ...withoutCurrent] };
+      });
+    };
+
+    const handleNewMessage = ({ message: incoming, conversation, contact }) => {
+      if (!incoming) return;
+      upsertConversation(conversation, contact);
+      queryClient.setQueryData(["messages", user.id, String(incoming.conversation_id)], (old) => {
+        if (!old?.messages) return old;
+        if (old.messages.some((msg) => msg._id === incoming._id)) return old;
+        return { ...old, messages: [...old.messages, incoming] };
+      });
+      queryClient.invalidateQueries({ queryKey: ["contacts", user.id] });
+    };
+
+    const handleMessageStatus = ({ message_id, status, error_details }) => {
+      queryClient.setQueriesData({ queryKey: ["messages", user.id] }, (old) => {
+        if (!old?.messages) return old;
+        return {
+          ...old,
+          messages: old.messages.map((msg) =>
+            msg._id === message_id ? { ...msg, status, error_details } : msg,
+          ),
+        };
+      });
+    };
+
+    socket.on("new_message", handleNewMessage);
+    socket.on("message_status", handleMessageStatus);
+
+    return () => {
+      socket.off("new_message", handleNewMessage);
+      socket.off("message_status", handleMessageStatus);
+    };
+  }, [socket, user, queryClient]);
+
+  React.useLayoutEffect(() => {
+    if (!selectedConv || msgsLoading) return;
+
+    const previous = scrollStateRef.current;
+    const isSameConversation = previous.conversationId === selectedConv;
+    const hasNewMessage = messages.length > previous.messageCount;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isSameConversation && hasNewMessage ? "smooth" : "auto",
+      block: "end",
+    });
+
+    scrollStateRef.current = {
+      conversationId: selectedConv,
+      messageCount: messages.length,
+    };
+  }, [messages.length, msgsLoading, selectedConv]);
 
   const sendMutation = useMutation({
     mutationFn: async () => {

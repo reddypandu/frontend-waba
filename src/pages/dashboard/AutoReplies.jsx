@@ -23,12 +23,15 @@ const AutoReplies = () => {
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["auto-replies", user?.id],
-    queryFn: () => apiGet("/api/admin/auto-replies"),
+    queryFn: async () => {
+      const data = await apiGet("/api/automation/auto-replies");
+      return data.replies || [];
+    },
     enabled: !!user,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => apiPost("/api/admin/auto-replies", data),
+    mutationFn: (data) => apiPost("/api/automation/auto-replies", data),
     onSuccess: () => {
       toast({ title: "Auto-reply created!" });
       queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
@@ -38,7 +41,7 @@ const AutoReplies = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }) => apiPut(`/api/admin/auto-replies/${id}`, data),
+    mutationFn: ({ id, ...data }) => apiPut(`/api/automation/auto-replies/${id}`, data),
     onSuccess: () => {
       toast({ title: "Auto-reply updated!" });
       queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
@@ -48,12 +51,12 @@ const AutoReplies = () => {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) => apiPut(`/api/admin/auto-replies/${id}`, { is_active }),
+    mutationFn: ({ id, is_active }) => apiPut(`/api/automation/auto-replies/${id}`, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => apiDelete(`/api/admin/auto-replies/${id}`),
+    mutationFn: (id) => apiDelete(`/api/automation/auto-replies/${id}`),
     onSuccess: () => {
       toast({ title: "Deleted" });
       queryClient.invalidateQueries({ queryKey: ["auto-replies", user?.id] });
@@ -78,7 +81,7 @@ const AutoReplies = () => {
       return;
     }
     if (editItem) {
-      updateMutation.mutate({ id: editItem.id, ...form });
+      updateMutation.mutate({ id: editItem._id, ...form });
     } else {
       createMutation.mutate(form);
     }
@@ -171,7 +174,7 @@ const AutoReplies = () => {
       ) : (
         <div className="space-y-3">
           {rules.map((rule) => (
-            <Card key={rule.id} className={`shadow-sm transition-all ${!rule.is_active ? "opacity-60" : ""}`}>
+            <Card key={rule._id} className={`shadow-sm transition-all ${!rule.is_active ? "opacity-60" : ""}`}>
               <CardContent className="p-4 flex items-start sm:items-center gap-4 justify-between flex-wrap">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
@@ -193,12 +196,12 @@ const AutoReplies = () => {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={!!rule.is_active}
-                    onCheckedChange={(checked) => toggleMutation.mutate({ id: rule.id, is_active: checked ? 1 : 0 })}
+                    onCheckedChange={(checked) => toggleMutation.mutate({ id: rule._id, is_active: checked })}
                   />
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleEdit(rule)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(rule.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(rule._id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

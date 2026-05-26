@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, Loader2, Upload, ChevronDown, ChevronUp,
   FileSpreadsheet, UserPlus, Clock, Zap, Check, Smartphone,
-  Send, CalendarDays, Users,
+  Send, CalendarDays, Users, Paperclip,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ const CreateCampaign = () => {
     setInteractiveParams({ header_image_url: "", offer_code: "" });
   };
 
-  const [dataSource, setDataSource] = useState("");
+  const [dataSource, setDataSource] = useState("all_opted_in");
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [excelContacts, setExcelContacts] = useState([]);
   const [scheduleType, setScheduleType] = useState("immediate");
@@ -87,14 +87,15 @@ const CreateCampaign = () => {
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts-for-campaign"],
     queryFn: async () => {
-      const data = await apiPost("/api/whatsapp", { action: "get_contacts" });
+      const data = await apiGet("/api/contacts");
       return data?.contacts || [];
     },
     enabled: !!user,
   });
 
   const selectedTemplate = (templates || []).find(t => t.id === templateId || t._id === templateId || t.name === templateId);
-  const totalRecipients = dataSource === "excel" ? excelContacts.length : selectedContacts.length;
+  const optedInContacts = contacts.filter((c) => c.opt_in_status !== "opted_out");
+  const totalRecipients = dataSource === "excel" ? excelContacts.length : dataSource === "all_opted_in" ? optedInContacts.length : selectedContacts.length;
 
   // Extract variables
   const templateBody = (Array.isArray(selectedTemplate?.components)
@@ -174,6 +175,8 @@ const CreateCampaign = () => {
       if (dataSource === 'excel') {
         const res = await apiPost("/api/whatsapp/contacts/batch", { contacts: excelContacts });
         finalContacts = res.ids;
+      } else if (dataSource === 'all_opted_in') {
+        finalContacts = [];
       }
 
       // Convert mappings to Meta components structure
@@ -223,7 +226,7 @@ const CreateCampaign = () => {
         components // Added for variables
       };
 
-      return await apiPost("/api/whatsapp/campaigns", payload);
+      return await apiPost("/api/campaigns", payload);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -445,7 +448,13 @@ const CreateCampaign = () => {
           {openSection === "audience" && (
             <Card className="border-none shadow-none bg-muted/20">
               <CardContent className="p-4 pt-0 space-y-4">
-                <RadioGroup value={dataSource} onValueChange={setDataSource} className="grid grid-cols-2 gap-3">
+                <RadioGroup value={dataSource} onValueChange={setDataSource} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Label htmlFor="all_opted_in" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${dataSource === 'all_opted_in' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+                    <RadioGroupItem value="all_opted_in" id="all_opted_in" className="sr-only" />
+                    <Users className="w-5 h-5 text-primary mb-2" />
+                    <p className="font-bold text-xs text-center">All Opted-in</p>
+                    <p className="text-[10px] text-muted-foreground text-center">{optedInContacts.length} contacts</p>
+                  </Label>
                   <Label htmlFor="manual" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${dataSource === 'manual' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
                     <RadioGroupItem value="manual" id="manual" className="sr-only" />
                     <UserPlus className="w-5 h-5 text-primary mb-2" />

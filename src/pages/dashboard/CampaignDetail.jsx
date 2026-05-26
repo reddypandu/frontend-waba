@@ -84,14 +84,14 @@ const CampaignDetail = () => {
 
   const { data: campaign, isLoading, refetch } = useQuery({
     queryKey: ["campaign-detail", user?.id, id],
-    queryFn: () => apiGet(`/api/whatsapp/campaigns/${id}`),
+    queryFn: () => apiGet(`/api/campaigns/${id}`),
     select: (data) => data.campaign,
     enabled: !!user && !!id,
   });
 
   const { data: statsData, refetch: refetchStats } = useQuery({
     queryKey: ["campaign-stats", user?.id, id],
-    queryFn: () => apiGet(`/api/whatsapp/campaigns/${id}/stats`),
+    queryFn: () => apiGet(`/api/campaigns/${id}/stats`),
     enabled: !!user && !!id,
     refetchInterval: (c) => (campaign?.status === 'running' ? 3000 : false),
   });
@@ -115,7 +115,7 @@ const CampaignDetail = () => {
 
   // Go Live send mutation
   const goLiveMutation = useMutation({
-    mutationFn: () => apiPost(`/api/whatsapp/campaigns/${id}/send`),
+    mutationFn: () => apiPost(`/api/campaigns/${id}/send`),
     onSuccess: () => {
       toast({ title: "Campaign is Live!", description: "Messages are being sent." });
       setSearchParams({}, { replace: true });
@@ -131,7 +131,7 @@ const CampaignDetail = () => {
 
   // Retarget mutation - resend to failed contacts
   const retargetMutation = useMutation({
-    mutationFn: () => apiPost(`/api/whatsapp/campaigns/${id}/retarget`),
+    mutationFn: () => apiPost(`/api/campaigns/${id}/retarget`),
     onSuccess: (data) => {
       toast({ title: `Retargeting ${data.sent} failed contact(s)...` });
       setShowRetargetConfirm(false);

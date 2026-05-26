@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5005";
+export const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5005";
 
 export async function apiPost(path, body) {
   const token = localStorage.getItem("token");

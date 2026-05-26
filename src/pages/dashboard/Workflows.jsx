@@ -33,12 +33,15 @@ const Workflows = () => {
 
   const { data: workflows = [], isLoading } = useQuery({
     queryKey: ["workflows", user?.id],
-    queryFn: () => apiGet("/api/admin/workflows"),
+    queryFn: async () => {
+      const data = await apiGet("/api/automation/workflows");
+      return data.workflows || [];
+    },
     enabled: !!user,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => apiPost("/api/admin/workflows", { ...data, actions: [{ type: "send_message", message: "" }] }),
+    mutationFn: (data) => apiPost("/api/automation/workflows", { ...data, actions: [{ type: "send_message", message: "" }] }),
     onSuccess: () => {
       toast({ title: "Workflow created!" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
@@ -48,7 +51,7 @@ const Workflows = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }) => apiPut(`/api/admin/workflows/${id}`, data),
+    mutationFn: ({ id, ...data }) => apiPut(`/api/automation/workflows/${id}`, data),
     onSuccess: () => {
       toast({ title: "Workflow updated!" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
@@ -57,12 +60,12 @@ const Workflows = () => {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) => apiPut(`/api/admin/workflows/${id}`, { is_active }),
+    mutationFn: ({ id, is_active }) => apiPut(`/api/automation/workflows/${id}`, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => apiDelete(`/api/admin/workflows/${id}`),
+    mutationFn: (id) => apiDelete(`/api/automation/workflows/${id}`),
     onSuccess: () => {
       toast({ title: "Workflow deleted" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
@@ -87,7 +90,7 @@ const Workflows = () => {
       return;
     }
     if (editItem) {
-      updateMutation.mutate({ id: editItem.id, ...form });
+      updateMutation.mutate({ id: editItem._id, ...form });
     } else {
       createMutation.mutate(form);
     }
@@ -185,7 +188,7 @@ const Workflows = () => {
           {workflows.map((wf) => {
             const TriggerIcon = TRIGGER_ICONS[wf.trigger_type] || Zap;
             return (
-              <Card key={wf.id} className={`shadow-sm transition-all ${!wf.is_active ? "opacity-60" : ""}`}>
+              <Card key={wf._id} className={`shadow-sm transition-all ${!wf.is_active ? "opacity-60" : ""}`}>
                 <CardContent className="p-4 flex items-start sm:items-center gap-4 justify-between flex-wrap">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -211,12 +214,12 @@ const Workflows = () => {
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={!!wf.is_active}
-                      onCheckedChange={(checked) => toggleMutation.mutate({ id: wf.id, is_active: checked ? 1 : 0 })}
+                      onCheckedChange={(checked) => toggleMutation.mutate({ id: wf._id, is_active: checked })}
                     />
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleEdit(wf)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(wf.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(wf._id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

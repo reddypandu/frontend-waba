@@ -5,6 +5,7 @@ import ChatbotWidget from "@/components/landing/ChatbotWidget";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -60,7 +61,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<ProtectedRoute><SocketProvider><DashboardLayout /></SocketProvider></ProtectedRoute>}>
               <Route index element={<DashboardOverview />} />
               <Route path="whatsapp-setup" element={<WhatsAppSetup />} />
               <Route path="business-profile" element={<BusinessProfile />} />

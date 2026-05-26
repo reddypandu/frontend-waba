@@ -9,19 +9,31 @@ const DashboardHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const initial = user?.user_metadata?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
+  const initial =
+    user?.user_metadata?.full_name?.[0]?.toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "U";
 
   // Simplified balance for now, we'll reconnect query logic later if needed
   const balance = 0;
 
   return (
     <>
-      <header className="h-16 border-b border-border/60 flex items-center justify-between px-6 shrink-0"
-        style={{ background: "hsl(var(--card) / 0.8)", backdropFilter: "blur(12px)" }}>
-
+      <header
+        className="h-16 border-b border-border/60 flex items-center justify-between px-6 shrink-0"
+        style={{
+          background: "hsl(var(--card) / 0.8)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
         {/* Left side */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="h-5 w-5" />
           </Button>
 
@@ -29,19 +41,21 @@ const DashboardHeader = () => {
           <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 border border-border/50 text-muted-foreground w-56 cursor-pointer hover:bg-secondary transition-colors">
             <Search className="h-4 w-4" />
             <span className="text-sm">Search...</span>
-            <span className="ml-auto text-xs bg-secondary rounded px-1.5 py-0.5 border border-border/40">⌘K</span>
+            <span className="ml-auto text-xs bg-secondary rounded px-1.5 py-0.5 border border-border/40">
+              ⌘K
+            </span>
           </div>
         </div>
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => navigate("/dashboard/designs")}
             className="h-10 px-5 rounded-xl font-semibold border-primary/30 text-primary hover:bg-primary/10"
           >
             <Palette className="h-4 w-4" />
-          </Button>
+          </Button> */}
           {/* Wallet badge */}
           {/* <Button
             variant="outline"

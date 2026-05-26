@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, apiDelete } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +45,7 @@ const Campaigns = () => {
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ["campaigns", user?.id],
     queryFn: async () => {
-      const data = await apiGet("/api/whatsapp/campaigns");
+      const data = await apiGet("/api/campaigns");
       return data.campaigns || [];
     },
     enabled: !!user,
@@ -68,7 +68,7 @@ const Campaigns = () => {
       const statsMap = {};
       for (const cid of campaignIds) {
         try {
-          const stats = await apiGet(`/api/whatsapp/campaigns/${cid}/stats`);
+          const stats = await apiGet(`/api/campaigns/${cid}/stats`);
           if (stats) statsMap[cid] = stats;
         } catch (e) { console.error("Stats fail for", cid, e); }
       }
@@ -81,7 +81,7 @@ const Campaigns = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       // Assuming a generic delete or an action
-      await apiPost("/api/whatsapp", { action: "delete_campaign", id });
+      await apiDelete(`/api/campaigns/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -92,7 +92,7 @@ const Campaigns = () => {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
-      await apiPost(`/api/whatsapp/campaigns/${id}/status`, { status });
+      await apiPost(`/api/campaigns/${id}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -154,7 +154,7 @@ const Campaigns = () => {
             </TableHeader>
             <TableBody>
               {campaigns.map((c) => {
-                const stats = c.stats || { sent: 0, delivered: 0, read: 0 };
+                const stats = allStats[c._id] || c.stats || { sent: 0, delivered: 0, read: 0 };
                 return (
                   <TableRow
                     key={c._id}
