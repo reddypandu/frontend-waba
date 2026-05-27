@@ -61,7 +61,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/dashboard" element={<ProtectedRoute><SocketProvider><DashboardLayout /></SocketProvider></ProtectedRoute>}>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <SocketProvider>
+                    <DashboardLayout />
+                  </SocketProvider>
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<DashboardOverview />} />
               <Route path="whatsapp-setup" element={<WhatsAppSetup />} />
               <Route path="business-profile" element={<BusinessProfile />} />
