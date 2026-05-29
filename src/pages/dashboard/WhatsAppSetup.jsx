@@ -249,7 +249,7 @@ const WhatsAppSetup = () => {
         </div>
 
         {/* Registration Status Card - Connected */}
-        {["connected", "already_registered"].includes(registrationStatus) ? (
+        {["connected", "already_registered", "test_number"].includes(registrationStatus) ? (
           <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-card shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -262,10 +262,12 @@ const WhatsAppSetup = () => {
                       <h3 className="text-lg font-bold text-foreground">
                         {registrationStatus === "already_registered"
                           ? "Already Registered"
-                          : "WhatsApp Connected"}
+                          : registrationStatus === "test_number"
+                            ? "Test Number Connected"
+                            : "WhatsApp Connected"}
                       </h3>
                       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold">
-                        LIVE
+                        {registrationStatus === "test_number" ? "TEST MODE" : "LIVE"}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
@@ -369,7 +371,7 @@ const WhatsAppSetup = () => {
               </div>
             </CardContent>
           </Card>
-        ) : ["pending", "test_number_pending", "test_number"].includes(registrationStatus) ? (
+        ) : ["pending", "test_number_pending"].includes(registrationStatus) ? (
           // Registration Pending
           <Card className="border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-card shadow-sm">
             <CardContent className="p-6">
