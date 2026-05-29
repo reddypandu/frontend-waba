@@ -46,6 +46,7 @@ const WhatsAppSetup = () => {
   });
   const [saving, setSaving] = React.useState(false);
   const [isRetrying, setIsRetrying] = React.useState(false);
+  const [isSyncingStatus, setIsSyncingStatus] = React.useState(false);
 
   const {
     data: dashData,
@@ -63,6 +64,12 @@ const WhatsAppSetup = () => {
   const isConnected = !!waAccount?.phone_number_id;
   const isStep3Visible =
     dashboardStatus === "connected" || dashboardStatus === "sandbox";
+  const displayPhoneNumber =
+    waAccount?.phone_number ||
+    waAccount?.display_phone_number ||
+    waAccount?.displayPhoneNumber ||
+    "";
+  const waMeNumber = displayPhoneNumber.replace(/\D/g, "");
 
   // Get current registration status
   const getRegistrationStatus = () => {
@@ -79,6 +86,25 @@ const WhatsAppSetup = () => {
   };
 
   const registrationStatus = getRegistrationStatus();
+
+  const handleRefreshStatus = async () => {
+    setIsSyncingStatus(true);
+    try {
+      if (waAccount?.phone_number_id) {
+        await apiGet("/api/admin/whatsapp-status/sync");
+      }
+      await refetch();
+    } catch (err) {
+      await refetch();
+      toast({
+        title: "Could not sync from Meta",
+        description: err.message || "Showing the latest saved account details.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncingStatus(false);
+    }
+  };
 
   // Retry registration mutation
   const retryRegistrationMutation = useMutation({
@@ -181,10 +207,14 @@ const WhatsAppSetup = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={handleRefreshStatus}
+            disabled={isSyncingStatus}
             className="rounded-xl"
           >
-            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isSyncingStatus ? "animate-spin" : ""}`}
+            />{" "}
+            Refresh
           </Button>
         </div>
 
@@ -207,7 +237,7 @@ const WhatsAppSetup = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
-                      {waAccount?.phone_number || "Number registered"}
+                      {displayPhoneNumber || "Number registered"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Status:{" "}
@@ -257,7 +287,7 @@ const WhatsAppSetup = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
-                      {waAccount?.phone_number || "Number not registered"}
+                      {displayPhoneNumber || "Number not registered"}
                     </p>
                     <p className="text-xs text-red-600 mt-1 font-semibold break-words">
                       {waAccount?.registration_error ||
@@ -322,7 +352,7 @@ const WhatsAppSetup = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
-                      {waAccount?.phone_number || "Number not yet registered"}
+                      {displayPhoneNumber || "Number not yet registered"}
                     </p>
                     <p className="text-xs text-amber-600 mt-1 font-semibold">
                       Your phone number is awaiting registration with Meta. This
@@ -333,11 +363,15 @@ const WhatsAppSetup = () => {
                 </div>
                 <div className="flex gap-2 flex-wrap shrink-0">
                   <Button
-                    onClick={() => refetch()}
+                    onClick={handleRefreshStatus}
+                    disabled={isSyncingStatus}
                     size="sm"
                     className="rounded-xl"
                   >
-                    <RefreshCw className="h-4 w-4 mr-1.5" /> Check Status
+                    <RefreshCw
+                      className={`h-4 w-4 mr-1.5 ${isSyncingStatus ? "animate-spin" : ""}`}
+                    />{" "}
+                    Check Status
                   </Button>
                   <Button
                     onClick={() => retryRegistrationMutation.mutate()}
@@ -382,12 +416,16 @@ const WhatsAppSetup = () => {
                   </div>
                 </div>
                 <Button
-                  onClick={() => refetch()}
+                  onClick={handleRefreshStatus}
+                  disabled={isSyncingStatus}
                   variant="outline"
                   size="sm"
                   className="rounded-xl"
                 >
-                  <RefreshCw className="h-4 w-4 mr-1.5" /> Refresh
+                  <RefreshCw
+                    className={`h-4 w-4 mr-1.5 ${isSyncingStatus ? "animate-spin" : ""}`}
+                  />{" "}
+                  Refresh
                 </Button>
               </div>
             </CardContent>
@@ -482,7 +520,7 @@ const WhatsAppSetup = () => {
         )}
 
         {/* Branding & QR Code (For Users) */}
-        {isStep3Visible && registrationStatus === "connected" && (
+        {isStep3Visible && registrationStatus === "connected" && waMeNumber && (
           <Card className="shadow-sm border-border/50 bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base text-primary">
@@ -493,7 +531,7 @@ const WhatsAppSetup = () => {
             <CardContent className="flex flex-col items-center text-center space-y-4">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent("https://wa.me/" + (waAccount?.phone_number || "").replace(/\D/g, ""))}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent("https://wa.me/" + waMeNumber)}`}
                   alt="WhatsApp QR"
                   className="w-32 h-32"
                 />
@@ -511,7 +549,7 @@ const WhatsAppSetup = () => {
                 size="sm"
                 onClick={() =>
                   window.open(
-                    `https://wa.me/${(waAccount?.phone_number || "").replace(/\D/g, "")}`,
+                    `https://wa.me/${waMeNumber}`,
                     "_blank",
                   )
                 }
