@@ -54,9 +54,29 @@ const WhatsAppSetup = () => {
     refetch,
   } = useQuery({
     queryKey: ["wa-setup-status", user?.id],
-    queryFn: () => apiGet("/api/admin/me"),
+    queryFn: async () => {
+      const data = await apiGet("/api/admin/me");
+      const shouldSync =
+        data?.waAccount?.phone_number_id &&
+        !data?.waAccount?.was_messaging &&
+        data?.dashboardStatus !== "connected";
+
+      if (!shouldSync) return data;
+
+      try {
+        await apiGet("/api/admin/whatsapp-status/sync");
+        return await apiGet("/api/admin/me");
+      } catch {
+        return data;
+      }
+    },
     enabled: !!user,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds to catch registration changes
+    refetchInterval: (query) => {
+      const status = query.state.data?.dashboardStatus;
+      return ["registration_pending", "test_number_pending", "action_required"].includes(status)
+        ? 10000
+        : false;
+    },
   });
 
   const waAccount = dashData?.waAccount || null;
@@ -71,18 +91,25 @@ const WhatsAppSetup = () => {
     "";
   const waMeNumber = displayPhoneNumber.replace(/\D/g, "");
 
-  // Get current registration status
   const getRegistrationStatus = () => {
     if (!waAccount) return null;
 
     const meta_wa_status = waAccount.meta_wa_status || "pending";
     const registration_error = waAccount.registration_error;
+    const isTestNumber = waAccount.is_meta_test_number;
+    const wasMessaging = waAccount.was_messaging;
 
-    if (meta_wa_status === "connected") return "connected";
-    if (meta_wa_status === "action_required" && registration_error)
-      return "failed";
-    if (meta_wa_status === "pending") return "pending";
-    return "unknown";
+    if (wasMessaging) return "already_registered";
+    if (dashboardStatus === "connected") return "connected";
+    if (meta_wa_status === "connected") return "already_registered";
+    if (dashboardStatus === "test_number_pending") return "test_number_pending";
+    if (dashboardStatus === "test_number" || isTestNumber) return "test_number";
+    if (dashboardStatus === "registration_failed" || registration_error) return "failed";
+    if (dashboardStatus === "action_required" || meta_wa_status === "action_required")
+      return "action_required";
+    if (dashboardStatus === "registration_pending" || meta_wa_status === "pending")
+      return "pending";
+    return "action_required";
   };
 
   const registrationStatus = getRegistrationStatus();
@@ -111,7 +138,10 @@ const WhatsAppSetup = () => {
     mutationFn: async () => {
       setIsRetrying(true);
       try {
-        const res = await apiPost("/api/whatsapp/retry-register", {});
+        const endpoint = waAccount?._id
+          ? `/api/whatsapp/retry-register/${waAccount._id}`
+          : "/api/whatsapp/retry-register";
+        const res = await apiPost(endpoint, {});
         return res;
       } finally {
         setIsRetrying(false);
@@ -120,9 +150,9 @@ const WhatsAppSetup = () => {
     onSuccess: (data) => {
       toast({
         title: "✓ Registration successful!",
-        description: "Your phone number is now registered with Meta.",
+        description:
+          data?.message || "Meta registration status has been refreshed.",
       });
-      // Refetch status
       setTimeout(() => refetch(), 1000);
     },
     onError: (err) => {
@@ -219,7 +249,7 @@ const WhatsAppSetup = () => {
         </div>
 
         {/* Registration Status Card - Connected */}
-        {registrationStatus === "connected" ? (
+        {["connected", "already_registered"].includes(registrationStatus) ? (
           <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-card shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -230,7 +260,9 @@ const WhatsAppSetup = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-foreground">
-                        WhatsApp Connected
+                        {registrationStatus === "already_registered"
+                          ? "Already Registered"
+                          : "WhatsApp Connected"}
                       </h3>
                       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold">
                         LIVE
@@ -242,7 +274,9 @@ const WhatsAppSetup = () => {
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Status:{" "}
                       <span className="font-bold capitalize text-emerald-600">
-                        Connected & Verified
+                        {registrationStatus === "already_registered"
+                          ? "Already registered with Meta"
+                          : "Connected & Verified"}
                       </span>
                     </p>
                   </div>
@@ -268,7 +302,7 @@ const WhatsAppSetup = () => {
               </div>
             </CardContent>
           </Card>
-        ) : registrationStatus === "failed" ? (
+        ) : ["failed", "action_required"].includes(registrationStatus) ? (
           // Registration Failed
           <Card className="border-red-500/30 bg-gradient-to-br from-red-50/50 to-card shadow-sm">
             <CardContent className="p-6">
@@ -280,7 +314,9 @@ const WhatsAppSetup = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-foreground">
-                        Registration Failed
+                        {registrationStatus === "action_required"
+                          ? "Action Required"
+                          : "Registration Failed"}
                       </h3>
                       <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] font-bold">
                         ACTION REQUIRED
@@ -291,7 +327,7 @@ const WhatsAppSetup = () => {
                     </p>
                     <p className="text-xs text-red-600 mt-1 font-semibold break-words">
                       {waAccount?.registration_error ||
-                        "Registration with Meta API failed. Please try again."}
+                        "Meta needs an extra action before this number can send messages."}
                     </p>
                     {waAccount?.last_registration_attempt && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -333,7 +369,7 @@ const WhatsAppSetup = () => {
               </div>
             </CardContent>
           </Card>
-        ) : registrationStatus === "pending" ? (
+        ) : ["pending", "test_number_pending", "test_number"].includes(registrationStatus) ? (
           // Registration Pending
           <Card className="border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-card shadow-sm">
             <CardContent className="p-6">
@@ -345,7 +381,11 @@ const WhatsAppSetup = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-foreground">
-                        Registration Pending
+                        {registrationStatus === "test_number_pending"
+                          ? "Test Number Pending"
+                          : registrationStatus === "test_number"
+                            ? "Test Number"
+                            : "Registration Pending"}
                       </h3>
                       <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-bold">
                         IN PROGRESS
@@ -355,9 +395,11 @@ const WhatsAppSetup = () => {
                       {displayPhoneNumber || "Number not yet registered"}
                     </p>
                     <p className="text-xs text-amber-600 mt-1 font-semibold">
-                      Your phone number is awaiting registration with Meta. This
-                      usually completes within 1-2 minutes. The page will update
-                      automatically.
+                      {registrationStatus === "test_number_pending"
+                        ? "Meta did not complete registration for this temporary test number. Connect a real business number when you are ready to send to customers."
+                        : registrationStatus === "test_number"
+                          ? "This is a Meta temporary test/display number. It is safe for development, but it is not a real customer-sending number."
+                          : "Your phone number is awaiting registration with Meta. This usually completes within 1-2 minutes. The page will update automatically."}
                     </p>
                   </div>
                 </div>
