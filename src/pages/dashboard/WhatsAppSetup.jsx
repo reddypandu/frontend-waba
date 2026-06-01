@@ -33,6 +33,10 @@ import { apiGet, apiPost } from "@/lib/api";
 import AutoConnectFlow from "@/components/dashboard/whatsapp/AutoConnectFlow";
 import { useToast } from "@/hooks/use-toast";
 
+const STATUS_REFRESH_COOLDOWN_MS = 60 * 1000;
+const RETRY_COOLDOWN_MS = 90 * 1000;
+const MAX_STATUS_POLL_MS = 2 * 60 * 1000;
+
 const WhatsAppSetup = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -47,6 +51,14 @@ const WhatsAppSetup = () => {
   const [saving, setSaving] = React.useState(false);
   const [isRetrying, setIsRetrying] = React.useState(false);
   const [isSyncingStatus, setIsSyncingStatus] = React.useState(false);
+  const [statusCooldownUntil, setStatusCooldownUntil] = React.useState(null);
+  const [retryCooldownUntil, setRetryCooldownUntil] = React.useState(null);
+  const pollStartedAtRef = React.useRef(Date.now());
+
+  const statusCooldownActive =
+    statusCooldownUntil && statusCooldownUntil.getTime() > Date.now();
+  const retryCooldownActive =
+    retryCooldownUntil && retryCooldownUntil.getTime() > Date.now();
 
   const {
     data: dashData,
@@ -54,29 +66,25 @@ const WhatsAppSetup = () => {
     refetch,
   } = useQuery({
     queryKey: ["wa-setup-status", user?.id],
-    queryFn: async () => {
-      const data = await apiGet("/api/admin/me");
-      const shouldSync =
-        data?.waAccount?.phone_number_id &&
-        !data?.waAccount?.was_messaging &&
-        data?.dashboardStatus !== "connected";
-
-      if (!shouldSync) return data;
-
-      try {
-        await apiGet("/api/admin/whatsapp-status/sync");
-        return await apiGet("/api/admin/me");
-      } catch {
-        return data;
-      }
-    },
+    queryFn: () => apiGet("/api/admin/me"),
     enabled: !!user,
     refetchInterval: (query) => {
       const status = query.state.data?.dashboardStatus;
-      return ["registration_pending", "test_number_pending", "action_required"].includes(status)
-        ? 10000
-        : false;
+      const hasPhoneNumber = query.state.data?.waAccount?.phone_number;
+      const shouldPoll = [
+        "registration_pending",
+        "test_number_pending",
+      ].includes(status);
+
+      if (!shouldPoll || statusCooldownActive) return false;
+      if (Date.now() - pollStartedAtRef.current > MAX_STATUS_POLL_MS) {
+        return false;
+      }
+
+      // Poll local DB only. Meta sync is explicit and throttled by Check Status.
+      return status === "connected" && !hasPhoneNumber ? 30000 : 15000;
     },
+    staleTime: 30 * 1000,
   });
 
   const waAccount = dashData?.waAccount || null;
@@ -104,10 +112,17 @@ const WhatsAppSetup = () => {
     if (meta_wa_status === "connected") return "already_registered";
     if (dashboardStatus === "test_number_pending") return "test_number_pending";
     if (dashboardStatus === "test_number" || isTestNumber) return "test_number";
-    if (dashboardStatus === "registration_failed" || registration_error) return "failed";
-    if (dashboardStatus === "action_required" || meta_wa_status === "action_required")
+    if (dashboardStatus === "registration_failed" || registration_error)
+      return "failed";
+    if (
+      dashboardStatus === "action_required" ||
+      meta_wa_status === "action_required"
+    )
       return "action_required";
-    if (dashboardStatus === "registration_pending" || meta_wa_status === "pending")
+    if (
+      dashboardStatus === "registration_pending" ||
+      meta_wa_status === "pending"
+    )
       return "pending";
     return "action_required";
   };
@@ -213,6 +228,19 @@ const WhatsAppSetup = () => {
     }
   };
 
+  // Auto-sync phone number if missing on mount or when waAccount changes
+  React.useEffect(() => {
+    if (
+      isConnected &&
+      !displayPhoneNumber &&
+      waAccount?.phone_number_id &&
+      !isSyncingStatus
+    ) {
+      console.log("[WhatsAppSetup] Auto-syncing phone number (missing)");
+      handleRefreshStatus();
+    }
+  }, [isConnected, displayPhoneNumber, waAccount?.phone_number_id]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -249,7 +277,9 @@ const WhatsAppSetup = () => {
         </div>
 
         {/* Registration Status Card - Connected */}
-        {["connected", "already_registered", "test_number"].includes(registrationStatus) ? (
+        {["connected", "already_registered", "test_number"].includes(
+          registrationStatus,
+        ) ? (
           <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-card shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -267,7 +297,9 @@ const WhatsAppSetup = () => {
                             : "WhatsApp Connected"}
                       </h3>
                       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold">
-                        {registrationStatus === "test_number" ? "TEST MODE" : "LIVE"}
+                        {registrationStatus === "test_number"
+                          ? "TEST MODE"
+                          : "LIVE"}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
@@ -478,6 +510,7 @@ const WhatsAppSetup = () => {
 
         {/* Account Details */}
         <div className="grid sm:grid-cols-2 gap-4">
+          <InfoCard label="Phone Number" value={displayPhoneNumber} mono />
           <InfoCard
             label="Phone Number ID"
             value={waAccount?.phone_number_id}
@@ -563,14 +596,20 @@ const WhatsAppSetup = () => {
           </Card>
         )}
 
-        {/* Branding & QR Code (For Users) */}
-        {isStep3Visible && registrationStatus === "connected" && waMeNumber && (
+        {/* Branding & QR Code (For Users) - Show if connected OR has valid phone number after OAuth */}
+        {isConnected && waMeNumber && (
           <Card className="shadow-sm border-border/50 bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base text-primary">
                 <QrCode className="h-4 w-4" />
                 Your WhatsApp Marketing QR
               </CardTitle>
+              <CardDescription>
+                {registrationStatus === "connected" ||
+                registrationStatus === "test_number"
+                  ? "Share this QR code with your customers"
+                  : "QR code will be ready once registration completes"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center text-center space-y-4">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
@@ -582,20 +621,23 @@ const WhatsAppSetup = () => {
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">
-                  Scan to test your connection
+                  {registrationStatus === "connected" ||
+                  registrationStatus === "test_number"
+                    ? "Scan to start chatting"
+                    : "Registration in progress..."}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Share this QR with your customers to start chatting!
+                  {registrationStatus === "connected" ||
+                  registrationStatus === "test_number"
+                    ? "Share this QR with your customers to start chatting!"
+                    : "Your phone number is being registered with WhatsApp. The QR will be active once complete."}
                 </p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  window.open(
-                    `https://wa.me/${waMeNumber}`,
-                    "_blank",
-                  )
+                  window.open(`https://wa.me/${waMeNumber}`, "_blank")
                 }
               >
                 Test wa.me Link
