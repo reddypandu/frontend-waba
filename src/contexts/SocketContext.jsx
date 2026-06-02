@@ -12,6 +12,7 @@ export const SocketProvider = ({ children }) => {
   const socket = useMemo(() => {
     if (!token) return null;
     return io(BASE, {
+      path: "/api/socket.io",
       auth: { token },
       transports: ["websocket", "polling"],
       autoConnect: true,
