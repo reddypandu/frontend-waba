@@ -27,7 +27,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
-import { useSocket } from "@/contexts/SocketContext";
 
 const Inbox = () => {
   const { user } = useAuth();
@@ -35,7 +34,6 @@ const Inbox = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { socket, connected } = useSocket();
   const [selectedConv, setSelectedConv] = React.useState(null);
   const [message, setMessage] = React.useState("");
   const [search, setSearch] = React.useState("");
@@ -55,7 +53,9 @@ const Inbox = () => {
     queryKey: ["conversations", user?.id],
     queryFn: () => apiGet("/api/whatsapp/conversations"),
     enabled: !!user,
-    refetchInterval: connected ? false : 5000,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: contactsData, isLoading: contactsLoading } = useQuery({
@@ -65,6 +65,9 @@ const Inbox = () => {
       return data.contacts || [];
     },
     enabled: !!user,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const conversations = convsData?.conversations || [];
@@ -187,94 +190,48 @@ const Inbox = () => {
     }
   }, [searchParams, conversations]);
 
+  const selectedConvData = React.useMemo(() => {
+    if (selectedConv === "new")
+      return {
+        _id: "new",
+        phone_number: newChatPhone,
+        contact_id: { name: "New Chat", phone_number: newChatPhone },
+      };
+    if (selectedConv?.startsWith("contact-")) {
+      const c = contacts.find((con) => `contact-${con._id}` === selectedConv);
+      return {
+        _id: selectedConv,
+        phone_number: c?.phone_number,
+        contact_id: c,
+      };
+    }
+    return conversations.find((c) => c._id === selectedConv);
+  }, [selectedConv, conversations, contacts, newChatPhone]);
+
+  const selectedConversationId = React.useMemo(() => {
+    if (!selectedConv || selectedConv === "new") return null;
+    if (selectedConv.startsWith("contact-")) {
+      const contactId = selectedConv.replace("contact-", "");
+      const matched = conversations.find(
+        (conv) =>
+          String(conv.contact_id?._id) === contactId ||
+          conv.phone_number === selectedConvData?.phone_number,
+      );
+      return matched?._id || null;
+    }
+    return selectedConv;
+  }, [selectedConv, conversations, selectedConvData?.phone_number]);
+
   const { data: msgsData, isLoading: msgsLoading } = useQuery({
-    queryKey: ["messages", user?.id, selectedConv],
-    queryFn: () => {
-      if (
-        !selectedConv ||
-        selectedConv === "new" ||
-        selectedConv.startsWith("contact-")
-      )
-        return { messages: [] };
-      return apiGet(`/api/whatsapp/messages/${selectedConv}`);
-    },
-    enabled:
-      !!user &&
-      !!selectedConv &&
-      selectedConv !== "new" &&
-      !selectedConv.startsWith("contact-"),
-    refetchInterval: connected ? false : 3000,
+    queryKey: ["messages", user?.id, selectedConversationId],
+    queryFn: () => apiGet(`/api/whatsapp/messages/${selectedConversationId}`),
+    enabled: !!user && !!selectedConversationId,
+    refetchInterval: 2000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const messages = msgsData?.messages || [];
-
-  React.useEffect(() => {
-    if (!socket || !user) return undefined;
-
-    const upsertConversation = (conversation, contact) => {
-      queryClient.setQueryData(["conversations", user.id], (old) => {
-        if (!old?.conversations || !conversation?._id) return old;
-        const enriched = {
-          ...conversation,
-          contact_id: conversation.contact_id?.name
-            ? conversation.contact_id
-            : contact || conversation.contact_id,
-          isConv: true,
-        };
-        const withoutCurrent = old.conversations.filter(
-          (c) => c._id !== enriched._id,
-        );
-        return { ...old, conversations: [enriched, ...withoutCurrent] };
-      });
-    };
-
-    const handleNewMessage = ({ message: incoming, conversation, contact }) => {
-      if (!incoming) return;
-      upsertConversation(conversation, contact);
-      appendMessagesCache(incoming.conversation_id, incoming);
-      queryClient.invalidateQueries({ queryKey: ["contacts", user.id] });
-
-      if (
-        selectedConv === "new" &&
-        newChatPhone === conversation.phone_number
-      ) {
-        setSelectedConv(conversation._id);
-      }
-      if (selectedConv?.startsWith("contact-") && contact?._id) {
-        const contactId = selectedConv.replace("contact-", "");
-        if (String(contact._id) === contactId) {
-          setSelectedConv(conversation._id);
-        }
-      }
-    };
-
-    const handleMessageStatus = ({ message_id, status, error_details }) => {
-      queryClient.setQueriesData({ queryKey: ["messages", user.id] }, (old) => {
-        if (!old?.messages) return old;
-        return {
-          ...old,
-          messages: old.messages.map((msg) =>
-            msg._id === message_id ? { ...msg, status, error_details } : msg,
-          ),
-        };
-      });
-    };
-
-    socket.on("new_message", handleNewMessage);
-    socket.on("message_status", handleMessageStatus);
-
-    return () => {
-      socket.off("new_message", handleNewMessage);
-      socket.off("message_status", handleMessageStatus);
-    };
-  }, [
-    socket,
-    user,
-    queryClient,
-    selectedConv,
-    newChatPhone,
-    appendMessagesCache,
-  ]);
 
   React.useLayoutEffect(() => {
     if (!selectedConv || msgsLoading) return;
@@ -335,23 +292,54 @@ const Inbox = () => {
     },
   });
 
-  const selectedConvData = React.useMemo(() => {
-    if (selectedConv === "new")
-      return {
-        _id: "new",
-        phone_number: newChatPhone,
-        contact_id: { name: "New Chat", phone_number: newChatPhone },
-      };
-    if (selectedConv?.startsWith("contact-")) {
-      const c = contacts.find((con) => `contact-${con._id}` === selectedConv);
-      return {
-        _id: selectedConv,
-        phone_number: c?.phone_number,
-        contact_id: c,
-      };
+  React.useEffect(() => {
+    if (!selectedConv || !conversations.length) return;
+
+    if (selectedConv === "new" && newChatPhone) {
+      const matched = conversations.find(
+        (conv) =>
+          conv.phone_number === newChatPhone ||
+          conv.contact_id?.phone_number === newChatPhone,
+      );
+      if (matched) {
+        setSelectedConv(matched._id);
+        setNewChatPhone(null);
+      }
+      return;
     }
-    return conversations.find((c) => c._id === selectedConv);
-  }, [selectedConv, conversations, contacts, newChatPhone]);
+
+    if (selectedConv?.startsWith("contact-")) {
+      const contactId = selectedConv.replace("contact-", "");
+      const matched = conversations.find(
+        (conv) =>
+          String(conv.contact_id?._id) === contactId ||
+          conv.phone_number === selectedConvData?.phone_number,
+      );
+      if (matched) {
+        setSelectedConv(matched._id);
+      }
+    }
+  }, [
+    conversations,
+    selectedConv,
+    newChatPhone,
+    selectedConvData?.phone_number,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      !user ||
+      !selectedConv ||
+      selectedConv === "new" ||
+      selectedConversationId
+    ) {
+      return;
+    }
+
+    if (selectedConv.startsWith("contact-")) {
+      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+    }
+  }, [user, selectedConv, selectedConversationId, queryClient, user?.id]);
 
   const handleSendTemplate = (tpl, mappings = {}) => {
     setSendingTemplate(true);
@@ -718,10 +706,12 @@ const Inbox = () => {
                   ?.toUpperCase()}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">
-                  {selectedConvData.contact_id?.name ||
-                    selectedConvData.phone_number}
-                </h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-foreground">
+                    {selectedConvData.contact_id?.name ||
+                      selectedConvData.phone_number}
+                  </h3>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {selectedConvData.contact_id?.phone_number ||
                     selectedConvData.phone_number}

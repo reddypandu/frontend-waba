@@ -1,4 +1,48 @@
-export const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5005";
+const runtimeOrigin =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "http://localhost:5005";
+
+const isLocalhostUrl = (url) =>
+  typeof url === "string" &&
+  /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/.test(url);
+
+const normalizeBaseUrl = (value) => {
+  if (typeof value !== "string" || !value.trim()) return value;
+  const trimmed = value.trim();
+  if (trimmed.startsWith(":")) return `http://localhost${trimmed}`;
+  if (/^\d+$/.test(trimmed)) return `http://localhost:${trimmed}`;
+  if (trimmed.startsWith("//")) {
+    return `${window.location.protocol}${trimmed}`;
+  }
+  return trimmed.replace(/\/$/, "");
+};
+
+let baseUrl =
+  normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) ||
+  (import.meta.env.MODE === "production"
+    ? runtimeOrigin
+    : "http://localhost:5005");
+
+if (
+  typeof window !== "undefined" &&
+  isLocalhostUrl(baseUrl) &&
+  !isLocalhostUrl(runtimeOrigin)
+) {
+  console.warn(
+    "[API] Overriding localhost BASE with page origin:",
+    baseUrl,
+    "=>",
+    runtimeOrigin,
+  );
+  baseUrl = runtimeOrigin;
+}
+
+if (typeof window !== "undefined") {
+  console.log("[API] Using BASE URL:", baseUrl);
+}
+
+export const BASE = baseUrl;
 
 export async function apiPost(path, body) {
   const token = localStorage.getItem("token");

@@ -5,7 +5,6 @@ import ChatbotWidget from "@/components/landing/ChatbotWidget";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { SocketProvider } from "@/contexts/SocketContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -65,9 +64,7 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <SocketProvider>
-                    <DashboardLayout />
-                  </SocketProvider>
+                  <DashboardLayout />
                 </ProtectedRoute>
               }
             >
