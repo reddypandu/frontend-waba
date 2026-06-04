@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Receipt,
   Palette,
+  Key,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
@@ -73,6 +74,7 @@ const navGroups = [
       { title: "Invoices", path: "/dashboard/invoices", icon: Receipt },
       { title: "Reports", path: "/dashboard/reports", icon: BarChart3 },
       { title: "Settings", path: "/dashboard/settings", icon: Settings },
+      { title: "API Keys", path: "/dashboard/api-keys", icon: Key },
       { title: "Admin", path: "/dashboard/admin", icon: ShieldCheck },
     ],
   },

@@ -33,6 +33,7 @@ import Workflows from "./pages/dashboard/Workflows";
 import Invoices from "./pages/dashboard/Invoices";
 import Designs from "./pages/dashboard/Designs";
 import DesignEditor from "./pages/dashboard/DesignEditor";
+import ApiKeys from "./pages/dashboard/ApiKeys";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="workflows" element={<Workflows />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="designs" element={<Designs />} />
+              <Route path="api-keys" element={<ApiKeys />} />
             </Route>
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
