@@ -5,54 +5,59 @@ import { Link } from "react-router-dom";
 
 const plans = [
   {
-    name: "Free",
-    price: "₹0",
-    period: "/month",
-    description: "For individuals exploring WhatsApp marketing",
-    features: [
-      "1,000 messages/month",
-      "1 WhatsApp number",
-      "Basic templates",
-      "Contact management",
-      "Email support",
-    ],
-    cta: "Get Started Free",
-    popular: false,
-    gradient: "from-slate-500 to-gray-600",
-  },
-  {
     name: "Starter",
-    price: "₹999",
-    period: "/month",
-    description: "For growing businesses ready to scale",
+    price: "₹24,500",
+    period: "/year",
+    description: "Best for Small Businesses",
     features: [
-      "10,000 messages/month",
-      "2 WhatsApp numbers",
-      "Unlimited templates",
-      "Campaign scheduling",
-      "CSV import",
-      "Analytics dashboard",
-      "Priority support",
+      "1 WhatsApp Number",
+      "3 Team Members",
+      "Unlimited Contacts",
+      "Campaign Broadcasting",
+      "Template Management",
+      "Basic Analytics",
+      "Shared Inbox",
+      "Email Support",
     ],
     cta: "Start Free Trial",
-    popular: true,
+    popular: false,
     gradient: "from-green-500 to-emerald-600",
   },
   {
-    name: "Pro",
-    price: "₹2,999",
-    period: "/month",
-    description: "For high-volume teams and enterprises",
+    name: "Growth",
+    price: "₹30,000",
+    period: "/year",
+    description: "Best for Growing Businesses",
     features: [
-      "Unlimited messages",
-      "5 WhatsApp numbers",
-      "Advanced analytics & reports",
-      "API access & webhooks",
-      "Team collaboration",
-      "AI Auto Replies",
-      "Dedicated account manager",
+      "Everything in Starter",
+      "3 WhatsApp Numbers",
+      "10 Team Members",
+      "Auto Replies",
+      "Campaign Scheduling",
+      "Advanced Analytics",
+      "Contact Segmentation",
+      "Priority Support",
     ],
-    cta: "Contact Sales",
+    cta: "Start Free Trial",
+    popular: true,
+    gradient: "from-blue-500 to-cyan-600",
+  },
+  {
+    name: "Professional",
+    price: "₹35,000",
+    period: "/year",
+    description: "Best for Agencies & Advanced Users",
+    features: [
+      "Everything in Growth",
+      "5 WhatsApp Numbers",
+      "Unlimited Team Members",
+      "Workflow Automation",
+      "Team Inbox Assignment",
+      "API Access",
+      "Custom Branding",
+      "Premium Support",
+    ],
+    cta: "Start Free Trial",
     popular: false,
     gradient: "from-violet-500 to-purple-600",
   },
@@ -60,12 +65,17 @@ const plans = [
 
 const PricingSection = () => {
   return (
-    <section id="pricing" className="relative py-32 bg-muted/30 overflow-hidden">
+    <section
+      id="pricing"
+      className="relative py-32 bg-muted/30 overflow-hidden"
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] blur-3xl opacity-5 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, hsl(93 69% 41%), transparent)" }}
+        style={{
+          background: "radial-gradient(ellipse, hsl(93 69% 41%), transparent)",
+        }}
       />
 
       <div className="container mx-auto px-4 relative">
@@ -99,10 +109,11 @@ const PricingSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
-              className={`relative rounded-3xl p-8 border transition-all duration-300 ${plan.popular
-                ? "border-primary bg-card shadow-xl scale-105"
-                : "border-border bg-card/60 hover:border-primary/50"
-                }`}
+              className={`relative rounded-3xl p-8 border transition-all duration-300 ${
+                plan.popular
+                  ? "border-primary bg-card shadow-xl scale-105"
+                  : "border-border bg-card/60 hover:border-primary/50"
+              }`}
             >
               {/* Popular badge */}
               {plan.popular && (
@@ -114,16 +125,28 @@ const PricingSection = () => {
               )}
 
               {/* Plan name & description */}
-              <div className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-4 shadow-lg`}>
-                <span className="text-white font-black text-sm">{plan.name[0]}</span>
+              <div
+                className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-4 shadow-lg`}
+              >
+                <span className="text-white font-black text-sm">
+                  {plan.name[0]}
+                </span>
               </div>
-              <h3 className="text-2xl font-extrabold text-foreground">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1 mb-6">{plan.description}</p>
+              <h3 className="text-2xl font-extrabold text-foreground">
+                {plan.name}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">
+                {plan.description}
+              </p>
 
               {/* Price */}
               <div className="mb-7 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-foreground">{plan.price}</span>
-                <span className="text-muted-foreground text-sm">{plan.period}</span>
+                <span className="text-4xl font-extrabold text-foreground">
+                  {plan.price}
+                </span>
+                <span className="text-muted-foreground text-sm">
+                  {plan.period}
+                </span>
               </div>
 
               {/* CTA */}
@@ -138,7 +161,10 @@ const PricingSection = () => {
               {/* Features */}
               <ul className="space-y-3">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/80">
+                  <li
+                    key={f}
+                    className="flex items-start gap-2.5 text-sm text-foreground/80"
+                  >
                     <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     {f}
                   </li>

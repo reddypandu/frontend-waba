@@ -1,19 +1,60 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageSquare, Users, BarChart3, Zap, Star, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  MessageSquare,
+  Users,
+  BarChart3,
+  Zap,
+  Star,
+  Shield,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 const floatingMessages = [
-  { name: "Priya S.", msg: "Order confirmed 🎉", time: "2m ago", avatar: "P", color: "from-green-500 to-emerald-600" },
-  { name: "Raj M.", msg: "Thanks for the update!", time: "5m ago", avatar: "R", color: "from-blue-500 to-cyan-600" },
-  { name: "Neha K.", msg: "When will it arrive?", time: "8m ago", avatar: "N", color: "from-purple-500 to-pink-600" },
+  {
+    name: "Priya S.",
+    msg: "Order confirmed 🎉",
+    time: "2m ago",
+    avatar: "P",
+    color: "from-green-500 to-emerald-600",
+  },
+  {
+    name: "Raj M.",
+    msg: "Thanks for the update!",
+    time: "5m ago",
+    avatar: "R",
+    color: "from-blue-500 to-cyan-600",
+  },
+  {
+    name: "Neha K.",
+    msg: "When will it arrive?",
+    time: "8m ago",
+    avatar: "N",
+    color: "from-purple-500 to-pink-600",
+  },
 ];
 
 const stats = [
   { icon: Users, value: "....", label: "Businesses", color: "text-green-400" },
-  { icon: MessageSquare, value: "....", label: "Messages Sent", color: "text-blue-400" },
-  { icon: BarChart3, value: "....", label: "Delivery Rate", color: "text-yellow-400" },
-  { icon: Zap, value: "....", label: "Faster Growth", color: "text-purple-400" },
+  {
+    icon: MessageSquare,
+    value: "....",
+    label: "Messages Sent",
+    color: "text-blue-400",
+  },
+  {
+    icon: BarChart3,
+    value: "....",
+    label: "Delivery Rate",
+    color: "text-yellow-400",
+  },
+  {
+    icon: Zap,
+    value: "....",
+    label: "Faster Growth",
+    color: "text-purple-400",
+  },
 ];
 
 const AnimatedDots = () => (
@@ -39,10 +80,18 @@ const HeroSection = () => {
       <div className="absolute inset-0 hero-glow pointer-events-none" />
 
       {/* Glowing orbs */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(circle, hsl(93 69% 41%), transparent)" }} />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full opacity-10 blur-3xl"
-        style={{ background: "radial-gradient(circle, hsl(210 100% 60%), transparent)" }} />
+      <div
+        className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
+        style={{
+          background: "radial-gradient(circle, hsl(93 69% 41%), transparent)",
+        }}
+      />
+      <div
+        className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full opacity-10 blur-3xl"
+        style={{
+          background: "radial-gradient(circle, hsl(210 100% 60%), transparent)",
+        }}
+      />
 
       <div className="container relative mx-auto px-4 py-32 lg:py-40">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -71,11 +120,15 @@ const HeroSection = () => {
               <br />
               <span className="text-gradient">on WhatsApp</span>
               <br />
-              <span className="text-foreground/70 text-4xl md:text-5xl lg:text-6xl">like Never Before</span>
+              <span className="text-foreground/70 text-4xl md:text-5xl lg:text-6xl">
+                like Never Before
+              </span>
             </h1>
 
             <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-lg">
-              Send bulk messages, automate conversations, and track campaigns in real-time — all powered by the official Meta WhatsApp Business API.
+              Send bulk messages, automate conversations, and track campaigns in
+              real-time — all powered by the official Meta WhatsApp Business
+              API.
             </p>
 
             {/* CTA Buttons */}
@@ -86,7 +139,8 @@ const HeroSection = () => {
                 className="text-base px-8 h-14 rounded-xl font-bold shadow-btn hover:shadow-glow hover:scale-105 transition-all duration-200"
               >
                 <Link to="/login">
-                  Start Free — No Card Needed <ArrowRight className="ml-2 h-5 w-5" />
+                  Start Free — No Card Needed{" "}
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button
@@ -95,9 +149,7 @@ const HeroSection = () => {
                 asChild
                 className="text-base px-8 h-14 rounded-xl font-semibold glass-light hover:bg-white/8 transition-all duration-200 border border-white/10"
               >
-                <a href="#features">
-                  See All Features
-                </a>
+                <a href="#features">See All Features</a>
               </Button>
             </div>
 
@@ -105,9 +157,14 @@ const HeroSection = () => {
             <div className="flex items-center gap-6 flex-wrap">
               <div className="flex items-center gap-1.5">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <Star
+                    key={i}
+                    className="w-4 h-4 fill-yellow-400 text-yellow-400"
+                  />
                 ))}
-                <span className="text-sm text-muted-foreground ml-1">4.9/5 rating</span>
+                <span className="text-sm text-muted-foreground ml-1">
+                  4.9/5 rating
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4 text-green-400" />
@@ -132,8 +189,12 @@ const HeroSection = () => {
               {/* Header */}
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <p className="text-xs text-muted-foreground">Campaign Performance</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">Diwali Sale 2025</p>
+                  <p className="text-xs text-muted-foreground">
+                    Campaign Performance
+                  </p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">
+                    Diwali Sale 2025
+                  </p>
                 </div>
                 <div className="badge-primary">Live ●</div>
               </div>
@@ -142,10 +203,17 @@ const HeroSection = () => {
               <div className="grid grid-cols-3 gap-3 mb-5">
                 {[
                   { label: "Sent", value: "12,450", color: "text-blue-400" },
-                  { label: "Delivered", value: "12,201", color: "text-green-400" },
+                  {
+                    label: "Delivered",
+                    value: "12,201",
+                    color: "text-green-400",
+                  },
                   { label: "Read", value: "9,843", color: "text-yellow-400" },
                 ].map((s) => (
-                  <div key={s.label} className="bg-white/5 rounded-xl p-3 text-center">
+                  <div
+                    key={s.label}
+                    className="bg-white/5 rounded-xl p-3 text-center"
+                  >
                     <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-xs text-muted-foreground">{s.label}</p>
                   </div>
@@ -154,7 +222,8 @@ const HeroSection = () => {
 
               {/* Progress bar */}
               <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-                <span>Delivery Rate</span><span className="text-green-400 font-semibold">98.0%</span>
+                <span>Delivery Rate</span>
+                <span className="text-green-400 font-semibold">98.0%</span>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <motion.div
@@ -182,14 +251,22 @@ const HeroSection = () => {
                   animationDelay: `${i * 0.5}s`,
                 }}
               >
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${msg.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
+                <div
+                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${msg.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}
+                >
                   {msg.avatar}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">{msg.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{msg.msg}</p>
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {msg.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {msg.msg}
+                  </p>
                 </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">{msg.time}</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {msg.time}
+                </span>
               </motion.div>
             ))}
           </motion.div>
@@ -211,7 +288,9 @@ const HeroSection = () => {
               className="text-center"
             >
               <s.icon className={`w-5 h-5 ${s.color} mx-auto mb-2`} />
-              <p className={`text-2xl font-extrabold flex items-center justify-center ${s.color}`}>
+              <p
+                className={`text-2xl font-extrabold flex items-center justify-center ${s.color}`}
+              >
                 {s.value === "...." ? <AnimatedDots /> : s.value}
               </p>
               <p className="text-sm text-muted-foreground">{s.label}</p>
