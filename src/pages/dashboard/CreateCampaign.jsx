@@ -53,6 +53,23 @@ const CreateCampaign = () => {
 
   const [completedSections, setCompletedSections] = useState(new Set());
 
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["me", user?.id],
+    queryFn: async () => apiGet("/api/admin/me"),
+    enabled: !!user,
+  });
+
+  const userPlan = profileData?.subscription?.plan || "starter";
+  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
+  const isAdmin = profileData?.user?.role === "admin";
+  const canScheduleCampaign = isAdmin || ["growth", "professional"].includes(normalizedPlan);
+
+  React.useEffect(() => {
+    if (!canScheduleCampaign && scheduleType === "scheduled") {
+      setScheduleType("immediate");
+    }
+  }, [canScheduleCampaign, scheduleType]);
+
   const markComplete = (section) => {
     setCompletedSections(prev => new Set(prev).add(section));
   };
@@ -522,18 +539,30 @@ const CreateCampaign = () => {
           {openSection === "schedule" && (
             <Card className="border-none shadow-none bg-muted/20">
               <CardContent className="p-4 pt-0 space-y-4">
-                <RadioGroup value={scheduleType} onValueChange={setScheduleType} className="grid grid-cols-2 gap-3">
+                <RadioGroup
+                  value={scheduleType}
+                  onValueChange={(value) => {
+                    if (value === 'scheduled' && !canScheduleCampaign) return;
+                    setScheduleType(value);
+                  }}
+                  className="grid grid-cols-2 gap-3"
+                >
                   <Label htmlFor="immediate" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${scheduleType === 'immediate' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
                     <RadioGroupItem value="immediate" id="immediate" className="sr-only" />
                     <Zap className="w-5 h-5 text-amber-500 mb-2" />
                     <p className="font-bold text-xs text-center">Now</p>
                   </Label>
-                  <Label htmlFor="later" className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${scheduleType === 'scheduled' ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
-                    <RadioGroupItem value="scheduled" id="later" className="sr-only" />
+                  <Label htmlFor="later" className={`p-4 rounded-xl border-2 transition-all ${scheduleType === 'scheduled' ? 'border-primary bg-primary/5' : 'border-border bg-card'} ${!canScheduleCampaign ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <RadioGroupItem value="scheduled" id="later" className="sr-only" disabled={!canScheduleCampaign} />
                     <Clock className="w-5 h-5 text-blue-500 mb-2" />
                     <p className="font-bold text-xs text-center">Later</p>
                   </Label>
                 </RadioGroup>
+                {!canScheduleCampaign && (
+                  <p className="text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded-xl p-3">
+                    Campaign scheduling is available on the Growth plan and above. Upgrade in Billing to unlock later delivery.
+                  </p>
+                )}
                 {scheduleType === 'scheduled' && (
                   <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in-95">
                     <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />

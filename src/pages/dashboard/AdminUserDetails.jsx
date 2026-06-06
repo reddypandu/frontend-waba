@@ -109,7 +109,7 @@ const AdminUserDetails = () => {
                 Subscription
               </p>
               <p className="text-lg font-bold text-foreground mt-1 capitalize">
-                {user.subscription?.plan || "free"}
+                {user.role === "admin" ? "admin" : user.subscription?.plan || "starter"}
               </p>
             </div>
             <CreditCard className="w-8 h-8 text-primary/30" />
@@ -274,7 +274,7 @@ const AdminUserDetails = () => {
                       variant="outline"
                       className="capitalize text-base px-3 py-1"
                     >
-                      {user.subscription?.plan || "free"}
+                      {user.role === "admin" ? "admin" : user.subscription?.plan || "starter"}
                     </Badge>
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, GitBranch, Pencil, MessageCircle, Clock, UserPlus, Zap } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
@@ -21,9 +22,26 @@ const TRIGGER_ICONS = {
 
 const Workflows = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = React.useState(false);
+
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+    error: profileErrorObject,
+  } = useQuery({
+    queryKey: ["me", user?.id],
+    queryFn: async () => apiGet("/api/admin/me"),
+    enabled: !!user,
+  });
+
+  const userPlan = profileData?.subscription?.plan ?? "starter";
+  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
+  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role);
+  const canUseWorkflows = isAdminOrManager || normalizedPlan === "professional";
   const [editItem, setEditItem] = React.useState(null);
   const generateId = () => `step_${Math.random().toString(36).substring(2, 9)}`;
   const defaultAction = () => ({
@@ -99,13 +117,13 @@ const Workflows = () => {
     }));
   };
 
-  const { data: workflows = [], isLoading } = useQuery({
+  const { data: workflows = [], isLoading: workflowsLoading } = useQuery({
     queryKey: ["workflows", user?.id],
     queryFn: async () => {
       const data = await apiGet("/api/automation/workflows");
       return data.workflows || [];
     },
-    enabled: !!user,
+    enabled: !!user && !profileLoading && canUseWorkflows,
   });
 
   const createMutation = useMutation({
@@ -115,7 +133,7 @@ const Workflows = () => {
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
       resetForm();
     },
-    onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err) => toast({ title: "Workflow created!", description: err.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -172,6 +190,49 @@ const Workflows = () => {
       createMutation.mutate(form);
     }
   };
+
+  if (!user || profileLoading) {
+    return <div className="text-center text-muted-foreground py-12 animate-pulse">Loading subscription...</div>;
+  }
+
+  if (profileError) {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Unable to load profile</h1>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              There was a problem loading your account information. Please refresh the page or contact support if this continues.
+            </p>
+            <Button onClick={() => window.location.reload()} className="rounded-xl">
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canUseWorkflows) {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-8 text-center">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center">
+              <Zap className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Workflow Automation</h1>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Workflow automation is available on the Professional plan. Upgrade to unlock multi-step journeys, conditional actions, and workflow triggers.
+            </p>
+            <Button onClick={() => navigate('/dashboard/billing')} className="rounded-xl">
+              Upgrade to Professional
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const triggerBadgeColors = {
     keyword_match: "bg-violet-100 text-violet-700 border-violet-200",
@@ -336,7 +397,7 @@ const Workflows = () => {
         </Card>
       )}
 
-      {isLoading ? (
+      {workflowsLoading ? (
         <div className="text-center text-muted-foreground py-12 animate-pulse">Loading workflows...</div>
       ) : (
         <>

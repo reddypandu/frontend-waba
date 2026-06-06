@@ -34,8 +34,13 @@ const Wallet = () => {
     try {
       const orderData = await apiPost("/api/razorpay/create-order", { amount: amt * 100 });
 
+      const razorpayKey = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+      if (!razorpayKey) {
+        throw new Error('Razorpay key missing. Check deployment environment variable VITE_RAZORPAY_KEY_ID.');
+      }
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        key: razorpayKey,
         amount: orderData.amount,
         currency: "INR",
         name: "Connectly Chat",

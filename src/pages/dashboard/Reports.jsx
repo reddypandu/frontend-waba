@@ -6,31 +6,47 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Send, CheckCircle, Eye, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiGet } from "@/lib/api";
 
 const Reports = () => {
   const [dateRange, setDateRange] = React.useState("30");
 
-  const data = [
-    { name: "Mon", sent: 400, delivered: 240, read: 180 },
-    { name: "Tue", sent: 300, delivered: 139, read: 90 },
-    { name: "Wed", sent: 200, delivered: 980, read: 700 },
-    { name: "Thu", sent: 278, delivered: 390, read: 200 },
-    { name: "Fri", sent: 189, delivered: 480, read: 350 },
-    { name: "Sat", sent: 239, delivered: 380, read: 250 },
-    { name: "Sun", sent: 349, delivered: 430, read: 310 },
+  const { user } = useAuth();
+  const { data: profileData, refetch } = useQuery({
+    queryKey: ["reports", user?.id, dateRange],
+    queryFn: async () => apiGet(`/api/admin/me?days=${dateRange}`),
+    enabled: !!user,
+    keepPreviousData: true,
+  });
+
+  const messageStats = profileData?.messageStats || {
+    total: 0,
+    sent: 0,
+    delivered: 0,
+    read: 0,
+    failed: 0,
+  };
+
+  const chartData = profileData?.chartData || [];
+  const deliveredOnly = Math.max(0, messageStats.delivered - messageStats.read);
+  const deliveredRate = messageStats.total
+    ? Math.round((messageStats.delivered / messageStats.total) * 1000) / 10
+    : 0;
+  const readRate = messageStats.total
+    ? Math.round((messageStats.read / messageStats.total) * 1000) / 10
+    : 0;
+
+  const stats = [
+    { title: "Total Sent", value: messageStats.total.toLocaleString(), icon: Send, color: "text-blue-500" },
+    { title: "Delivered", value: `${deliveredRate}%`, icon: CheckCircle, color: "text-green-500" },
+    { title: "Read Rate", value: `${readRate}%`, icon: Eye, color: "text-purple-500" },
+    { title: "Failed", value: messageStats.failed.toLocaleString(), icon: XCircle, color: "text-red-500" },
   ];
 
   const pieData = [
-    { name: "Delivered", value: 1240, color: "#10b981" },
-    { name: "Read", value: 840, color: "#3b82f6" },
-    { name: "Failed", value: 120, color: "#ef4444" },
-  ];
-
-  const stats = [
-    { title: "Total Sent", value: "2,405", icon: Send, color: "text-blue-500" },
-    { title: "Delivered", value: "98.2%", icon: CheckCircle, color: "text-green-500" },
-    { title: "Read Rate", value: "65.4%", icon: Eye, color: "text-purple-500" },
-    { title: "Failed", value: "45", icon: XCircle, color: "text-red-500" },
+    { name: "Delivered", value: deliveredOnly, color: "#10b981" },
+    { name: "Read", value: messageStats.read, color: "#3b82f6" },
+    { name: "Failed", value: messageStats.failed, color: "#ef4444" },
   ];
 
   return (
@@ -51,7 +67,9 @@ const Reports = () => {
               <SelectItem value="90">Last 90 Days</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline"><RefreshCw className="h-4 w-4 mr-2" /> Refresh</Button>
+          <Button variant="outline" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
         </div>
       </div>
 
@@ -74,7 +92,7 @@ const Reports = () => {
           <CardHeader><CardTitle>Volume Trend</CardTitle></CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis />

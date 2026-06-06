@@ -9,26 +9,41 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Zap, Bot, MessageCircle, Pencil } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
 const AutoReplies = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = React.useState(false);
+
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+    error: profileErrorObject,
+  } = useQuery({
+    queryKey: ["me", user?.id],
+    queryFn: async () => apiGet("/api/admin/me"),
+    enabled: !!user,
+  });
+
+  const userPlan = profileData?.subscription?.plan ?? "starter";
+  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
+  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role);
+  const canUseAutoReplies = isAdminOrManager || ["growth", "professional"].includes(normalizedPlan);
   const [editItem, setEditItem] = React.useState(null);
   const [form, setForm] = React.useState({ keyword: "", match_type: "contains", response: "" });
 
-  const { data: rules = [], isLoading } = useQuery({
-    queryKey: ["auto-replies", user?.id],
-    queryFn: async () => {
-      const data = await apiGet("/api/automation/auto-replies");
-      return data.replies || [];
-    },
-    enabled: !!user,
-  });
+  const resetForm = React.useCallback(() => {
+    setForm({ keyword: "", match_type: "contains", response: "" });
+    setEditItem(null);
+    setShowForm(false);
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: (data) => apiPost("/api/automation/auto-replies", data),
@@ -63,19 +78,13 @@ const AutoReplies = () => {
     },
   });
 
-  const resetForm = () => {
-    setForm({ keyword: "", match_type: "contains", response: "" });
-    setEditItem(null);
-    setShowForm(false);
-  };
-
-  const handleEdit = (rule) => {
+  const handleEdit = React.useCallback((rule) => {
     setForm({ keyword: rule.keyword, match_type: rule.match_type, response: rule.response });
     setEditItem(rule);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = React.useCallback(() => {
     if (!form.keyword.trim() || !form.response.trim()) {
       toast({ title: "Keyword and response are required", variant: "destructive" });
       return;
@@ -85,7 +94,59 @@ const AutoReplies = () => {
     } else {
       createMutation.mutate(form);
     }
-  };
+  }, [createMutation, editItem, form, toast, updateMutation]);
+
+  const { data: rules = [], isLoading: rulesLoading } = useQuery({
+    queryKey: ["auto-replies", user?.id],
+    queryFn: async () => {
+      const data = await apiGet("/api/automation/auto-replies");
+      return data.replies || [];
+    },
+    enabled: !!user && !profileLoading && canUseAutoReplies,
+  });
+
+  if (!user || profileLoading) {
+    return <div className="text-center text-muted-foreground py-12 animate-pulse">Loading subscription...</div>;
+  }
+
+  if (profileError) {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Unable to load profile</h1>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              There was a problem loading your account information. Please refresh the page or contact support if this continues.
+            </p>
+            <Button onClick={() => window.location.reload()} className="rounded-xl">
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canUseAutoReplies) {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-8 text-center">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-3xl bg-blue-100 flex items-center justify-center">
+              <Zap className="h-8 w-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Auto Replies</h1>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Auto replies are available on the Growth plan and above. Upgrade to use keyword-based automatic responses.
+            </p>
+            <Button onClick={() => navigate('/dashboard/billing')} className="rounded-xl">
+              Upgrade to Growth
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const matchTypeBadge = {
     exact: "bg-violet-100 text-violet-700 border-violet-200",
@@ -156,7 +217,7 @@ const AutoReplies = () => {
       )}
 
       {/* Rules List */}
-      {isLoading ? (
+      {rulesLoading ? (
         <div className="text-center text-muted-foreground py-12 animate-pulse">Loading rules...</div>
       ) : rules.length === 0 ? (
         <Card className="shadow-sm">

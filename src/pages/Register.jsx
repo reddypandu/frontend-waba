@@ -12,7 +12,7 @@ import Logo from "@/assets/yestickai.png";
 
 const benefits = [
   "14-day free trial, no credit card needed",
-  "Up to 1,000 messages free forever",
+  "Start with a Starter plan trial and upgrade anytime",
   "Setup in under 5 minutes",
   "Official Meta WhatsApp Business API",
 ];
@@ -138,6 +138,9 @@ const Register = () => {
             <p className="text-muted-foreground">
               Already have an account?{" "}
               <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+            </p>
+            <p className="text-sm text-muted-foreground mt-3">
+              Your new account starts on the Starter plan trial so you can launch campaigns, manage templates, and use the shared inbox right away.
             </p>
           </div>
 

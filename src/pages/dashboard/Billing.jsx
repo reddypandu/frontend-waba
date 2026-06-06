@@ -87,7 +87,8 @@ const Billing = () => {
     status: "active",
     messages_used: 0,
   };
-  const currentPlan = subscription.plan || "starter";
+  const normalizePlan = (plan) => (plan === "pro" ? "professional" : plan);
+  const currentPlan = normalizePlan(subscription.plan || "starter");
 
   const handleUpgrade = async (planId) => {
     if (planId === currentPlan) return;
@@ -99,8 +100,13 @@ const Billing = () => {
         amount: plan.price * 100,
       });
 
+      const razorpayKey = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+      if (!razorpayKey) {
+        throw new Error('Razorpay key missing. Check deployment environment variable VITE_RAZORPAY_KEY_ID.');
+      }
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        key: razorpayKey,
         amount: orderData.amount,
         currency: "INR",
         name: "Connectly Chat",
@@ -113,6 +119,7 @@ const Billing = () => {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               plan: planId,
+              amount: orderData.amount,
             });
             toast({ title: `Upgraded to ${plan.name} plan!` });
             window.location.reload();
@@ -154,6 +161,11 @@ const Billing = () => {
         <p className="text-muted-foreground">
           Manage your subscription and upgrade as you grow.
         </p>
+        {currentPlan === 'starter' && (
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+            You are currently on the Starter plan trial. Upgrade anytime to Growth or Professional for more automation, campaigns, and advanced features.
+          </div>
+        )}
       </div>
 
       {/* Current Plan Card */}
