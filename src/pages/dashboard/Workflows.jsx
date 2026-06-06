@@ -338,64 +338,112 @@ const Workflows = () => {
 
       {isLoading ? (
         <div className="text-center text-muted-foreground py-12 animate-pulse">Loading workflows...</div>
-      ) : workflows.length === 0 ? (
-        <Card className="shadow-sm">
-          <CardContent className="py-16 flex flex-col items-center text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <GitBranch className="h-8 w-8 text-primary/50" />
-            </div>
-            <h3 className="font-bold text-foreground">No workflows yet</h3>
-            <p className="text-muted-foreground text-sm max-w-xs">Create automated workflows to send messages, add tags, or take actions based on customer behavior.</p>
-            <Button onClick={() => setShowForm(true)} className="mt-2 rounded-xl">
-              <Plus className="h-4 w-4 mr-2" /> Create First Workflow
-            </Button>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="space-y-3">
-          {workflows.map((wf) => {
-            const TriggerIcon = TRIGGER_ICONS[wf.trigger_type] || Zap;
-            return (
-              <Card key={wf._id} className={`shadow-sm transition-all ${!wf.is_active ? "opacity-60" : ""}`}>
-                <CardContent className="p-4 flex items-start sm:items-center gap-4 justify-between flex-wrap">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <TriggerIcon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-bold text-sm text-foreground">{wf.name}</span>
-                        <Badge variant="outline" className={`text-[10px] capitalize ${triggerBadgeColors[wf.trigger_type]}`}>
-                          {wf.trigger_type.replace(/_/g, ' ')}
-                        </Badge>
-                        {wf.is_active ? (
-                          <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-none">Active</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px]">Paused</Badge>
-                        )}
+        <>
+          {workflows.length === 0 ? (
+            <Card className="shadow-sm">
+              <CardContent className="py-16 flex flex-col items-center text-center space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <GitBranch className="h-8 w-8 text-primary/50" />
+                </div>
+                <h3 className="font-bold text-foreground">No workflows yet</h3>
+                <p className="text-muted-foreground text-sm max-w-xs">Create automated workflows to send messages, add tags, or take actions based on customer behavior.</p>
+                <Button onClick={() => setShowForm(true)} className="mt-2 rounded-xl">
+                  <Plus className="h-4 w-4 mr-2" /> Create First Workflow
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {workflows.map((wf) => {
+                const TriggerIcon = TRIGGER_ICONS[wf.trigger_type] || Zap;
+                return (
+                  <Card key={wf._id} className={`shadow-sm transition-all ${!wf.is_active ? "opacity-60" : ""}`}>
+                    <CardContent className="p-4 flex items-start sm:items-center gap-4 justify-between flex-wrap">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <TriggerIcon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-bold text-sm text-foreground">{wf.name}</span>
+                            <Badge variant="outline" className={`text-[10px] capitalize ${triggerBadgeColors[wf.trigger_type]}`}>
+                              {wf.trigger_type.replace(/_/g, ' ')}
+                            </Badge>
+                            {wf.is_active ? (
+                              <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-none">Active</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">Paused</Badge>
+                            )}
+                          </div>
+                          {wf.trigger_value && (
+                            <p className="text-xs text-muted-foreground">Trigger: <code className="font-mono bg-muted px-1 rounded">{wf.trigger_value}</code></p>
+                          )}
+                        </div>
                       </div>
-                      {wf.trigger_value && (
-                        <p className="text-xs text-muted-foreground">Trigger: <code className="font-mono bg-muted px-1 rounded">{wf.trigger_value}</code></p>
-                      )}
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={!!wf.is_active}
+                          onCheckedChange={(checked) => toggleMutation.mutate({ id: wf._id, is_active: checked })}
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleEdit(wf)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(wf._id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-border">
+            <h3 className="font-bold text-lg mb-4 text-foreground">Coming Soon</h3>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <Card className="border-dashed opacity-60 hover:opacity-80 transition-opacity cursor-not-allowed">
+                <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <div className="h-6 w-6 text-blue-600">📊</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={!!wf.is_active}
-                      onCheckedChange={(checked) => toggleMutation.mutate({ id: wf._id, is_active: checked })}
-                    />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleEdit(wf)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(wf._id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">Workflow Analytics</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Track trigger counts, execution stats, and conversion rates for each workflow.</p>
                   </div>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-300 mt-2 text-[10px]">Coming Soon</Badge>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+
+              <Card className="border-dashed opacity-60 hover:opacity-80 transition-opacity cursor-not-allowed">
+                <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <div className="h-6 w-6 text-purple-600">🎨</div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">Visual Flow Builder</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Drag-and-drop workflow designer with real-time flow visualization.</p>
+                  </div>
+                  <Badge className="bg-purple-100 text-purple-700 border-purple-300 mt-2 text-[10px]">Coming Soon</Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="border-dashed opacity-60 hover:opacity-80 transition-opacity cursor-not-allowed">
+                <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <div className="h-6 w-6 text-emerald-600">⚡</div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">Templates Library</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Pre-built workflow templates for common business scenarios.</p>
+                  </div>
+                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 mt-2 text-[10px]">Coming Soon</Badge>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
