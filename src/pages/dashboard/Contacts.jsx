@@ -160,7 +160,7 @@ const Contacts = () => {
                     id="phone"
                     value={newContact.phone}
                     onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                    placeholder="+91 98765 43210"
+                    placeholder="91 98765 43210"
                     required
                   />
                 </div>

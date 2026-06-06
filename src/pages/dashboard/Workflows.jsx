@@ -25,11 +25,79 @@ const Workflows = () => {
   const { toast } = useToast();
   const [showForm, setShowForm] = React.useState(false);
   const [editItem, setEditItem] = React.useState(null);
+  const generateId = () => `step_${Math.random().toString(36).substring(2, 9)}`;
+  const defaultAction = () => ({
+    id: generateId(),
+    type: "send_text",
+    text: "",
+    buttons: [],
+    next_step: "",
+  });
+
   const [form, setForm] = React.useState({
     name: "",
     trigger_type: "keyword_match",
     trigger_value: "",
+    actions: [defaultAction()],
   });
+
+  const addAction = () => setForm((f) => ({ ...f, actions: [...(f.actions || []), defaultAction()] }));
+  const removeAction = (id) =>
+    setForm((f) => ({ ...f, actions: (f.actions || []).filter((action) => action.id !== id) }));
+  const updateAction = (id, updates) =>
+    setForm((f) => ({
+      ...f,
+      actions: (f.actions || []).map((action) =>
+        action.id === id ? { ...action, ...updates } : action,
+      ),
+    }));
+
+  const addButton = (actionId) => {
+    setForm((f) => ({
+      ...f,
+      actions: (f.actions || []).map((action) =>
+        action.id === actionId
+          ? {
+              ...action,
+              buttons: [
+                ...(action.buttons || []),
+                { id: generateId(), title: "", next_step: "" },
+              ],
+            }
+          : action,
+      ),
+    }));
+  };
+
+  const updateButton = (actionId, index, updates) => {
+    setForm((f) => ({
+      ...f,
+      actions: (f.actions || []).map((action) =>
+        action.id === actionId
+          ? {
+              ...action,
+              buttons: (action.buttons || []).map((button, buttonIndex) =>
+                buttonIndex === index ? { ...button, ...updates } : button,
+              ),
+            }
+          : action,
+      ),
+    }));
+  };
+
+  const removeButton = (actionId, index) => {
+    setForm((f) => ({
+      ...f,
+      actions: (f.actions || []).map((action) =>
+        action.id === actionId
+          ? {
+              ...action,
+              buttons: (action.buttons || []).filter((_, i) => i !== index),
+            }
+          : action,
+      ),
+    }));
+  };
 
   const { data: workflows = [], isLoading } = useQuery({
     queryKey: ["workflows", user?.id],
@@ -41,7 +109,7 @@ const Workflows = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => apiPost("/api/automation/workflows", { ...data, actions: [{ type: "send_message", message: "" }] }),
+    mutationFn: (data) => apiPost("/api/automation/workflows", data),
     onSuccess: () => {
       toast({ title: "Workflow created!" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
@@ -73,13 +141,18 @@ const Workflows = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", trigger_type: "keyword_match", trigger_value: "" });
+    setForm({ name: "", trigger_type: "keyword_match", trigger_value: "", actions: [defaultAction()] });
     setEditItem(null);
     setShowForm(false);
   };
 
   const handleEdit = (wf) => {
-    setForm({ name: wf.name, trigger_type: wf.trigger_type, trigger_value: wf.trigger_value || "" });
+    setForm({
+      name: wf.name,
+      trigger_type: wf.trigger_type,
+      trigger_value: wf.trigger_value || "",
+      actions: wf.actions || [defaultAction()],
+    });
     setEditItem(wf);
     setShowForm(true);
   };
@@ -87,6 +160,10 @@ const Workflows = () => {
   const handleSubmit = () => {
     if (!form.name.trim()) {
       toast({ title: "Workflow name is required", variant: "destructive" });
+      return;
+    }
+    if (!form.actions?.length) {
+      toast({ title: "Add at least one workflow action", variant: "destructive" });
       return;
     }
     if (editItem) {
@@ -155,8 +232,99 @@ const Workflows = () => {
                 />
               </div>
             </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <Label className="font-bold text-sm">Workflow Steps</Label>
+                  <p className="text-xs text-muted-foreground">Build the reply flow using text or interactive buttons.</p>
+                </div>
+                <Button size="sm" onClick={addAction} className="rounded-xl">
+                  <Plus className="mr-2 h-4 w-4" /> Add Step
+                </Button>
+              </div>
+
+              {(form.actions || []).map((action, index) => (
+                <Card key={action.id} className="border border-border bg-muted/50 p-4 rounded-2xl">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <span className="text-sm font-semibold">Step {index + 1}</span>
+                    <Button variant="ghost" size="icon" onClick={() => removeAction(action.id)} className="h-8 w-8 rounded-lg text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-bold text-sm">Action Type</Label>
+                      <Select value={action.type} onValueChange={(value) => updateAction(action.id, { type: value })}>
+                        <SelectTrigger className="h-11 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="send_text">Send Text</SelectItem>
+                          <SelectItem value="send_buttons">Send Buttons</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-sm">Next Step ID</Label>
+                      <Input
+                        placeholder="Optional next step id"
+                        value={action.next_step || ""}
+                        onChange={(e) => updateAction(action.id, { next_step: e.target.value })}
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <Label className="font-bold text-sm">Message Text</Label>
+                    <Input
+                      placeholder="Enter message text"
+                      value={action.text || ""}
+                      onChange={(e) => updateAction(action.id, { text: e.target.value })}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+
+                  {action.type === "send_buttons" && (
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="font-bold text-sm">Buttons</Label>
+                        <Button size="sm" onClick={() => addButton(action.id)} className="rounded-xl">
+                          <Plus className="mr-2 h-4 w-4" /> Add Button
+                        </Button>
+                      </div>
+                      {(action.buttons || []).map((button, buttonIndex) => (
+                        <div key={button.id} className="grid sm:grid-cols-[1fr_1fr_40px] gap-3 items-end">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold">Button Title</Label>
+                            <Input
+                              placeholder="Button label"
+                              value={button.title || ""}
+                              onChange={(e) => updateButton(action.id, buttonIndex, { title: e.target.value })}
+                              className="h-11 rounded-xl"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold">Next Step ID</Label>
+                            <Input
+                              placeholder="Next step id"
+                              value={button.next_step || ""}
+                              onChange={(e) => updateButton(action.id, buttonIndex, { next_step: e.target.value })}
+                              className="h-11 rounded-xl"
+                            />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg text-destructive" onClick={() => removeButton(action.id, buttonIndex)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-              <strong>Note:</strong> Workflow actions (messages, delays, tags) are managed after creation. This creates the workflow trigger.
+              <strong>Note:</strong> For button flows, set the next step IDs on buttons and actions. Leave next step empty to end the workflow.
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={resetForm} className="rounded-xl">Cancel</Button>
