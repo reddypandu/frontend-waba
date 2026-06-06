@@ -169,6 +169,11 @@ const Campaigns = () => {
                       <Badge variant="outline" className={`capitalize text-xs font-semibold ${statusStyles[c.status] || ""}`}>
                         {c.status}
                       </Badge>
+                      {c.status === "scheduled" && c.scheduled_at && (
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          {new Date(c.scheduled_at).toLocaleString("en-GB", { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-center">{c.total_contacts || 0}</TableCell>
                     <TableCell className="text-center font-bold">{stats.sent}</TableCell>
@@ -185,7 +190,7 @@ const Campaigns = () => {
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        {(c.status === "draft" || c.status === "scheduled") && (
+                        {c.status === "draft" && (
                           <Button
                             variant="default"
                             size="sm"
@@ -193,6 +198,16 @@ const Campaigns = () => {
                             onClick={() => navigate(`/dashboard/campaigns/${c._id}?golive=true`)}
                           >
                             <Play className="w-3 h-3 mr-1" /> Go Live
+                          </Button>
+                        )}
+                        {c.status === "scheduled" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => navigate(`/dashboard/campaigns/${c._id}?golive=true`)}
+                          >
+                            <Play className="w-3 h-3 mr-1" /> Force Start
                           </Button>
                         )}
                         {c.status === "running" && (

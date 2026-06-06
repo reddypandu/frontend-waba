@@ -47,6 +47,7 @@ const CreateCampaign = () => {
   const [showTestDialog, setShowTestDialog] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [variableMappings, setVariableMappings] = useState({});
+  const [nameVariables, setNameVariables] = useState({});
   const [requiresFollowUp, setRequiresFollowUp] = useState(false);
   const [interactiveParams, setInteractiveParams] = useState({ header_image_url: "", offer_code: "" });
 
@@ -196,7 +197,10 @@ const CreateCampaign = () => {
         } else if (headerFormat === "TEXT" && headerVars.length > 0) {
           components.push({
             type: "header",
-            parameters: headerVars.map(v => ({ type: "text", text: variableMappings[`h${v}`] || "" }))
+            parameters: headerVars.map(v => ({ 
+              type: "text", 
+              text: nameVariables[`h${v}`] ? `{{name|${variableMappings[`h${v}`] || ""}}}` : (variableMappings[`h${v}`] || "")
+            }))
           });
         }
       }
@@ -207,7 +211,7 @@ const CreateCampaign = () => {
           type: "body",
           parameters: templateVars.map(v => ({
             type: "text",
-            text: variableMappings[v] || ""
+            text: nameVariables[v] ? `{{name|${variableMappings[v] || ""}}}` : (variableMappings[v] || "")
           }))
         });
       }
@@ -217,7 +221,7 @@ const CreateCampaign = () => {
         template_name: selectedTemplate?.name,
         audience_type: dataSource === 'excel' ? 'excel' : 'existing',
         schedule_type: scheduleType === 'scheduled' ? 'later' : 'now',
-        scheduled_at: scheduleType === 'scheduled' ? `${scheduledDate}T${scheduledTime}` : null,
+        scheduled_at: scheduleType === 'scheduled' ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString() : null,
         contacts: finalContacts,
         requires_follow_up: requiresFollowUp,
         interactive_params: (interactiveParams.header_image_url || interactiveParams.offer_code) && !headerFormat 
@@ -285,7 +289,7 @@ const CreateCampaign = () => {
               (headerFormat === "TEXT" && headerVars.some(v => !variableMappings[`h${v}`]))
             }
           >
-            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Go Live"}
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (scheduleType === 'scheduled' ? "Schedule Campaign" : "Go Live")}
           </Button>
         </div>
       </div>
@@ -373,7 +377,7 @@ const CreateCampaign = () => {
                         {headerFormat === "TEXT" && headerVars.length > 0 && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {headerVars.map(v => (
-                              <div key={`h${v}`} className="space-y-1">
+                              <div key={`h${v}`} className="space-y-2">
                                 <Label className="text-[10px]">Header Var {"{{"}{v}{"}}"}</Label>
                                 <Input
                                   placeholder={`Value for h${v}...`}
@@ -381,6 +385,10 @@ const CreateCampaign = () => {
                                   value={variableMappings[`h${v}`] || ""}
                                   onChange={e => setVariableMappings(prev => ({ ...prev, [`h${v}`]: e.target.value }))}
                                 />
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                  <input type="checkbox" className="w-3 h-3 accent-primary" checked={nameVariables[`h${v}`] || false} onChange={e => setNameVariables(prev => ({ ...prev, [`h${v}`]: e.target.checked }))} />
+                                  <span className="text-[9px] text-muted-foreground">Use contact's name if available</span>
+                                </label>
                               </div>
                             ))}
                           </div>
@@ -393,7 +401,7 @@ const CreateCampaign = () => {
                         <p className="text-[10px] font-bold text-primary uppercase">Template Variables</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {templateVars.map(v => (
-                            <div key={v} className="space-y-1">
+                            <div key={v} className="space-y-2">
                               <Label className="text-[10px]">Variable {"{{"}{v}{"}}"}</Label>
                               <Input
                                 placeholder={`Enter value for ${v}...`}
@@ -401,6 +409,10 @@ const CreateCampaign = () => {
                                 value={variableMappings[v] || ""}
                                 onChange={e => setVariableMappings(prev => ({ ...prev, [v]: e.target.value }))}
                               />
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" className="w-3 h-3 accent-primary" checked={nameVariables[v] || false} onChange={e => setNameVariables(prev => ({ ...prev, [v]: e.target.checked }))} />
+                                <span className="text-[9px] text-muted-foreground">Use contact's name if available</span>
+                              </label>
                             </div>
                           ))}
                         </div>
@@ -562,12 +574,18 @@ const CreateCampaign = () => {
                     {headerFormat === 'TEXT' && headerText && (
                       <strong className="block border-b border-border/10 pb-1 mb-1">
                         {headerText.replace(/\{\{(\d+)\}\}/g, (match, p1) => {
-                          return variableMappings[`h${p1}`] || match;
+                          const val = variableMappings[`h${p1}`];
+                          const useName = nameVariables[`h${p1}`];
+                          if (useName) return `[Contact Name or "${val || ""}"]`;
+                          return val || match;
                         })}
                       </strong>
                     )}
                     {(templateBody || "Select a template...").replace(/\{\{(\d+)\}\}/g, (match, p1) => {
-                       return variableMappings[p1] ? <strong key={p1} className="text-primary">{variableMappings[p1]}</strong> : match;
+                       const val = variableMappings[p1];
+                       const useName = nameVariables[p1];
+                       if (useName) return <strong key={p1} className="text-primary">[Contact Name or "{val || ""}"]</strong>;
+                       return val ? <strong key={p1} className="text-primary">{val}</strong> : match;
                     }) || "Select a template to preview your message here..."}
                   </p>
                   <p className="text-[9px] text-muted-foreground text-right mt-1">10:45 AM</p>
@@ -616,7 +634,10 @@ const CreateCampaign = () => {
                           if (templateVars.length > 0) {
                             components.push({
                               type: "body",
-                              parameters: templateVars.map(v => ({ type: "text", text: variableMappings[v] || "" }))
+                              parameters: templateVars.map(v => ({ 
+                                type: "text", 
+                                text: nameVariables[v] ? `{{name|${variableMappings[v] || ""}}}` : (variableMappings[v] || "") 
+                              }))
                             });
                           }
 

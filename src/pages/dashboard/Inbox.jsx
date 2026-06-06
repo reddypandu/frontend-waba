@@ -41,6 +41,7 @@ const Inbox = () => {
 
   const [activeTemplate, setActiveTemplate] = React.useState(null);
   const [templateMappings, setTemplateMappings] = React.useState({});
+  const [nameVariables, setNameVariables] = React.useState({});
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
@@ -393,7 +394,7 @@ const Inbox = () => {
         type: "body",
         parameters: vars.map((v) => ({
           type: "text",
-          text: mappings[v] || "",
+          text: nameVariables[v] ? `{{name|${mappings[v] || ""}}}` : (mappings[v] || ""),
         })),
       });
     }
@@ -500,9 +501,8 @@ const Inbox = () => {
                   {activeTemplate.bodyText.replace(
                     /\{\{(\d+)\}\}/g,
                     (match, p1) => {
-                      return templateMappings[p1]
-                        ? `[${templateMappings[p1]}]`
-                        : match;
+                      const val = nameVariables[p1] ? `{{name|${templateMappings[p1] || ""}}}` : templateMappings[p1];
+                      return val ? `[${val}]` : match;
                     },
                   )}
                 </p>
@@ -551,13 +551,27 @@ const Inbox = () => {
                   ))}
                 {activeTemplate.vars.map((v) => (
                   <div key={v} className="space-y-1.5">
-                    <Label className="text-xs font-bold">
-                      Body Variable {"{{"}
-                      {v}
-                      {"}}"}
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold">
+                        Body Variable {"{{"}
+                        {v}
+                        {"}}"}
+                      </Label>
+                      <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer text-primary">
+                        <input
+                          type="checkbox"
+                          checked={nameVariables[v] || false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setNameVariables(prev => ({ ...prev, [v]: checked }));
+                          }}
+                          className="rounded border-primary/30 text-primary focus:ring-primary/50 w-3 h-3"
+                        />
+                        Use Contact Name
+                      </label>
+                    </div>
                     <Input
-                      placeholder={`Body variable ${v}...`}
+                      placeholder={nameVariables[v] ? `Fallback for {{${v}}} (e.g. User)` : `Body variable ${v}...`}
                       value={templateMappings[v] || ""}
                       onChange={(e) =>
                         setTemplateMappings((prev) => ({
@@ -583,7 +597,7 @@ const Inbox = () => {
                   className="flex-1 rounded-xl font-bold"
                   disabled={
                     sendingTemplate ||
-                    activeTemplate.vars.some((v) => !templateMappings[v]) ||
+                    activeTemplate.vars.some((v) => !nameVariables[v] && !templateMappings[v]) ||
                     (activeTemplate.headerVars || []).some(
                       (v) => !templateMappings[`h${v}`],
                     ) ||
