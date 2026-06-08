@@ -1,65 +1,39 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Zap, Star, ArrowRight } from "lucide-react";
+import { Check, Zap, Crown } from "lucide-react"; // Import Crown icon
 import { Link } from "react-router-dom";
 
 const plans = [
   {
-    name: "Starter",
-    price: "₹24,500",
-    period: "/year",
-    description: "Best for Small Businesses",
+    name: "Free Trial",
+    price: "Free",
+    period: "", // No period for free
+    description: "Explore basic features",
     features: [
-      "1 WhatsApp Number",
-      "3 Team Members",
-      "Unlimited Contacts",
-      "Campaign Broadcasting",
-      "Template Management",
-      "Basic Analytics",
-      "Shared Inbox",
-      "Email Support",
+      "10 Contacts",
+      "Connect WhatsApp Business",
+      "Basic Messaging",
     ],
     cta: "Start Free Trial",
     popular: false,
-    gradient: "from-green-500 to-emerald-600",
+    gradient: "from-gray-400 to-gray-500", // Neutral gradient for free
   },
   {
-    name: "Growth",
+    name: "Paid Plan",
     price: "₹30,000",
     period: "/year",
-    description: "Best for Growing Businesses",
+    description: "Unlock full potential",
     features: [
-      "Everything in Starter",
-      "3 WhatsApp Numbers",
-      "10 Team Members",
+      "Send bulk WhatsApp campaigns",
+      "Manage chats in a Shared Team Inbox & set up simple greeting / OOO automations",
+      "Unlimited Messages (Based on your WhatsApp Number)",
+      "Unlimited Contacts",
       "Auto Replies",
-      "Campaign Scheduling",
-      "Advanced Analytics",
-      "Contact Segmentation",
-      "Priority Support",
+      "Auto Work flows",
     ],
-    cta: "Start Free Trial",
+    cta: "Upgrade Now",
     popular: true,
     gradient: "from-blue-500 to-cyan-600",
-  },
-  {
-    name: "Professional",
-    price: "₹35,000",
-    period: "/year",
-    description: "Best for Agencies & Advanced Users",
-    features: [
-      "Everything in Growth",
-      "5 WhatsApp Numbers",
-      "Unlimited Team Members",
-      "Workflow Automation",
-      "Team Inbox Assignment",
-      "API Access",
-      "Custom Branding",
-      "Premium Support",
-    ],
-    cta: "Start Free Trial",
-    popular: false,
-    gradient: "from-violet-500 to-purple-600",
   },
 ];
 
@@ -128,9 +102,7 @@ const PricingSection = () => {
               <div
                 className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-4 shadow-lg`}
               >
-                <span className="text-white font-black text-sm">
-                  {plan.name[0]}
-                </span>
+                {plan.name === "Free Trial" ? <Zap className="w-5 h-5 text-white" /> : <Crown className="w-5 h-5 text-white" />}
               </div>
               <h3 className="text-2xl font-extrabold text-foreground">
                 {plan.name}

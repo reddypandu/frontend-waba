@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,10 +39,9 @@ const Workflows = () => {
     enabled: !!user,
   });
 
-  const userPlan = profileData?.subscription?.plan ?? "starter";
-  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
-  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role);
-  const canUseWorkflows = isAdminOrManager || normalizedPlan === "professional";
+  const userPlan = profileData?.subscription?.plan ?? "paid"; // Default to 'paid' for existing users without explicit plan
+  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role); // Admins/Managers always have access
+  const canUseWorkflows = isAdminOrManager || userPlan === "paid"; // Access if admin/manager OR on paid plan
   const [editItem, setEditItem] = React.useState(null);
   const generateId = () => `step_${Math.random().toString(36).substring(2, 9)}`;
   const defaultAction = () => ({
@@ -223,10 +223,10 @@ const Workflows = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Workflow Automation</h1>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Workflow automation is available on the Professional plan. Upgrade to unlock multi-step journeys, conditional actions, and workflow triggers.
+              Workflow automation is available on the Paid plan. Upgrade to unlock multi-step journeys, conditional actions, and workflow triggers.
             </p>
             <Button onClick={() => navigate('/dashboard/billing')} className="rounded-xl">
-              Upgrade to Professional
+              Upgrade to Paid Plan
             </Button>
           </CardContent>
         </Card>

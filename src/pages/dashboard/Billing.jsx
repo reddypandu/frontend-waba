@@ -16,60 +16,36 @@ import { apiGet, apiPost } from "@/lib/api";
 
 const PLANS = [
   {
-    id: "starter",
-    name: "Starter",
-    price: 24500,
-    icon: Rocket,
-    color: "border-green-400 shadow-green-100 shadow-md",
-    badge: null,
+    id: "free",
+    name: "Free Trial",
+    price: 0, // Corrected price for Free Trial
+    icon: Zap, // Using Zap for Free Trial
+    color: "border-gray-400 shadow-gray-100 shadow-md",
+    badge: "Free",
     features: [
-      "1 WhatsApp Number",
-      "3 Team Members",
-      "Unlimited Contacts",
-      "Campaign Broadcasting",
-      "Template Management",
-      "Basic Analytics",
-      "Shared Inbox",
-      "Email Support",
+      "10 Contacts",
+      "Connect WhatsApp Business",
+      "Basic Messaging",
     ],
   },
   {
-    id: "growth",
-    name: "Growth",
+    id: "paid",
+    name: "Paid Plan",
     price: 30000,
-    icon: Zap,
+    icon: Crown, // Using Crown for Paid Plan
     color: "border-blue-400 shadow-blue-100 shadow-md",
     badge: "Popular",
     features: [
-      "Everything in Starter",
-      "3 WhatsApp Numbers",
-      "10 Team Members",
+      "Send bulk WhatsApp campaigns",
+      "Manage chats in a Shared Team Inbox & set up simple greeting / OOO automations",
+      "Unlimited Messages (Based on your WhatsApp Number)",
+      "Unlimited Contacts",
       "Auto Replies",
-      "Campaign Scheduling",
-      "Advanced Analytics",
-      "Contact Segmentation",
-      "Priority Support",
-    ],
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    price: 35000,
-    icon: Crown,
-    color: "border-violet-400 shadow-violet-100 shadow-md",
-    badge: "Advanced",
-    features: [
-      "Everything in Growth",
-      "5 WhatsApp Numbers",
-      "Unlimited Team Members",
-      "Workflow Automation",
-      "Team Inbox Assignment",
-      "API Access",
-      "Custom Branding",
-      "Premium Support",
+      "Auto Work flows",
     ],
   },
 ];
+
 
 const Billing = () => {
   const { user } = useAuth();
@@ -83,12 +59,11 @@ const Billing = () => {
   });
 
   const subscription = dashData?.subscription || {
-    plan: "starter",
+    plan: "paid", // Default to 'paid' for existing users if plan is not explicitly set
     status: "active",
     messages_used: 0,
   };
-  const normalizePlan = (plan) => (plan === "pro" ? "professional" : plan);
-  const currentPlan = normalizePlan(subscription.plan || "starter");
+  const currentPlan = subscription.plan || "paid"; // Default to 'paid' for existing users if plan is not explicitly set
 
   const handleUpgrade = async (planId) => {
     if (planId === currentPlan) return;
@@ -152,18 +127,16 @@ const Billing = () => {
     }
   };
 
-  const usagePercent = 0; // Usage limits are removed for yearly plans
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Billing & Plans</h1>
         <p className="text-muted-foreground">
-          Manage your subscription and upgrade as you grow.
+          Manage your subscription and upgrade to unlock more features.
         </p>
-        {currentPlan === 'starter' && (
+        {currentPlan === 'free' && (
           <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
-            You are currently on the Starter plan trial. Upgrade anytime to Growth or Professional for more automation, campaigns, and advanced features.
+            You are currently on the Free Trial. Upgrade anytime to the Paid Plan for unlimited contacts, campaigns, and automation.
           </div>
         )}
       </div>
@@ -176,28 +149,14 @@ const Billing = () => {
               <p className="text-sm text-muted-foreground font-medium">
                 Current Plan
               </p>
-              <Badge className="capitalize bg-primary/10 text-primary border-none font-bold">
+              <Badge className={`capitalize ${currentPlan === 'free' ? 'bg-gray-100 text-gray-700' : 'bg-primary/10 text-primary'} border-none font-bold`}>
                 {currentPlan}
               </Badge>
             </div>
             <p className="text-2xl font-black text-foreground">
-              {subscription.messages_used?.toLocaleString() || 0}{" "}
-              <span className="text-sm font-medium text-muted-foreground">
-                messages used this month
-              </span>
+              {currentPlan === 'free' ? 'Free Trial' : 'Paid Plan'}
             </p>
-          </div>
-          <div className="w-full sm:w-48">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Usage</span>
-              <span>{Math.round(usagePercent)}%</span>
-            </div>
-            <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${usagePercent > 80 ? "bg-red-500" : usagePercent > 50 ? "bg-amber-500" : "bg-primary"}`}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
+            {currentPlan === 'free' && <p className="text-sm text-muted-foreground mt-1">Limited to 10 contacts.</p>}
           </div>
         </CardContent>
       </Card>
@@ -212,10 +171,10 @@ const Billing = () => {
               key={plan.id}
               className={`relative border-2 ${plan.color} transition-all`}
             >
-              {plan.badge && (
+              {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-primary text-primary-foreground font-bold shadow-sm text-xs px-3">
-                    {plan.badge}
+                    Most Popular
                   </Badge>
                 </div>
               )}
@@ -227,10 +186,9 @@ const Billing = () => {
                   <CardTitle className="text-lg">{plan.name}</CardTitle>
                 </div>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-black text-foreground">
-                    ₹{plan.price.toLocaleString()}
-                  </span>
-                  <span className="text-sm text-muted-foreground mb-0.5">
+                  <span className="text-3xl font-black text-foreground">{plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString()}`}</span>
+                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}
+
                     /year
                   </span>
                 </div>
@@ -250,16 +208,25 @@ const Billing = () => {
                 <Button
                   className="w-full rounded-xl font-bold"
                   variant={isCurrent ? "outline" : "default"}
-                  disabled={isCurrent || upgrading === plan.id}
-                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={isCurrent || upgrading === plan.id || (plan.id === 'free' && currentPlan === 'paid')}
+                  onClick={() => {
+                    if (plan.id === 'paid') { // Only call handleUpgrade for the paid plan
+                      handleUpgrade(plan.id);
+                    } else if (plan.id === 'free' && currentPlan === 'paid') {
+                      // Optionally, navigate to a support page or show a toast for downgrade
+                      toast({ title: "Downgrade not supported via button", description: "Please contact support to downgrade your plan.", variant: "info" });
+                    }
+                  }}
                 >
                   {isCurrent
                     ? "Current Plan"
                     : upgrading === plan.id
                       ? "Processing..."
-                      : plan.price === 0
-                        ? "Downgrade"
-                        : `Upgrade to ${plan.name}`}
+                      : plan.id === 'free' && currentPlan === 'paid'
+                        ? "Downgrade (Contact Support)"
+                        : plan.id === 'free'
+                          ? "Start Free Trial"
+                          : "Upgrade Now"}
                 </Button>
               </CardContent>
             </Card>

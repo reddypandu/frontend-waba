@@ -270,11 +270,8 @@ const AdminUserDetails = () => {
                     Current Plan
                   </p>
                   <div className="mt-1">
-                    <Badge
-                      variant="outline"
-                      className="capitalize text-base px-3 py-1"
-                    >
-                      {user.role === "admin" ? "admin" : user.subscription?.plan || "starter"}
+                    <Badge variant="outline" className="capitalize text-base px-3 py-1">
+                      {user.role === "admin" ? "admin" : user.subscription?.plan || "paid"}
                     </Badge>
                   </div>
                 </div>

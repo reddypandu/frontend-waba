@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,10 +33,9 @@ const AutoReplies = () => {
     enabled: !!user,
   });
 
-  const userPlan = profileData?.subscription?.plan ?? "starter";
-  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
-  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role);
-  const canUseAutoReplies = isAdminOrManager || ["growth", "professional"].includes(normalizedPlan);
+  const userPlan = profileData?.subscription?.plan ?? "paid"; // Default to 'paid' for existing users without explicit plan
+  const isAdminOrManager = ["admin", "manager"].includes(profileData?.user?.role); // Admins/Managers always have access
+  const canUseAutoReplies = isAdminOrManager || userPlan === "paid"; // Access if admin/manager OR on paid plan
   const [editItem, setEditItem] = React.useState(null);
   const [form, setForm] = React.useState({ keyword: "", match_type: "contains", response: "" });
 
@@ -137,10 +137,10 @@ const AutoReplies = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Auto Replies</h1>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Auto replies are available on the Growth plan and above. Upgrade to use keyword-based automatic responses.
+              Auto replies are available on the Paid plan. Upgrade to use keyword-based automatic responses.
             </p>
             <Button onClick={() => navigate('/dashboard/billing')} className="rounded-xl">
-              Upgrade to Growth
+              Upgrade to Paid Plan
             </Button>
           </CardContent>
         </Card>

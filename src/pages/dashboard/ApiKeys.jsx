@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiDelete } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +19,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 export default function ApiKeys() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [dialogAction, setDialogAction] = useState(null); // 'regenerate' | 'revoke'
+
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["me", user?.id],
+    queryFn: async () => apiGet("/api/admin/me"),
+    enabled: !!user,
+  });
 
   const { data: keyData, isLoading, refetch } = useQuery({
     queryKey: ["apiKey"],
@@ -76,6 +86,39 @@ export default function ApiKeys() {
 
   const hasKey = !!keyData?.api_key;
   const isRevoked = keyData?.is_active === false;
+
+  const userPlan = profileData?.subscription?.plan || "free"; // Default to 'free' for new users
+
+  if (profileLoading) {
+    return (
+      <div className="flex justify-center p-6">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (userPlan === 'free') {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto pb-12">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">API Key Management</h1>
+          <p className="text-muted-foreground mt-2">Integrate WhatsApp capabilities directly into your application.</p>
+        </div>
+        <Card className="border-primary/20 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center p-8 border border-dashed rounded-xl bg-muted/20">
+            <Key className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+            <h3 className="font-semibold text-lg mb-2">API Keys are a Premium Feature</h3>
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+              Upgrade to the Paid Plan to generate and manage API keys for programmatic access to our platform.
+            </p>
+            <Button onClick={() => navigate('/dashboard/billing')}>
+              Upgrade to Paid Plan
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">

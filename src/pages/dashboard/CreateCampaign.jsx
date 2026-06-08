@@ -59,10 +59,9 @@ const CreateCampaign = () => {
     enabled: !!user,
   });
 
-  const userPlan = profileData?.subscription?.plan || "starter";
-  const normalizedPlan = userPlan === "pro" ? "professional" : userPlan;
-  const isAdmin = profileData?.user?.role === "admin";
-  const canScheduleCampaign = isAdmin || ["growth", "professional"].includes(normalizedPlan);
+  const userPlan = profileData?.subscription?.plan || "paid"; // Default to 'paid' for existing users without explicit plan
+  const isAdmin = profileData?.user?.role === "admin"; // Admins always have access
+  const canScheduleCampaign = isAdmin || userPlan === "paid"; // Access if admin OR on paid plan
 
   React.useEffect(() => {
     if (!canScheduleCampaign && scheduleType === "scheduled") {
@@ -560,7 +559,7 @@ const CreateCampaign = () => {
                 </RadioGroup>
                 {!canScheduleCampaign && (
                   <p className="text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded-xl p-3">
-                    Campaign scheduling is available on the Growth plan and above. Upgrade in Billing to unlock later delivery.
+                    Campaign scheduling is available on the Paid plan. Upgrade in Billing to unlock later delivery.
                   </p>
                 )}
                 {scheduleType === 'scheduled' && (

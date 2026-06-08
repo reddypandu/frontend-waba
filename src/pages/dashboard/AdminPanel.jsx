@@ -211,7 +211,7 @@ const AdminPanel = () => {
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant="outline" className="capitalize">
-                          {u.role === "admin" ? "admin" : u.subscription?.plan || "starter"}
+                          {u.role === "admin" ? "admin" : u.subscription?.plan || "paid"}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
