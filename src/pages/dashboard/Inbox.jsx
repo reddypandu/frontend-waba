@@ -795,7 +795,7 @@ const Inbox = () => {
                           className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`rounded-2xl px-4 py-2.5 text-sm max-w-[70%] flex flex-col ${
+                            className={`rounded-2xl text-sm flex flex-col ${msg.message_type === "template" ? "p-0 overflow-hidden max-w-[75%]" : "px-4 py-2.5 max-w-[70%]"} ${
                               isOutbound
                                 ? "bg-primary text-primary-foreground rounded-br-md"
                                 : "bg-secondary text-foreground rounded-bl-md"
@@ -810,9 +810,9 @@ const Inbox = () => {
                                 <span>{msg.content}</span>
                               </div>
                             ) : msg.message_type === "template" ? (
-                              <div className="flex flex-col gap-2 min-w-[200px]">
+                              <div className="flex flex-col w-full">
                                 <span
-                                  className={`text-[10px] uppercase tracking-widest font-bold ${isOutbound ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}
+                                  className={`text-[10px] uppercase tracking-widest font-bold px-3 pt-2.5 pb-1 ${isOutbound ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}
                                 >
                                   Template
                                 </span>
@@ -845,36 +845,45 @@ const Inbox = () => {
 
                                   if (!templateData) {
                                     return (
-                                      <span>
+                                      <span className="px-3 py-2">
                                         {msg.content || `[Sent template: ${msg.template_name}]`}
                                       </span>
                                     );
                                   }
 
+                                  const renderFormattedText = (text) => {
+                                    if (!text) return text;
+                                    return text.split(/(\*[^*]+\*|_[^_]+_)/g).map((part, i) => {
+                                      if (part.startsWith('*') && part.endsWith('*')) return <strong key={i}>{part.slice(1, -1)}</strong>;
+                                      if (part.startsWith('_') && part.endsWith('_')) return <em key={i}>{part.slice(1, -1)}</em>;
+                                      return part;
+                                    });
+                                  };
+
                                   return (
-                                    <div className={`space-y-2 ${isOutbound ? "text-primary-foreground" : "text-foreground"}`}>
+                                    <div className={`flex flex-col ${isOutbound ? "text-primary-foreground" : "text-foreground"}`}>
                                       {/* Render Header */}
                                       {templateData.header && (
                                         <div>
                                           {["IMAGE", "VIDEO", "DOCUMENT"].includes(templateData.header.format) && (templateData.header.media_url || msg.media_url) ? (
-                                            <div className="w-full rounded-lg overflow-hidden border border-border/20 max-w-xs mb-2 shadow-sm">
+                                            <div className="w-full overflow-hidden aspect-square">
                                               {templateData.header.format === "VIDEO" ? (
                                                 <video
                                                   src={templateData.header.media_url || msg.media_url}
                                                   controls
-                                                  className="w-full h-auto max-h-48 object-cover"
+                                                  className="w-full h-full object-cover"
                                                 />
                                               ) : (
                                                 <img
                                                   src={templateData.header.media_url || msg.media_url}
-                                                  className="w-full h-auto max-h-48 object-cover"
+                                                  className="w-full h-full object-cover"
                                                   alt="Template Media"
                                                 />
                                               )}
                                             </div>
                                           ) : (
                                             templateData.header.format === "TEXT" && templateData.header.text && (
-                                              <p className="text-sm font-bold opacity-100 border-b border-current/20 pb-1 mb-1">
+                                              <p className="text-sm font-bold opacity-100 px-3 pt-2 pb-1 border-b border-current/10">
                                                 {templateData.header.text}
                                               </p>
                                             )
@@ -883,20 +892,20 @@ const Inbox = () => {
                                       )}
                                       
                                       {/* Render Body */}
-                                      <p className="text-sm opacity-95 leading-relaxed whitespace-pre-wrap">
-                                        {templateData.body}
+                                      <p className="text-sm opacity-95 leading-relaxed whitespace-pre-wrap px-3 py-2">
+                                        {renderFormattedText(templateData.body)}
                                       </p>
 
                                       {/* Render Footer */}
                                       {templateData.footer && (
-                                        <p className={`text-[11px] mt-1 pt-1 border-t ${isOutbound ? "text-primary-foreground/60 border-primary-foreground/10" : "text-muted-foreground/70 border-border/50"}`}>
+                                        <p className={`text-[11px] px-3 pb-1 pt-1 border-t ${isOutbound ? "text-primary-foreground/60 border-primary-foreground/10" : "text-muted-foreground/70 border-border/50"}`}>
                                           {templateData.footer}
                                         </p>
                                       )}
 
                                       {/* Render Buttons */}
                                       {templateData.buttons && templateData.buttons.length > 0 && (
-                                        <div className={`mt-3 pt-2 border-t flex flex-col gap-1.5 ${isOutbound ? "border-primary-foreground/15" : "border-border/60"}`}>
+                                        <div className={`px-3 pb-2 pt-2 border-t flex flex-col gap-1.5 ${isOutbound ? "border-primary-foreground/15" : "border-border/60"}`}>
                                           {templateData.buttons.map((btn, idx) => {
                                             const isLink = btn.type === 'URL';
                                             const isPhone = btn.type === 'PHONE_NUMBER';
@@ -908,9 +917,9 @@ const Inbox = () => {
                                                 href={href}
                                                 target={isLink ? "_blank" : undefined}
                                                 rel={isLink ? "noopener noreferrer" : undefined}
-                                                className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors w-full ${
+                                                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-colors w-full ${
                                                   isOutbound 
-                                                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
+                                                    ? "bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground" 
                                                     : "bg-muted hover:bg-muted/80 text-primary"
                                                 }`}
                                               >
@@ -931,6 +940,8 @@ const Inbox = () => {
                             )}
                             <div
                               className={`text-[9px] mt-1 self-end opacity-70 font-medium ${
+                                msg.message_type === "template" ? "px-3 pb-2" : ""
+                              } ${
                                 isOutbound
                                   ? "text-primary-foreground/90"
                                   : "text-muted-foreground"
