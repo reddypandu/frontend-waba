@@ -1,0 +1,821 @@
+import { Router } from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import mongoose from "mongoose";
+import { requireAuth } from "../middleware/auth.js";
+import WhatsAppAccount from "../models/WhatsAppAccount.js";
+import Contact from "../models/Contact.js";
+import Campaign from "../models/Campaign.js";
+import Template from "../models/Template.js";
+import Message from "../models/Message.js";
+import User from "../models/User.js";
+import Conversation from "../models/Conversation.js";
+import { sendCampaign } from "../utils/campaign.js";
+import { uploadToCloudinary } from "../services/cloudinary.js";
+import { normalizePhone } from "../utils/phoneUtils.js";
+import { fileURLToPath } from "url";
+
+const router = Router();
+const META_API = "https://graph.facebook.com/v22.0";
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+const RE_ENGAGEMENT_ERROR =
+  "24-hour window closed. Send an approved template to re-open the chat.";
+
+const getMetaClientError = (error, fallback = "Meta API error") => {
+  if (Number(error?.code) === 131047) return RE_ENGAGEMENT_ERROR;
+  return error?.message || fallback;
+};
+
+const findTemplateComponent = (components = [], type) =>
+  components.find((component) => component.type?.toUpperCase() === type);
+
+const replaceTemplateParams = (text = "", parameters = []) =>
+  text.replace(/\{\{(\d+)\}\}/g, (_match, index) => {
+    const value = parameters[Number(index) - 1]?.text;
+    return value === undefined || value === null ? "" : String(value);
+  });
+
+const getMediaFromParameter = (parameter = {}) =>
+  parameter.image?.link ||
+  parameter.video?.link ||
+  parameter.document?.link ||
+  null;
+
+const buildTemplateSnapshot = (templateRecord, sentComponents = []) => {
+  const templateComponents = Array.isArray(templateRecord?.components)
+    ? templateRecord.components
+    : [];
+  const header = findTemplateComponent(templateComponents, "HEADER");
+  const body = findTemplateComponent(templateComponents, "BODY");
+  const footer = findTemplateComponent(templateComponents, "FOOTER");
+  const buttons = findTemplateComponent(templateComponents, "BUTTONS");
+  const sentHeader = findTemplateComponent(sentComponents, "HEADER");
+  const sentBody = findTemplateComponent(sentComponents, "BODY");
+
+  const mediaUrl =
+    getMediaFromParameter(sentHeader?.parameters?.[0]) ||
+    templateRecord?.local_url ||
+    header?.example?.header_url?.[0] ||
+    header?.example?.header_handle?.[0] ||
+    null;
+
+  return {
+    name: templateRecord?.name,
+    language: templateRecord?.language,
+    category: templateRecord?.category,
+    header: header
+      ? {
+          format: header.format,
+          text:
+            header.format === "TEXT"
+              ? replaceTemplateParams(header.text || "", sentHeader?.parameters)
+              : header.text || "",
+          media_url: ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format)
+            ? mediaUrl
+            : null,
+        }
+      : null,
+    body: replaceTemplateParams(
+      body?.text || templateRecord?.body_text || "",
+      sentBody?.parameters,
+    ),
+    footer: footer?.text || templateRecord?.footer_text || "",
+    buttons: buttons?.buttons || templateRecord?.buttons || [],
+  };
+};
+
+// ── Media Upload (Local + Meta Handle) ────────────────────────────────────────
+router.post(
+  "/upload_media",
+  requireAuth,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) return res.status(400).json({ error: "No file provided" });
+
+      // 1. Save locally as backup
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const assetPath = path.join(
+        __dirname,
+        "..",
+        "public",
+        "uploads",
+        "templates",
+      );
+      if (!fs.existsSync(assetPath))
+        fs.mkdirSync(assetPath, { recursive: true });
+
+      const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`;
+      const localFilePath = path.join(assetPath, filename);
+      fs.writeFileSync(localFilePath, file.buffer);
+
+      // 2. Upload to Cloudinary for reliable public HTTPS URL
+      let cloudUrl = null;
+      try {
+        cloudUrl = await uploadToCloudinary(localFilePath);
+      } catch (cErr) {
+        console.error("Cloudinary upload failed, falling back to local:", cErr);
+      }
+
+      // Build accessible URL
+      const host = req.get("host");
+      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+      const protocol = isLocal
+        ? req.headers["x-forwarded-proto"] || req.protocol
+        : "https";
+      const localUrl =
+        cloudUrl || `${protocol}://${host}/uploads/templates/${filename}`;
+
+      // 3. Get Meta Handle (Required for template creation)
+      const waAccount = await WhatsAppAccount.findOne({ user_id: req.user.id });
+      if (!waAccount)
+        return res.status(400).json({ error: "WhatsApp account not linked" });
+
+      const appId = process.env.META_APP_ID;
+      const sessRes = await fetch(
+        `${META_API}/${appId}/uploads?file_length=${file.size}&file_type=${file.mimetype}&access_token=${waAccount.access_token}`,
+        {
+          method: "POST",
+        },
+      );
+      const sessData = await sessRes.json();
+      if (sessData.error) throw new Error(sessData.error.message);
+
+      const upRes = await fetch(`${META_API}/${sessData.id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `OAuth ${waAccount.access_token}`,
+          file_offset: "0",
+        },
+        body: file.buffer,
+      });
+      const upData = await upRes.json();
+      if (upData.error) throw new Error(upData.error.message);
+
+      res.json({ success: true, handle: upData.h, localPath: localUrl });
+    } catch (err) {
+      console.error("Upload media error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
+import { WhatsAppController } from "../controllers/whatsappController.js";
+
+// ── Retry Registration Endpoint ────────────────────────────────────────────────
+router.post("/retry-register", requireAuth, async (req, res) => {
+  return await WhatsAppController.retryRegistration(req, res);
+});
+
+router.post("/retry-register/:id", requireAuth, async (req, res) => {
+  return await WhatsAppController.retryRegistration(req, res);
+});
+
+// ── WhatsApp Actions (templates, send, contacts) ─────────────────────────────
+router.post("/", requireAuth, async (req, res) => {
+  try {
+    const { action, ...params } = req.body;
+
+    // Intercept template sync actions to use the new controller
+    if (action === "get_templates" || action === "sync_templates") {
+      return await WhatsAppController.handleActions(req, res);
+    }
+
+    const userId = req.user.id;
+    const waAccount = await WhatsAppAccount.findOne({ user_id: userId });
+    if (!waAccount)
+      return res
+        .status(400)
+        .json({ error: "WhatsApp not configured. Complete setup first." });
+
+    const { access_token, phone_number_id, waba_id } = waAccount;
+    const user = await User.findById(userId);
+    const isFree = (user?.subscription?.plan || "paid") === "free"; // Existing users without a plan are 'paid'
+
+    if (action === "create_template") {
+      if (isFree) {
+        return res.status(403).json({
+          error:
+            "Creating templates is not allowed on the free plan. Please upgrade.",
+        });
+      }
+      const { name, category, language, components, local_url } = params;
+      const r = await fetch(`${META_API}/${waba_id}/message_templates`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, category, language, components }),
+      });
+      const data = await r.json();
+      if (!r.ok)
+        return res
+          .status(400)
+          .json({ error: data.error?.message || "Meta API error" });
+
+      const newTemplate = await Template.create({
+        user_id: userId,
+        name,
+        category,
+        language,
+        components,
+        status: "PENDING",
+        meta_template_id: data.id,
+        local_url: local_url,
+      });
+      return res.json({ success: true, template: newTemplate });
+    }
+
+    if (action === "send_template") {
+      if (isFree) {
+        return res.status(403).json({
+          error:
+            "Sending template messages is a premium feature. Please upgrade your plan.",
+        });
+      }
+      let {
+        to,
+        template_name,
+        template_language,
+        components,
+        requires_follow_up = false,
+        // New fields from frontend for rich display
+        template_full_data,
+        template_variable_values,
+      } = params;
+
+      to = normalizePhone(to);
+
+      const templateRecord = await Template.findOne({
+        user_id: userId,
+        name: template_name,
+      });
+
+      if (!template_language) {
+        template_language = templateRecord?.language || "en_US";
+      }
+      // Ensure contact & conversation exist FIRST
+      const normalizedPhone = to;
+      let contact = await Contact.findOne({
+        user_id: userId,
+        phone_number: normalizedPhone,
+      });
+      if (!contact) {
+        contact = await Contact.create({
+          user_id: userId,
+          phone_number: normalizedPhone,
+          name: normalizedPhone,
+        });
+      }
+
+      // Deep clone components to replace variables per-contact
+      const contactComponents = JSON.parse(JSON.stringify(components || []));
+      contactComponents.forEach((comp) => {
+        if (comp.parameters) {
+          comp.parameters.forEach((param) => {
+            if (param.type === "text" && typeof param.text === "string") {
+              param.text = param.text.replace(
+                /\{\{name(?:\|([^}]*))?\}\}/gi,
+                (match, fallback) => {
+                  const cName = contact.name?.trim();
+                  const isValidName =
+                    cName &&
+                    cName.toLowerCase() !== "user" &&
+                    cName !== contact.phone_number;
+                  return isValidName ? cName : fallback || "";
+                },
+              );
+            }
+          });
+        }
+      });
+
+      const endpoint = `${META_API}/${phone_number_id}/messages`;
+      const requestBody = {
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: {
+          name: template_name,
+          language: { code: template_language },
+          components: contactComponents,
+        },
+      };
+
+      console.log("[Send Template] Request details", {
+        endpoint,
+        method: "POST",
+        request_body: requestBody,
+      });
+
+      const r = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const data = await r.json();
+
+      console.log("[Send Template] Response received", {
+        status: r.status,
+        ok: r.ok,
+        meta_response: data,
+      });
+
+      if (!r.ok) {
+        console.error("[Send Template] Failed", {
+          recipient: to,
+          error_code: data.error?.code,
+          error_message: data.error?.message,
+          error_subcode: data.error?.error_subcode,
+          error_data: data.error?.error_data,
+        });
+        return res.status(400).json({
+          error: getMetaClientError(data.error, "Failed to send message"),
+          meta_error_code: data.error?.code,
+        });
+      }
+      const msgId = data.messages?.[0]?.id;
+
+      const conv = await Conversation.findOneAndUpdate(
+        { user_id: userId, contact_id: contact._id },
+        {
+          $set: {
+            phone_number: normalizedPhone,
+            last_message: `[Template: ${template_name}]`,
+            last_message_at: new Date(),
+          },
+        },
+        { upsert: true, new: true },
+      );
+
+      // Build a preview text for the Inbox list
+      const bodyComp = (components || []).find((c) => c.type === "body");
+      let previewContent = `[Template: ${template_name}]`;
+      if (bodyComp && bodyComp.parameters) {
+        // Simple preview of body variables
+        const varText = bodyComp.parameters.map((p) => p.text).join(", ");
+        previewContent = `${template_name}: ${varText}`;
+      }
+
+      // Extract media URL if present
+      const headerComp = (components || []).find((c) => c.type === "header");
+      const mediaUrl =
+        headerComp?.parameters?.[0]?.image?.link ||
+        headerComp?.parameters?.[0]?.video?.link ||
+        headerComp?.parameters?.[0]?.document?.link;
+      const templateSnapshot = buildTemplateSnapshot(
+        templateRecord,
+        contactComponents,
+      );
+      const messageContent =
+        templateSnapshot.body || `[Template: ${template_name}]`;
+
+      await Message.create({
+        user_id: userId,
+        conversation_id: conv._id,
+        contact_id: contact._id,
+        direction: "outbound",
+        message_type: "template",
+        template_name,
+        content: messageContent,
+        // Prioritize media_url from frontend params if available
+        media_url:
+          params.media_url || mediaUrl || templateSnapshot.header?.media_url,
+        template_snapshot: templateSnapshot,
+        template_full_data: template_full_data, // Persist full template data
+        template_variable_values: template_variable_values, // Persist variable values
+        phone_number: to,
+        whatsapp_message_id: msgId,
+        status: "sent",
+        requires_follow_up,
+      });
+
+      await WhatsAppAccount.findOneAndUpdate(
+        { user_id: userId },
+        { verification_status: "verified" },
+      );
+      return res.json({
+        success: true,
+        message_id: msgId,
+        conversation_id: conv._id,
+        template_full_data: template_full_data, // Return for immediate frontend update
+        template_variable_values: template_variable_values, // Return for immediate frontend update
+        template_snapshot: templateSnapshot,
+        content: messageContent,
+        media_url:
+          params.media_url || mediaUrl || templateSnapshot.header?.media_url, // Return for immediate frontend update
+      });
+    }
+
+    if (action === "get_contacts") {
+      const contacts = await Contact.find({ user_id: userId }).sort({
+        createdAt: -1,
+      });
+      return res.json({ contacts });
+    }
+
+    if (action === "send_message") {
+      let { to, content } = params;
+      if (isFree) {
+        return res.status(403).json({
+          error:
+            "Direct messaging is a premium feature. Please upgrade your plan.",
+        });
+      }
+      to = normalizePhone(to);
+
+      const endpoint = `${META_API}/${phone_number_id}/messages`;
+      const requestBody = {
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: { body: content },
+      };
+
+      console.log("[Send Message] Request details", {
+        endpoint,
+        method: "POST",
+        request_body: requestBody,
+      });
+
+      const r = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const data = await r.json();
+
+      console.log("[Send Message] Response received", {
+        status: r.status,
+        ok: r.ok,
+        meta_response: data,
+      });
+
+      if (!r.ok) {
+        console.error("[Send Message] Failed", {
+          recipient: to,
+          error_code: data.error?.code,
+          error_message: data.error?.message,
+          error_subcode: data.error?.error_subcode,
+          error_data: data.error?.error_data,
+        });
+        return res.status(400).json({
+          error: getMetaClientError(data.error, "Failed to send"),
+          meta_error_code: data.error?.code,
+        });
+      }
+
+      const msgId = data.messages?.[0]?.id;
+      // Find or create conversation
+      // Ensure contact exists for the conversation to group correctly
+      const normalizedPhoneInbound = normalizePhone(to);
+      const contact = await Contact.findOneAndUpdate(
+        { user_id: userId, phone_number: normalizedPhoneInbound },
+        {
+          $setOnInsert: {
+            user_id: userId,
+            phone_number: normalizedPhoneInbound,
+            name: normalizedPhoneInbound,
+          },
+        },
+        { upsert: true, new: true },
+      );
+
+      const conv = await Conversation.findOneAndUpdate(
+        { user_id: userId, contact_id: contact._id },
+        {
+          $set: {
+            phone_number: normalizedPhoneInbound,
+            last_message: content,
+            last_message_at: new Date(),
+          },
+        },
+        { upsert: true, new: true },
+      );
+
+      await Message.create({
+        user_id: userId,
+        conversation_id: conv._id,
+        contact_id: contact?._id,
+        direction: "outbound",
+        message_type: "text",
+        content,
+        phone_number: to,
+        whatsapp_message_id: msgId,
+        status: "sent",
+      });
+      return res.json({
+        success: true,
+        message_id: msgId,
+        conversation_id: conv._id,
+      });
+    }
+
+    if (action === "edit_template") {
+      const { name, category, components } = params;
+      const r = await fetch(`${META_API}/${waba_id}/message_templates`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, category, components }),
+      });
+      const data = await r.json();
+      if (!r.ok)
+        return res
+          .status(400)
+          .json({ error: data.error?.message || "Meta API error" });
+
+      await Template.findOneAndUpdate(
+        { user_id: userId, name: name },
+        { category, components, status: "PENDING" },
+      );
+      return res.json({ success: true });
+    }
+
+    if (action === "delete_campaign") {
+      const { id } = params;
+      if (!id) return res.status(400).json({ error: "Campaign ID required" });
+      await Campaign.findOneAndDelete({ _id: id, user_id: userId });
+      await Message.deleteMany({ campaign_id: id, user_id: userId });
+      return res.json({ success: true });
+    }
+
+    res.status(400).json({ error: "Unknown action" });
+  } catch (err) {
+    console.error("WhatsApp API error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Inbox (Conversations & Messages) ──────────────────────────────────────────
+router.get("/conversations", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if ((user?.subscription?.plan || "paid") === "free") {
+      // Existing users without a plan are 'paid'
+      return res.status(403).json({
+        error:
+          "Shared Inbox is a premium feature. Please upgrade to view and reply to messages.",
+      });
+    }
+    const convs = await Conversation.find({ user_id: req.user.id })
+      .populate("contact_id")
+      .sort({ last_message_at: -1 });
+    res.json({ conversations: convs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/messages/:convId", requireAuth, async (req, res) => {
+  try {
+    const messages = await Message.find({
+      user_id: req.user.id,
+      conversation_id: req.params.convId,
+    }).sort({ createdAt: 1 });
+
+    // Mark as read
+    await Conversation.findByIdAndUpdate(req.params.convId, {
+      unread_count: 0,
+    });
+
+    res.json({ messages });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/templates/all", requireAuth, async (req, res) => {
+  try {
+    const templates = await Template.find({ user_id: req.user.id }).sort({
+      createdAt: -1,
+    });
+    res.json({ templates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/templates/:id", requireAuth, async (req, res) => {
+  try {
+    const template = await Template.findOne({
+      _id: req.params.id,
+      user_id: req.user.id,
+    });
+    if (!template)
+      return res.status(404).json({ error: "Template not found locally" });
+    res.json({ template });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Campaigns ─────────────────────────────────────────────────────────────────
+router.get("/campaigns", requireAuth, async (req, res) => {
+  try {
+    const campaigns = await Campaign.aggregate([
+      { $match: { user_id: new mongoose.Types.ObjectId(req.user.id) } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "messages",
+          localField: "_id",
+          foreignField: "campaign_id",
+          as: "msgs",
+        },
+      },
+      {
+        $addFields: {
+          stats: {
+            sent: {
+              $size: {
+                $filter: {
+                  input: "$msgs",
+                  as: "m",
+                  cond: {
+                    $in: [
+                      "$$m.status",
+                      ["sent", "delivered", "read", "replied"],
+                    ],
+                  },
+                },
+              },
+            },
+            delivered: {
+              $size: {
+                $filter: {
+                  input: "$msgs",
+                  as: "m",
+                  cond: {
+                    $in: ["$$m.status", ["delivered", "read", "replied"]],
+                  },
+                },
+              },
+            },
+            read: {
+              $size: {
+                $filter: {
+                  input: "$msgs",
+                  as: "m",
+                  cond: { $in: ["$$m.status", ["read", "replied"]] },
+                },
+              },
+            },
+            failed: {
+              $size: {
+                $filter: {
+                  input: "$msgs",
+                  as: "m",
+                  cond: { $eq: ["$$m.status", "failed"] },
+                },
+              },
+            },
+          },
+        },
+      },
+      { $project: { msgs: 0 } },
+    ]);
+    res.json({ campaigns });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/campaigns/:id", requireAuth, async (req, res) => {
+  try {
+    const campaign = await Campaign.findOne({
+      _id: req.params.id,
+      user_id: req.user.id,
+    });
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+    res.json({ campaign });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/campaigns", requireAuth, async (req, res) => {
+  try {
+    const {
+      name,
+      template_name,
+      audience_type = "existing",
+      schedule_type = "now",
+      scheduled_at,
+      contacts = [],
+      requires_follow_up = false,
+      interactive_params = null,
+    } = req.body;
+    if (!name) return res.status(400).json({ error: "Campaign name required" });
+
+    let campaignContactIds = [];
+    if (contacts && contacts.length > 0) {
+      campaignContactIds = contacts;
+    } else if (audience_type === "existing") {
+      const allContacts = await Contact.find({ user_id: req.user.id });
+      campaignContactIds = allContacts.map((c) => c._id);
+    }
+
+    const campaign = await Campaign.create({
+      user_id: req.user.id,
+      name,
+      template_name,
+      audience_type,
+      schedule_type,
+      scheduled_at: scheduled_at || null,
+      total_contacts: campaignContactIds.length,
+      contact_ids: campaignContactIds,
+      status: schedule_type === "later" ? "scheduled" : "draft",
+      requires_follow_up,
+      interactive_params,
+      components: req.body.components || [], // Save template variables
+    });
+
+    res.json({ success: true, campaign_id: campaign._id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/campaigns/:id/send", requireAuth, async (req, res) => {
+  try {
+    const result = await sendCampaign(req.params.id);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/campaigns/:id/stats", requireAuth, async (req, res) => {
+  try {
+    const campaignId = req.params.id;
+    const stats = await Message.aggregate([
+      {
+        $match: {
+          campaign_id: new mongoose.Types.ObjectId(campaignId),
+          user_id: new mongoose.Types.ObjectId(req.user.id),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          sent: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["sent", "delivered", "read", "replied"]] },
+                1,
+                0,
+              ],
+            },
+          },
+          delivered: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["delivered", "read", "replied"]] },
+                1,
+                0,
+              ],
+            },
+          },
+          read: {
+            $sum: { $cond: [{ $in: ["$status", ["read", "replied"]] }, 1, 0] },
+          },
+          failed: { $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] } },
+          replied: { $sum: { $cond: [{ $eq: ["$status", "replied"] }, 1, 0] } },
+        },
+      },
+    ]);
+
+    const result = stats[0] || {
+      sent: 0,
+      delivered: 0,
+      read: 0,
+      failed: 0,
+      replied: 0,
+    };
+
+    // Special case: 'sent' includes everything that got out
+    // In many UIs, 'Sent' is treated as total attempted successfully
+    // We'll return them raw and let frontend decide
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;

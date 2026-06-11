@@ -15,6 +15,8 @@ import {
   Check,
   Info,
   RefreshCw,
+  ExternalLink,
+  Phone,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -403,6 +405,20 @@ const Inbox = () => {
       to,
       template_name: tpl.name,
       components,
+      // Pass full template data and variable values to backend for storage
+      template_full_data: {
+        name: tpl.name,
+        bodyText: tpl.bodyText,
+        headerText: tpl.headerText,
+        headerFormat: tpl.headerFormat,
+        headerVars: tpl.headerVars,
+        vars: tpl.vars,
+        isMediaHeader: tpl.isMediaHeader,
+      },
+      template_variable_values: mappings,
+      // Only set media_url if it's a media header, for consistent storage
+      ...(tpl.isMediaHeader &&
+        mappings.header_url && { media_url: mappings.header_url }),
     })
       .then((res) => {
         const outgoing = {
@@ -410,9 +426,22 @@ const Inbox = () => {
           conversation_id: res.conversation_id,
           direction: "outbound",
           message_type: "template",
-          content: `[Template: ${tpl.name}]`,
+          content: res.content || `[Template: ${tpl.name}]`,
           template_name: tpl.name,
           phone_number: to,
+          template_snapshot: res.template_snapshot,
+          media_url: res.media_url,
+          // Store the full template data and variable values for rich display
+          template_full_data: {
+            name: tpl.name,
+            bodyText: tpl.bodyText,
+            headerText: tpl.headerText,
+            headerFormat: tpl.headerFormat,
+            headerVars: tpl.headerVars,
+            vars: tpl.vars,
+            isMediaHeader: tpl.isMediaHeader,
+          },
+          template_variable_values: mappings,
           status: "sent",
           createdAt: new Date().toISOString(),
         };
@@ -781,39 +810,121 @@ const Inbox = () => {
                                 <span>{msg.content}</span>
                               </div>
                             ) : msg.message_type === "template" ? (
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">
+                              <div className="flex flex-col gap-2 min-w-[200px]">
+                                <span
+                                  className={`text-[10px] uppercase tracking-widest font-bold ${isOutbound ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}
+                                >
                                   Template
                                 </span>
-                                <span>
-                                  {msg.content ||
-                                    `[Sent template: ${msg.template_name}]`}
-                                </span>
-                                {msg.media_url && (
-                                  <div className="mt-2 rounded-lg overflow-hidden border border-border/20 max-w-xs">
-                                    {msg.media_url.match(
-                                      /\.(mp4|webm|ogg)$/i,
-                                    ) ||
-                                    msg.template_name
-                                      ?.toLowerCase()
-                                      .includes("video") ? (
-                                      <video
-                                        src={msg.media_url}
-                                        controls
-                                        className="w-full h-auto max-h-48 object-cover"
-                                      />
-                                    ) : (
-                                      <img
-                                        src={msg.media_url}
-                                        className="w-full h-auto max-h-48 object-cover"
-                                        alt="Template Media"
-                                        onError={(e) =>
-                                          (e.target.style.display = "none")
-                                        }
-                                      />
-                                    )}
-                                  </div>
-                                )}
+                                {(() => {
+                                  let templateData = null;
+                                  if (msg.template_snapshot) {
+                                    templateData = msg.template_snapshot;
+                                  } else if (msg.template_full_data && msg.template_variable_values) {
+                                    const fd = msg.template_full_data;
+                                    const vv = msg.template_variable_values;
+                                    const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
+                                    const isMediaHeader = mediaFormats.includes(fd.headerFormat);
+                                    
+                                    templateData = {
+                                      name: fd.name,
+                                      header: fd.headerFormat && fd.headerFormat !== "none" ? {
+                                        format: fd.headerFormat,
+                                        text: fd.headerFormat === "TEXT" && fd.headerText 
+                                          ? fd.headerText.replace(/\{\{(\d+)\}\}/g, (match, p1) => vv[`h${p1}`] || match)
+                                          : fd.headerText || "",
+                                        media_url: isMediaHeader ? (vv.header_url || msg.media_url) : null
+                                      } : null,
+                                      body: fd.bodyText 
+                                        ? fd.bodyText.replace(/\{\{(\d+)\}\}/g, (match, p1) => vv[p1] || match)
+                                        : "",
+                                      footer: fd.footerText || "",
+                                      buttons: fd.buttons || []
+                                    };
+                                  }
+
+                                  if (!templateData) {
+                                    return (
+                                      <span>
+                                        {msg.content || `[Sent template: ${msg.template_name}]`}
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className={`space-y-2 ${isOutbound ? "text-primary-foreground" : "text-foreground"}`}>
+                                      {/* Render Header */}
+                                      {templateData.header && (
+                                        <div>
+                                          {["IMAGE", "VIDEO", "DOCUMENT"].includes(templateData.header.format) && (templateData.header.media_url || msg.media_url) ? (
+                                            <div className="w-full rounded-lg overflow-hidden border border-border/20 max-w-xs mb-2 shadow-sm">
+                                              {templateData.header.format === "VIDEO" ? (
+                                                <video
+                                                  src={templateData.header.media_url || msg.media_url}
+                                                  controls
+                                                  className="w-full h-auto max-h-48 object-cover"
+                                                />
+                                              ) : (
+                                                <img
+                                                  src={templateData.header.media_url || msg.media_url}
+                                                  className="w-full h-auto max-h-48 object-cover"
+                                                  alt="Template Media"
+                                                />
+                                              )}
+                                            </div>
+                                          ) : (
+                                            templateData.header.format === "TEXT" && templateData.header.text && (
+                                              <p className="text-sm font-bold opacity-100 border-b border-current/20 pb-1 mb-1">
+                                                {templateData.header.text}
+                                              </p>
+                                            )
+                                          )}
+                                        </div>
+                                      )}
+                                      
+                                      {/* Render Body */}
+                                      <p className="text-sm opacity-95 leading-relaxed whitespace-pre-wrap">
+                                        {templateData.body}
+                                      </p>
+
+                                      {/* Render Footer */}
+                                      {templateData.footer && (
+                                        <p className={`text-[11px] mt-1 pt-1 border-t ${isOutbound ? "text-primary-foreground/60 border-primary-foreground/10" : "text-muted-foreground/70 border-border/50"}`}>
+                                          {templateData.footer}
+                                        </p>
+                                      )}
+
+                                      {/* Render Buttons */}
+                                      {templateData.buttons && templateData.buttons.length > 0 && (
+                                        <div className={`mt-3 pt-2 border-t flex flex-col gap-1.5 ${isOutbound ? "border-primary-foreground/15" : "border-border/60"}`}>
+                                          {templateData.buttons.map((btn, idx) => {
+                                            const isLink = btn.type === 'URL';
+                                            const isPhone = btn.type === 'PHONE_NUMBER';
+                                            const href = isLink ? btn.url : isPhone ? `tel:${btn.phone_number}` : undefined;
+                                            
+                                            return (
+                                              <a
+                                                key={idx}
+                                                href={href}
+                                                target={isLink ? "_blank" : undefined}
+                                                rel={isLink ? "noopener noreferrer" : undefined}
+                                                className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors w-full ${
+                                                  isOutbound 
+                                                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
+                                                    : "bg-muted hover:bg-muted/80 text-primary"
+                                                }`}
+                                              >
+                                                {isLink && <ExternalLink className="w-3.5 h-3.5" />}
+                                                {isPhone && <Phone className="w-3.5 h-3.5" />}
+                                                {btn.text}
+                                              </a>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             ) : (
                               msg.content
