@@ -28,136 +28,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
 
-const RE_ENGAGEMENT_ERROR =
-  "24-hour window closed. Send an approved template to re-open the chat.";
-
-const cleanSendError = (message = "") =>
-  message.includes("131047") || message.includes("Re-engagement message")
-    ? RE_ENGAGEMENT_ERROR
-    : message;
-
-const findTemplateComponent = (components = [], type) =>
-  components.find((component) => component.type?.toUpperCase() === type);
-
-const replaceTemplateParams = (text = "", parameters = []) =>
-  text.replace(/\{\{(\d+)\}\}/g, (_match, index) => {
-    const value = parameters[Number(index) - 1]?.text;
-    return value === undefined || value === null ? "" : String(value);
-  });
-
-const getMediaFromParameter = (parameter = {}) =>
-  parameter.image?.link ||
-  parameter.video?.link ||
-  parameter.document?.link ||
-  null;
-
-const buildTemplateSnapshot = (template, sentComponents = []) => {
-  const components = Array.isArray(template?.components)
-    ? template.components
-    : [];
-  const header = findTemplateComponent(components, "HEADER");
-  const body = findTemplateComponent(components, "BODY");
-  const footer = findTemplateComponent(components, "FOOTER");
-  const buttons = findTemplateComponent(components, "BUTTONS");
-  const sentHeader = findTemplateComponent(sentComponents, "HEADER");
-  const sentBody = findTemplateComponent(sentComponents, "BODY");
-  const mediaUrl =
-    getMediaFromParameter(sentHeader?.parameters?.[0]) ||
-    template?.local_url ||
-    header?.example?.header_url?.[0] ||
-    header?.example?.header_handle?.[0] ||
-    null;
-
-  return {
-    name: template?.name,
-    header: header
-      ? {
-          format: header.format,
-          text:
-            header.format === "TEXT"
-              ? replaceTemplateParams(header.text || "", sentHeader?.parameters)
-              : header.text || "",
-          media_url: ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format)
-            ? mediaUrl
-            : null,
-        }
-      : null,
-    body: replaceTemplateParams(
-      body?.text || template?.body_text || "",
-      sentBody?.parameters,
-    ),
-    footer: footer?.text || template?.footer_text || "",
-    buttons: buttons?.buttons || template?.buttons || [],
-  };
-};
-
-const TemplateBubble = ({ message, template }) => {
-  const snapshot =
-    message.template_snapshot ||
-    buildTemplateSnapshot(template, message.template_components || []);
-  const header = snapshot?.header;
-  const buttons = Array.isArray(snapshot?.buttons) ? snapshot.buttons : [];
-  const body =
-    snapshot?.body ||
-    message.content ||
-    `[Sent template: ${message.template_name}]`;
-  const mediaUrl = header?.media_url || message.media_url;
-  const isVideo =
-    header?.format === "VIDEO" || mediaUrl?.match(/\.(mp4|webm|ogg)$/i);
-  const isDocument = header?.format === "DOCUMENT";
-
-  return (
-    <div className="overflow-hidden rounded-xl bg-white text-slate-950 shadow-sm border border-black/10 min-w-56 max-w-xs">
-      {mediaUrl && (
-        <div className="bg-slate-100">
-          {isDocument ? (
-            <a
-              href={mediaUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="block p-3 text-sm font-medium text-primary underline"
-            >
-              View document
-            </a>
-          ) : isVideo ? (
-            <video src={mediaUrl} controls className="w-full max-h-64 object-cover" />
-          ) : (
-            <img
-              src={mediaUrl}
-              className="w-full max-h-64 object-cover"
-              alt=""
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          )}
-        </div>
-      )}
-      <div className="space-y-2 p-3">
-        {header?.format === "TEXT" && header.text && (
-          <div className="font-semibold leading-snug">{header.text}</div>
-        )}
-        <div className="whitespace-pre-wrap leading-relaxed">{body}</div>
-        {snapshot?.footer && (
-          <div className="text-xs text-slate-500">{snapshot.footer}</div>
-        )}
-      </div>
-      {buttons.length > 0 && (
-        <div className="border-t border-slate-200">
-          {buttons.map((button, index) => (
-            <div
-              key={`${button.text || button.type}-${index}`}
-              className="px-3 py-2 text-center text-sm font-medium text-sky-600 border-b border-slate-200 last:border-b-0"
-            >
-              {button.text || button.type}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const Inbox = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -171,7 +41,6 @@ const Inbox = () => {
 
   const [activeTemplate, setActiveTemplate] = React.useState(null);
   const [templateMappings, setTemplateMappings] = React.useState({});
-  const [nameVariables, setNameVariables] = React.useState({});
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
@@ -270,14 +139,6 @@ const Inbox = () => {
     },
     enabled: !!user,
   });
-
-  const templatesByName = React.useMemo(() => {
-    const map = new Map();
-    templates.forEach((template) => {
-      if (template?.name) map.set(template.name, template);
-    });
-    return map;
-  }, [templates]);
 
   // Filtered list: show conversations first, then contacts who don't have a conversation yet
   const filteredList = React.useMemo(() => {
@@ -425,7 +286,7 @@ const Inbox = () => {
     onError: (err) => {
       toast({
         title: "Send failed",
-        description: cleanSendError(err.message),
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -532,12 +393,10 @@ const Inbox = () => {
         type: "body",
         parameters: vars.map((v) => ({
           type: "text",
-          text: nameVariables[v] ? `{{name|${mappings[v] || ""}}}` : (mappings[v] || ""),
+          text: mappings[v] || "",
         })),
       });
     }
-
-    const selectedTemplateSnapshot = buildTemplateSnapshot(tpl, components);
 
     apiPost("/api/whatsapp", {
       action: "send_template",
@@ -553,9 +412,6 @@ const Inbox = () => {
           message_type: "template",
           content: `[Template: ${tpl.name}]`,
           template_name: tpl.name,
-          template_snapshot: res.template_snapshot || selectedTemplateSnapshot,
-          media_url:
-            res.media_url || selectedTemplateSnapshot.header?.media_url || null,
           phone_number: to,
           status: "sent",
           createdAt: new Date().toISOString(),
@@ -577,7 +433,7 @@ const Inbox = () => {
       .catch((err) =>
         toast({
           title: "Error",
-          description: cleanSendError(err.message),
+          description: err.message,
           variant: "destructive",
         }),
       )
@@ -644,8 +500,9 @@ const Inbox = () => {
                   {activeTemplate.bodyText.replace(
                     /\{\{(\d+)\}\}/g,
                     (match, p1) => {
-                      const val = nameVariables[p1] ? `{{name|${templateMappings[p1] || ""}}}` : templateMappings[p1];
-                      return val ? `[${val}]` : match;
+                      return templateMappings[p1]
+                        ? `[${templateMappings[p1]}]`
+                        : match;
                     },
                   )}
                 </p>
@@ -694,27 +551,13 @@ const Inbox = () => {
                   ))}
                 {activeTemplate.vars.map((v) => (
                   <div key={v} className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold">
-                        Body Variable {"{{"}
-                        {v}
-                        {"}}"}
-                      </Label>
-                      <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer text-primary">
-                        <input
-                          type="checkbox"
-                          checked={nameVariables[v] || false}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setNameVariables(prev => ({ ...prev, [v]: checked }));
-                          }}
-                          className="rounded border-primary/30 text-primary focus:ring-primary/50 w-3 h-3"
-                        />
-                        Use Contact Name
-                      </label>
-                    </div>
+                    <Label className="text-xs font-bold">
+                      Body Variable {"{{"}
+                      {v}
+                      {"}}"}
+                    </Label>
                     <Input
-                      placeholder={nameVariables[v] ? `Fallback for {{${v}}} (e.g. User)` : `Body variable ${v}...`}
+                      placeholder={`Body variable ${v}...`}
                       value={templateMappings[v] || ""}
                       onChange={(e) =>
                         setTemplateMappings((prev) => ({
@@ -740,7 +583,7 @@ const Inbox = () => {
                   className="flex-1 rounded-xl font-bold"
                   disabled={
                     sendingTemplate ||
-                    activeTemplate.vars.some((v) => !nameVariables[v] && !templateMappings[v]) ||
+                    activeTemplate.vars.some((v) => !templateMappings[v]) ||
                     (activeTemplate.headerVars || []).some(
                       (v) => !templateMappings[`h${v}`],
                     ) ||
@@ -883,51 +726,119 @@ const Inbox = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((msg) => {
+                  {messages.map((msg, index) => {
                     const isOutbound = msg.direction === "outbound";
-                    const isTemplate = msg.message_type === "template";
+
+                    const msgDate = new Date(msg.createdAt).toDateString();
+                    const prevMsgDate =
+                      index > 0
+                        ? new Date(messages[index - 1].createdAt).toDateString()
+                        : null;
+                    const showDateSeparator = msgDate !== prevMsgDate;
+
+                    let dateLabel = "";
+                    if (showDateSeparator) {
+                      const d = new Date(msg.createdAt);
+                      const today = new Date().toDateString();
+                      const yesterday = new Date(
+                        Date.now() - 86400000,
+                      ).toDateString();
+                      if (msgDate === today) dateLabel = "Today";
+                      else if (msgDate === yesterday) dateLabel = "Yesterday";
+                      else
+                        dateLabel = d.toLocaleDateString([], {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        });
+                    }
+
                     return (
-                      <div
-                        key={msg._id}
-                        className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={
-                            isTemplate
-                              ? "text-sm max-w-[82%]"
-                              : `rounded-2xl px-4 py-2.5 text-sm max-w-[70%] ${
-                                  isOutbound
-                                    ? "bg-primary text-primary-foreground rounded-br-md"
-                                    : "bg-secondary text-foreground rounded-bl-md"
-                                }`
-                          }
-                        >
-                          {msg.message_type === "interactive" ||
-                          msg.message_type === "button" ? (
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">
-                                Button Reply
-                              </span>
-                              <span>{msg.content}</span>
-                            </div>
-                          ) : msg.message_type === "template" ? (
-                            <TemplateBubble
-                              message={msg}
-                              template={templatesByName.get(
-                                msg.template_name,
-                              )}
-                            />
-                          ) : (
-                            msg.content
-                          )}
-                        </div>
-                        {msg.status === "failed" && msg.error_details && (
-                          <div className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1">
-                            <RefreshCw className="w-2.5 h-2.5" />
-                            Failed: {cleanSendError(msg.error_details)}
+                      <React.Fragment key={msg._id}>
+                        {showDateSeparator && (
+                          <div className="flex justify-center my-6 sticky top-0 z-10">
+                            <span className="bg-muted/80 backdrop-blur-sm text-muted-foreground text-[10px] font-bold px-4 py-1 rounded-lg border border-border shadow-sm uppercase tracking-tight">
+                              {dateLabel}
+                            </span>
                           </div>
                         )}
-                      </div>
+                        <div
+                          className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`rounded-2xl px-4 py-2.5 text-sm max-w-[70%] flex flex-col ${
+                              isOutbound
+                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                : "bg-secondary text-foreground rounded-bl-md"
+                            }`}
+                          >
+                            {msg.message_type === "interactive" ||
+                            msg.message_type === "button" ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">
+                                  Button Reply
+                                </span>
+                                <span>{msg.content}</span>
+                              </div>
+                            ) : msg.message_type === "template" ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">
+                                  Template
+                                </span>
+                                <span>
+                                  {msg.content ||
+                                    `[Sent template: ${msg.template_name}]`}
+                                </span>
+                                {msg.media_url && (
+                                  <div className="mt-2 rounded-lg overflow-hidden border border-border/20 max-w-xs">
+                                    {msg.media_url.match(
+                                      /\.(mp4|webm|ogg)$/i,
+                                    ) ||
+                                    msg.template_name
+                                      ?.toLowerCase()
+                                      .includes("video") ? (
+                                      <video
+                                        src={msg.media_url}
+                                        controls
+                                        className="w-full h-auto max-h-48 object-cover"
+                                      />
+                                    ) : (
+                                      <img
+                                        src={msg.media_url}
+                                        className="w-full h-auto max-h-48 object-cover"
+                                        alt="Template Media"
+                                        onError={(e) =>
+                                          (e.target.style.display = "none")
+                                        }
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              msg.content
+                            )}
+                            <div
+                              className={`text-[9px] mt-1 self-end opacity-70 font-medium ${
+                                isOutbound
+                                  ? "text-primary-foreground/90"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {new Date(msg.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          </div>
+                          {msg.status === "failed" && msg.error_details && (
+                            <div className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1">
+                              <RefreshCw className="w-2.5 h-2.5" />
+                              Failed: {msg.error_details}
+                            </div>
+                          )}
+                        </div>
+                      </React.Fragment>
                     );
                   })}
                   <div ref={messagesEndRef} />
