@@ -11,7 +11,7 @@ import { ArrowLeft, Plus, Bold, Italic, Type, MessageSquare, Globe, Phone, X, Sa
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, apiUpload } from "@/lib/api";
 
 const EditTemplate = () => {
   const { id } = useParams();
@@ -31,7 +31,7 @@ const EditTemplate = () => {
     buttons: []
   });
   const [headerPreviewUrl, setHeaderPreviewUrl] = React.useState(null);
-
+  const [headerFile, setHeaderFile] = React.useState(null);
   const { data: templateData, isLoading } = useQuery({
     queryKey: ["template", id],
     queryFn: () => apiGet(`/api/whatsapp/templates/${id}`),
@@ -72,6 +72,7 @@ const EditTemplate = () => {
     if (file) {
       const url = URL.createObjectURL(file);
       setHeaderPreviewUrl(url);
+      setHeaderFile(file);
       toast({ title: "Asset selected", description: "This will be re-uploaded on save." });
     }
   };
@@ -101,26 +102,64 @@ const EditTemplate = () => {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const components = [{ type: "BODY", text: form.body }];
+      let headerHandle = null;
+      if (form.headerType === 'media' && headerFile) {
+        const formData = new FormData();
+        formData.append('file', headerFile);
+        const uploadRes = await apiUpload("/api/whatsapp/upload_media", formData);
+        headerHandle = uploadRes.handle;
+      }
+
+      if (!form.body || !form.body.trim()) throw new Error("Body message is required.");
+      const bodyComp = { type: "BODY", text: form.body };
+      const matches = form.body.match(/\{\{(\d+)\}\}/g) || [];
+      const ids = [...new Set(matches.map(m => parseInt(m.replace(/[{}]/g, ""))))].sort((a, b) => a - b);
+      if (ids.length > 0) {
+        bodyComp.example = { body_text: [ids.map(v => `Sample ${v}`)] };
+      }
+      const components = [bodyComp];
+
       if (form.headerType === 'text') {
         components.push({ type: "HEADER", format: "TEXT", text: form.headerText });
       } else if (form.headerType === 'media') {
-        components.push({ type: "HEADER", format: form.headerFormat, example: { header_handle: ["456"] } });
+        const headerComp = { type: "HEADER", format: form.headerFormat };
+        if (headerHandle) {
+          headerComp.example = { header_handle: [headerHandle] };
+        } else if (template) {
+          const origHeader = template.components?.find(c => c.type === 'HEADER');
+          if (origHeader?.example?.header_handle) {
+            headerComp.example = { header_handle: origHeader.example.header_handle };
+          } else if (origHeader?.example?.header_url) {
+            headerComp.example = { header_url: origHeader.example.header_url };
+          }
+        }
+        components.push(headerComp);
       }
       if (form.footer) components.push({ type: "FOOTER", text: form.footer });
+      
       if (form.buttons.length > 0) {
-        components.push({ type: "BUTTONS", buttons: form.buttons.map(b => {
-          const btn = { type: b.type, text: b.text };
-          if (b.type === 'URL') btn.url = b.url;
-          if (b.type === 'PHONE_NUMBER') btn.phone_number = b.phone_number;
-          return btn;
-        })});
+        const mappedBtns = [];
+        for (const b of form.buttons) {
+          if (!b.text || !b.text.trim()) throw new Error("Button text is required.");
+          const btn = { type: b.type, text: b.text.trim() };
+          if (b.type === 'URL') {
+            if (!b.url || !b.url.trim()) throw new Error("URL is required for URL buttons.");
+            btn.url = b.url.trim();
+          }
+          if (b.type === 'PHONE_NUMBER') {
+            if (!b.phone_number || !b.phone_number.trim()) throw new Error("Phone number is required for Phone buttons.");
+            btn.phone_number = b.phone_number.trim();
+          }
+          mappedBtns.push(btn);
+        }
+        components.push({ type: "BUTTONS", buttons: mappedBtns });
       }
 
       return apiPost("/api/whatsapp", {
         action: "edit_template",
         name: form.name,
         category: form.category,
+        language: form.language,
         components
       });
     },
