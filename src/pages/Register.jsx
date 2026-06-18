@@ -21,7 +21,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", email: "", password: "", company: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", company: "" });
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -65,7 +65,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) {
+    if (!form.name || !form.email || !form.phone || !form.password) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
@@ -79,7 +79,7 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      const { data, error } = await signUp(form.email, form.password, form.name);
+      const { data, error } = await signUp(form.email, form.password, form.name, form.phone);
       if (error) throw error;
       toast({ title: "Account created!", description: "You are now signed in." });
       navigate("/dashboard");
@@ -166,6 +166,17 @@ const Register = () => {
                   className="h-11 border-border/60 focus:border-primary/60 transition-colors"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">WhatsApp Number *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="h-11 border-border/60 focus:border-primary/60 transition-colors"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Work Email *</Label>
