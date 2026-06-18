@@ -741,13 +741,14 @@ export default function VisualFlowBuilder({
                         />
                       </div>
                       <div className="vfb-field">
-                        <label className="vfb-field-label">Buttons</label>
+                        <label className="vfb-field-label">Buttons (Max 20 characters)</label>
                         <div className="vfb-panel-btn-list">
                           {(selectedNode.buttons || []).map((btn, bIdx) => (
                             <div key={btn.id} className="vfb-panel-btn-item">
                               <input
                                 placeholder={`Button ${bIdx + 1} title`}
                                 value={btn.title || ""}
+                                maxLength={20}
                                 onChange={(e) => {
                                   const btns = [...(selectedNode.buttons || [])];
                                   btns[bIdx] = { ...btns[bIdx], title: e.target.value };

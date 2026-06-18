@@ -843,6 +843,44 @@ const Inbox = () => {
                                     };
                                   }
 
+                                  if (!templateData && msg.template_name) {
+                                    const matchedTemplate = templates.find((t) => t.name === msg.template_name);
+                                    if (matchedTemplate) {
+                                      const bodyComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "BODY")
+                                        : null;
+                                      const bodyText = bodyComp?.text || matchedTemplate.body_text || "";
+
+                                      const headerComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "HEADER")
+                                        : null;
+                                      const headerFormat = headerComp?.format || null;
+                                      const headerText = headerComp?.text || "";
+
+                                      const footerComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "FOOTER")
+                                        : null;
+                                      const footerText = footerComp?.text || matchedTemplate.footer_text || "";
+
+                                      const buttonsComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "BUTTONS")
+                                        : null;
+                                      const buttons = buttonsComp?.buttons || matchedTemplate.buttons || [];
+
+                                      templateData = {
+                                        name: matchedTemplate.name,
+                                        header: headerFormat ? {
+                                          format: headerFormat,
+                                          text: headerText,
+                                          media_url: matchedTemplate.local_url || msg.media_url
+                                        } : null,
+                                        body: bodyText,
+                                        footer: footerText,
+                                        buttons: buttons
+                                      };
+                                    }
+                                  }
+
                                   if (!templateData) {
                                     return (
                                       <span className="px-3 py-2">

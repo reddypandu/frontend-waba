@@ -72,7 +72,7 @@ const Billing = () => {
       const plan = PLANS.find((p) => p.id === planId);
       const orderData = await apiPost("/api/subscription/create-order", {
         plan: planId,
-        amount: plan.price * 100,
+        amount: plan.price,
       });
 
       const razorpayKey = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
@@ -187,10 +187,7 @@ const Billing = () => {
                 </div>
                 <div className="flex items-end gap-1">
                   <span className="text-3xl font-black text-foreground">{plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString()}`}</span>
-                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}
-
-                    /year
-                  </span>
+                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

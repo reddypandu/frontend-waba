@@ -20,12 +20,12 @@ const DashboardOverview = () => {
     enabled: !!user,
   });
 
-  const { waAccount, wallet, profile } = dashboardData || {};
+  const { waAccount, wallet, profile, messageStats, chartData } = dashboardData || {};
 
-  const chartData = useMemo(() => {
-    // This would ideally come from the backend, using mock for visual structure
-    return DAY_ORDER.map(name => ({ name, sent: 0, delivered: 0, read: 0 }));
-  }, []);
+  const readRate = useMemo(() => {
+    if (!messageStats || !messageStats.sent) return 0;
+    return Math.round((messageStats.read / messageStats.sent) * 100);
+  }, [messageStats]);
 
   const isConnected = !!waAccount?.phone_number && !!waAccount?.phone_number_id;
   const displayName = user?.full_name || user?.email?.split("@")[0] || "there";
@@ -47,15 +47,15 @@ const DashboardOverview = () => {
     },
     {
       title: "Read Rate",
-      value: "0%",
-      sub: "Avg. last 7 days",
+      value: `${readRate}%`,
+      sub: "Avg. last 30 days",
       icon: Eye,
       gradient: "from-violet-500 to-purple-600",
     },
     {
       title: "Failed",
-      value: "0",
-      sub: "Last 7 days",
+      value: (messageStats?.failed || 0).toString(),
+      sub: "Last 30 days",
       icon: XCircle,
       gradient: "from-red-500 to-rose-600",
     },

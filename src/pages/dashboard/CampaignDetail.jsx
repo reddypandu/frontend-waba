@@ -115,7 +115,7 @@ const CampaignDetail = () => {
 
   const { data: messageLogs = [], refetch: refetchLogs } = useQuery({
     queryKey: ["campaign-message-logs", user?.id, id],
-    queryFn: () => apiGet(`/api/whatsapp/messages-by-campaign/${id}`),
+    queryFn: () => apiGet(`/api/campaigns/${id}/reports`),
     select: (data) => data.messages,
     enabled: !!user && !!id,
   });
@@ -252,7 +252,7 @@ const CampaignDetail = () => {
 
   const getFilteredLogs = (filter) => {
     if (!filter) return messageLogs;
-    if (filter === "all") return messageLogs;
+    if (filter === "all" || filter === "attempted") return messageLogs;
     if (filter === "sent")
       return messageLogs.filter((l) =>
         ["sent", "delivered", "read", "replied"].includes(l.status),
@@ -263,6 +263,8 @@ const CampaignDetail = () => {
       );
     if (filter === "read")
       return messageLogs.filter((l) => ["read", "replied"].includes(l.status));
+    if (filter === "replied")
+      return messageLogs.filter((l) => l.status === "replied");
     if (filter === "failed")
       return messageLogs.filter((l) => l.status === "failed");
     return messageLogs;
@@ -270,7 +272,7 @@ const CampaignDetail = () => {
 
   const statusStyle = statusStyles[campaign.status] || statusStyles.draft;
   const isProcessing = campaign.status === "running";
-  const totalCost = (statsData?.sent || 0) * 0.5; // Dynamic scale logic could be added
+  const totalCost = (statsData?.sent || 0) * 0.9; // Dynamic scale logic could be added
 
   const stats = [
     {
@@ -643,15 +645,14 @@ const CampaignDetail = () => {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={`text-[10px] scale-90 ${
-                          log.status === "read"
-                            ? "bg-primary/10 text-primary border-primary/20"
-                            : log.status === "delivered"
-                              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                              : log.status === "failed"
-                                ? "bg-destructive/10 text-destructive border-destructive/20"
-                                : "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                        }`}
+                        className={`text-[10px] scale-90 ${log.status === "read"
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : log.status === "delivered"
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : log.status === "failed"
+                              ? "bg-destructive/10 text-destructive border-destructive/20"
+                              : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                          }`}
                       >
                         {log.status === "sent" ? "accepted" : log.status}
                       </Badge>
