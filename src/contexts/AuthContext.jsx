@@ -60,12 +60,12 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]);
 
-  const signUp = async (email, password, fullName) => {
+  const signUp = async (email, password, fullName, phone) => {
     try {
       const res = await fetch(`${BASE}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName }),
+        body: JSON.stringify({ email, password, full_name: fullName, phone }),
       });
 
       const text = await res.text();

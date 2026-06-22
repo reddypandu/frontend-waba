@@ -30,6 +30,47 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
 
+
+const MessageTicks = ({ status, isOutbound }) => {
+  if (!isOutbound) return null;
+
+  if (status === "sent") {
+    return (
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M1 6L5 10L14 1" stroke="#8696A0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (status === "delivered") {
+    return (
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M1 6L5 10L14 1" stroke="#8696A0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 6L9 10L18 1" stroke="#8696A0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (status === "read") {
+    return (
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M1 6L5 10L14 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 6L9 10L18 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (status === "failed") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M1 1L11 11M11 1L1 11" stroke="#FF3B30" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 const Inbox = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -232,6 +273,9 @@ const Inbox = () => {
     refetchOnWindowFocus: true,
     staleTime: 0,
   });
+  // Component: MessageTicks.jsx
+
+
 
   const messages = msgsData?.messages || [];
 
@@ -843,6 +887,44 @@ const Inbox = () => {
                                     };
                                   }
 
+                                  if (!templateData && msg.template_name) {
+                                    const matchedTemplate = templates.find((t) => t.name === msg.template_name);
+                                    if (matchedTemplate) {
+                                      const bodyComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "BODY")
+                                        : null;
+                                      const bodyText = bodyComp?.text || matchedTemplate.body_text || "";
+
+                                      const headerComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "HEADER")
+                                        : null;
+                                      const headerFormat = headerComp?.format || null;
+                                      const headerText = headerComp?.text || "";
+
+                                      const footerComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "FOOTER")
+                                        : null;
+                                      const footerText = footerComp?.text || matchedTemplate.footer_text || "";
+
+                                      const buttonsComp = Array.isArray(matchedTemplate.components)
+                                        ? matchedTemplate.components.find((c) => c.type === "BUTTONS")
+                                        : null;
+                                      const buttons = buttonsComp?.buttons || matchedTemplate.buttons || [];
+
+                                      templateData = {
+                                        name: matchedTemplate.name,
+                                        header: headerFormat ? {
+                                          format: headerFormat,
+                                          text: headerText,
+                                          media_url: matchedTemplate.local_url || msg.media_url
+                                        } : null,
+                                        body: bodyText,
+                                        footer: footerText,
+                                        buttons: buttons
+                                      };
+                                    }
+                                  }
+
                                   if (!templateData) {
                                     return (
                                       <span className="px-3 py-2">
@@ -939,19 +1021,24 @@ const Inbox = () => {
                               msg.content
                             )}
                             <div
-                              className={`text-[9px] mt-1 self-end opacity-70 font-medium ${
-                                msg.message_type === "template" ? "px-3 pb-2" : ""
-                              } ${
-                                isOutbound
-                                  ? "text-primary-foreground/90"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
+  className={`flex items-center gap-1 mt-1 self-end opacity-90 font-medium ${
+    msg.message_type === "template" ? "px-3 pb-2" : ""
+  }`}
+>
+  <span
+    className={`text-[9px] ${
+      isOutbound
+        ? "text-primary-foreground/90"
+        : "text-muted-foreground"
+    }`}
+  >
+    {new Date(msg.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}
+  </span>
+  <MessageTicks status={msg.status} isOutbound={isOutbound} />
+</div>
                           </div>
                           {msg.status === "failed" && msg.error_details && (
                             <div className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1">

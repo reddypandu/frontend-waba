@@ -90,7 +90,8 @@ const AdminPanel = () => {
 
   const filtered = users.filter(u =>
     !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.phone?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDeleteUser = (targetUser) => {
@@ -179,6 +180,7 @@ const AdminPanel = () => {
                 <thead>
                   <tr className="border-b border-border bg-secondary/30">
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Phone</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">WhatsApp</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Plan</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Usage</th>
@@ -198,6 +200,16 @@ const AdminPanel = () => {
                             <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                           </div>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {u.phone ? (
+                          <div className="flex items-center gap-1.5 text-foreground">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs">{u.phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not provided</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         {u.wa_connected ? (
@@ -247,12 +259,12 @@ const AdminPanel = () => {
                   ))}
                   {filtered.length === 0 && !isLoading && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-muted-foreground">No users found match criteria.</td>
+                      <td colSpan={6} className="py-12 text-center text-muted-foreground">No users found match criteria.</td>
                     </tr>
                   )}
                   {isLoading && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-muted-foreground">Loading users...</td>
+                      <td colSpan={6} className="py-12 text-center text-muted-foreground">Loading users...</td>
                     </tr>
                   )}
                 </tbody>

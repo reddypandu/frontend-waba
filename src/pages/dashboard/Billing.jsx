@@ -52,18 +52,16 @@ const Billing = () => {
   const { toast } = useToast();
   const [upgrading, setUpgrading] = React.useState(null);
 
-  const { data: dashData } = useQuery({
-    queryKey: ["wa-setup-status", user?.id],
-    queryFn: () => apiGet("/api/admin/me"),
-    enabled: !!user,
-  });
+  const { data: dashData, isLoading: planLoading } = useQuery({
+  queryKey: ["wa-setup-status", user?.id],
+  queryFn: () => apiGet("/api/admin/me"),
+  enabled: !!user,
+});
 
-  const subscription = dashData?.subscription || {
-    plan: "paid", // Default to 'paid' for existing users if plan is not explicitly set
-    status: "active",
-    messages_used: 0,
-  };
-  const currentPlan = subscription.plan || "paid"; // Default to 'paid' for existing users if plan is not explicitly set
+// ✅ Replace with just these two lines:
+const subscription = dashData?.subscription;
+const currentPlan = subscription?.plan || "free";
+
 
   const handleUpgrade = async (planId) => {
     if (planId === currentPlan) return;
@@ -72,7 +70,7 @@ const Billing = () => {
       const plan = PLANS.find((p) => p.id === planId);
       const orderData = await apiPost("/api/subscription/create-order", {
         plan: planId,
-        amount: plan.price * 100,
+        amount: plan.price,
       });
 
       const razorpayKey = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
@@ -142,27 +140,64 @@ const Billing = () => {
       </div>
 
       {/* Current Plan Card */}
-      <Card className="shadow-sm border-primary/20">
-        <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-muted-foreground font-medium">
-                Current Plan
-              </p>
-              <Badge className={`capitalize ${currentPlan === 'free' ? 'bg-gray-100 text-gray-700' : 'bg-primary/10 text-primary'} border-none font-bold`}>
-                {currentPlan}
-              </Badge>
-            </div>
-            <p className="text-2xl font-black text-foreground">
-              {currentPlan === 'free' ? 'Free Trial' : 'Paid Plan'}
-            </p>
-            {currentPlan === 'free' && <p className="text-sm text-muted-foreground mt-1">Limited to 10 contacts.</p>}
+      {/* Current Plan Card */}
+<Card className="shadow-sm border-primary/20">
+  <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-sm text-muted-foreground font-medium">
+          Current Plan
+        </p>
+        {planLoading ? (
+          <div className="h-5 w-16 bg-muted rounded animate-pulse" />
+        ) : (
+          <Badge className={`capitalize ${
+            currentPlan === "free"
+              ? "bg-gray-100 text-gray-700"
+              : "bg-primary/10 text-primary"
+          } border-none font-bold`}>
+            {currentPlan}
+          </Badge>
+        )}
+      </div>
+      {planLoading ? (
+        <div className="h-8 w-32 bg-muted rounded animate-pulse mt-1" />
+      ) : (
+        <p className="text-2xl font-black text-foreground">
+          {currentPlan === "free" ? "Free Trial" : "Paid Plan"}
+        </p>
+      )}
+      {!planLoading && currentPlan === "free" && (
+        <p className="text-sm text-muted-foreground mt-1">
+          Limited to 10 contacts.
+        </p>
+      )}
+    </div>
+  </CardContent>
+</Card>
+
+{planLoading ? (
+  <div className="grid sm:grid-cols-3 gap-5">
+    {[1, 2].map((i) => (
+      <Card key={i} className="border-2 animate-pulse">
+        <CardHeader className="pb-3 pt-7">
+          <div className="h-6 bg-muted rounded w-24 mb-2" />
+          <div className="h-8 bg-muted rounded w-16" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="h-4 bg-muted rounded w-full" />
+            ))}
           </div>
+          <div className="h-10 bg-muted rounded w-full mt-4" />
         </CardContent>
       </Card>
-
-      {/* Plan Cards */}
-      <div className="grid sm:grid-cols-3 gap-5">
+    ))}
+  </div>
+) : (
+  // ✅ Your existing plan cards grid here
+  <div className="grid sm:grid-cols-3 gap-5">
         {PLANS.map((plan) => {
           const Icon = plan.icon;
           const isCurrent = currentPlan === plan.id;
@@ -187,10 +222,7 @@ const Billing = () => {
                 </div>
                 <div className="flex items-end gap-1">
                   <span className="text-3xl font-black text-foreground">{plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString()}`}</span>
-                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}
-
-                    /year
-                  </span>
+                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -233,6 +265,9 @@ const Billing = () => {
           );
         })}
       </div>
+)}
+      {/* Plan Cards */}
+     
 
       <p className="text-xs text-muted-foreground text-center pt-2">
         All plans include 256-bit encryption, GDPR compliance, and Meta-approved

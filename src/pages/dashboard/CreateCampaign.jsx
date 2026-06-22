@@ -190,7 +190,7 @@ const CreateCampaign = () => {
     mutationFn: async () => {
       let finalContacts = selectedContacts;
       if (dataSource === 'excel') {
-        const res = await apiPost("/api/whatsapp/contacts/batch", { contacts: excelContacts });
+        const res = await apiPost("/api/contacts/batch", { contacts: excelContacts });
         finalContacts = res.ids;
       } else if (dataSource === 'all_opted_in') {
         finalContacts = [];
