@@ -48,13 +48,27 @@ const EditTemplate = () => {
       const footer = components.find(c => c.type === 'FOOTER');
       const buttonComp = components.find(c => c.type === 'BUTTONS');
 
+      // ✅ Determine headerType correctly
+      let headerType = 'none';
+      if (header) {
+        if (header.format === 'TEXT') headerType = 'text';
+        else headerType = 'media'; // IMAGE, VIDEO, DOCUMENT
+      }
+
+      // ✅ Get existing media URL from template for preview
+      const existingMediaUrl =
+        header?.example?.header_url?.[0] ||
+        header?.example?.header_handle?.[0] ||
+        template.local_url ||
+        null;
+
       setForm({
         name: template.name || "",
         category: template.category || "MARKETING",
         language: template.language || "en",
-        headerType: header ? (header.format === 'TEXT' ? 'text' : 'media') : 'none',
-        headerText: header?.text || "",
-        headerFormat: header?.format || "IMAGE",
+        headerType,
+        headerText: header?.format === 'TEXT' ? (header?.text || "") : "",
+        headerFormat: header?.format && header.format !== 'TEXT' ? header.format : "IMAGE",
         body: body?.text || "",
         footer: footer?.text || "",
         buttons: buttonComp?.buttons?.map(b => ({
@@ -64,6 +78,11 @@ const EditTemplate = () => {
           phone_number: b.phone_number
         })) || []
       });
+
+      // ✅ Load existing media into preview so it shows without re-uploading
+      if (existingMediaUrl) {
+        setHeaderPreviewUrl(existingMediaUrl);
+      }
     }
   }, [template]);
 
@@ -82,8 +101,8 @@ const EditTemplate = () => {
       toast({ title: "Max 3 buttons allowed", variant: "destructive" });
       return;
     }
-    const newBtn = type === 'QUICK_REPLY' 
-      ? { type, text: "" } 
+    const newBtn = type === 'QUICK_REPLY'
+      ? { type, text: "" }
       : { type, text: "", url: type === 'URL' ? "" : undefined, phone_number: type === 'PHONE_NUMBER' ? "" : undefined };
     setForm({ ...form, buttons: [...form.buttons, newBtn] });
   };
@@ -136,7 +155,7 @@ const EditTemplate = () => {
         components.push(headerComp);
       }
       if (form.footer) components.push({ type: "FOOTER", text: form.footer });
-      
+
       if (form.buttons.length > 0) {
         const mappedBtns = [];
         for (const b of form.buttons) {
@@ -205,7 +224,7 @@ const EditTemplate = () => {
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
+                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="MARKETING">Marketing</SelectItem>
@@ -221,23 +240,23 @@ const EditTemplate = () => {
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <Label>Header (Optional)</Label>
-                <RadioGroup value={form.headerType} onValueChange={v => setForm({...form, headerType: v})} className="flex gap-4">
+                <RadioGroup value={form.headerType} onValueChange={v => setForm({ ...form, headerType: v })} className="flex gap-4">
                   <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="h-none" /><Label htmlFor="h-none" className="font-normal">None</Label></div>
                   <div className="flex items-center space-x-2"><RadioGroupItem value="text" id="h-text" /><Label htmlFor="h-text" className="font-normal">Text</Label></div>
                   <div className="flex items-center space-x-2"><RadioGroupItem value="media" id="h-media" /><Label htmlFor="h-media" className="font-normal">Media</Label></div>
                 </RadioGroup>
-                
+
                 {form.headerType === 'text' && (
-                  <Input 
-                    value={form.headerText} 
-                    onChange={e => setForm({...form, headerText: e.target.value})} 
-                    placeholder="Enter header text (max 60 chars)" 
-                    maxLength={60} 
+                  <Input
+                    value={form.headerText}
+                    onChange={e => setForm({ ...form, headerText: e.target.value })}
+                    placeholder="Enter header text (max 60 chars)"
+                    maxLength={60}
                   />
                 )}
                 {form.headerType === 'media' && (
                   <div className="space-y-3 mt-2">
-                    <Select value={form.headerFormat} onValueChange={v => setForm({...form, headerFormat: v})}>
+                    <Select value={form.headerFormat} onValueChange={v => setForm({ ...form, headerFormat: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="IMAGE">Image (.jpg, .png)</SelectItem>
@@ -267,12 +286,12 @@ const EditTemplate = () => {
                   <Label>Body Message</Label>
                   <div className="flex gap-2 text-xs text-muted-foreground">Use {"{{1}}"} for variables</div>
                 </div>
-                <Textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})} placeholder="Hi {{1}}, thank you!" rows={6} />
+                <Textarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Hi {{1}}, thank you!" rows={6} />
               </div>
 
               <div className="space-y-2">
                 <Label>Footer (Optional)</Label>
-                <Input value={form.footer} onChange={e => setForm({...form, footer: e.target.value})} placeholder="Reply STOP to opt-out" />
+                <Input value={form.footer} onChange={e => setForm({ ...form, footer: e.target.value })} placeholder="Reply STOP to opt-out" />
               </div>
 
               <div className="space-y-4 pt-4 border-t">
@@ -284,7 +303,7 @@ const EditTemplate = () => {
                     <Button type="button" variant="outline" size="sm" onClick={() => addButton('PHONE_NUMBER')}>+ Phone</Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   {form.buttons.map((btn, index) => (
                     <div key={index} className="p-4 rounded-xl border bg-muted/30 space-y-3 relative">
@@ -333,9 +352,22 @@ const EditTemplate = () => {
                 {form.headerType === 'media' && (
                   <div className="aspect-video bg-gray-100 flex flex-col items-center justify-center border-b overflow-hidden">
                     {headerPreviewUrl ? (
-                      form.headerFormat === 'IMAGE' ? <img src={headerPreviewUrl} className="w-full h-full object-cover" /> :
-                      form.headerFormat === 'VIDEO' ? <video src={headerPreviewUrl} className="w-full h-full object-cover" /> :
-                      <div className="flex flex-col items-center"><Type className="h-8 w-8 text-gray-300" /><span className="text-[10px] text-gray-400 font-bold uppercase">{form.headerFormat}</span></div>
+                      form.headerFormat === 'IMAGE' ? <img src={headerPreviewUrl} className="w-full h-full object-contain" /> :
+                        // ✅ Fix — add controls + poster fallback
+                        form.headerFormat === 'VIDEO' ? (
+                          <video
+                            src={headerPreviewUrl}
+                            controls
+                            controlsList="nodownload"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // If video URL is a Meta handle (not playable), show placeholder
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) :
+                          <div className="flex flex-col items-center"><Type className="h-8 w-8 text-gray-300" /><span className="text-[10px] text-gray-400 font-bold uppercase">{form.headerFormat}</span></div>
                     ) : (
                       <>
                         <Type className="h-8 w-8 text-gray-300 mb-1" />

@@ -716,9 +716,8 @@ const Inbox = () => {
                 <button
                   key={item._id}
                   onClick={() => setSelectedConv(item._id)}
-                  className={`w-full flex items-center gap-3 p-4 text-left hover:bg-secondary/50 transition-colors border-b border-border ${
-                    selectedConv === item._id ? "bg-secondary" : ""
-                  }`}
+                  className={`w-full flex items-center gap-3 p-4 text-left hover:bg-secondary/50 transition-colors border-b border-border ${selectedConv === item._id ? "bg-secondary" : ""
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
                     {displayInfo.name?.charAt(0)?.toUpperCase()}
@@ -839,14 +838,13 @@ const Inbox = () => {
                           className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`rounded-2xl text-sm flex flex-col ${msg.message_type === "template" ? "p-0 overflow-hidden max-w-[75%]" : "px-4 py-2.5 max-w-[70%]"} ${
-                              isOutbound
-                                ? "bg-primary text-primary-foreground rounded-br-md"
-                                : "bg-secondary text-foreground rounded-bl-md"
-                            }`}
+                            className={`rounded-2xl text-sm flex flex-col ${msg.message_type === "template" ? "p-0 overflow-hidden max-w-[75%] lg:max-w-[40%]" : "px-4 py-2.5 max-w-[70%]"} ${isOutbound
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-secondary text-foreground rounded-bl-md"
+                              }`}
                           >
                             {msg.message_type === "interactive" ||
-                            msg.message_type === "button" ? (
+                              msg.message_type === "button" ? (
                               <div className="flex flex-col gap-1">
                                 <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold">
                                   Button Reply
@@ -869,17 +867,17 @@ const Inbox = () => {
                                     const vv = msg.template_variable_values;
                                     const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
                                     const isMediaHeader = mediaFormats.includes(fd.headerFormat);
-                                    
+
                                     templateData = {
                                       name: fd.name,
                                       header: fd.headerFormat && fd.headerFormat !== "none" ? {
                                         format: fd.headerFormat,
-                                        text: fd.headerFormat === "TEXT" && fd.headerText 
+                                        text: fd.headerFormat === "TEXT" && fd.headerText
                                           ? fd.headerText.replace(/\{\{(\d+)\}\}/g, (match, p1) => vv[`h${p1}`] || match)
                                           : fd.headerText || "",
                                         media_url: isMediaHeader ? (vv.header_url || msg.media_url) : null
                                       } : null,
-                                      body: fd.bodyText 
+                                      body: fd.bodyText
                                         ? fd.bodyText.replace(/\{\{(\d+)\}\}/g, (match, p1) => vv[p1] || match)
                                         : "",
                                       footer: fd.footerText || "",
@@ -972,7 +970,7 @@ const Inbox = () => {
                                           )}
                                         </div>
                                       )}
-                                      
+
                                       {/* Render Body */}
                                       <p className="text-sm opacity-95 leading-relaxed whitespace-pre-wrap px-3 py-2">
                                         {renderFormattedText(templateData.body)}
@@ -992,18 +990,17 @@ const Inbox = () => {
                                             const isLink = btn.type === 'URL';
                                             const isPhone = btn.type === 'PHONE_NUMBER';
                                             const href = isLink ? btn.url : isPhone ? `tel:${btn.phone_number}` : undefined;
-                                            
+
                                             return (
                                               <a
                                                 key={idx}
                                                 href={href}
                                                 target={isLink ? "_blank" : undefined}
                                                 rel={isLink ? "noopener noreferrer" : undefined}
-                                                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-colors w-full ${
-                                                  isOutbound 
-                                                    ? "bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground" 
-                                                    : "bg-muted hover:bg-muted/80 text-primary"
-                                                }`}
+                                                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-colors w-full ${isOutbound
+                                                  ? "bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground"
+                                                  : "bg-muted hover:bg-muted/80 text-primary"
+                                                  }`}
                                               >
                                                 {isLink && <ExternalLink className="w-3.5 h-3.5" />}
                                                 {isPhone && <Phone className="w-3.5 h-3.5" />}
@@ -1021,29 +1018,36 @@ const Inbox = () => {
                               msg.content
                             )}
                             <div
-  className={`flex items-center gap-1 mt-1 self-end opacity-90 font-medium ${
-    msg.message_type === "template" ? "px-3 pb-2" : ""
-  }`}
->
-  <span
-    className={`text-[9px] ${
-      isOutbound
-        ? "text-primary-foreground/90"
-        : "text-muted-foreground"
-    }`}
-  >
-    {new Date(msg.createdAt).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}
-  </span>
-  <MessageTicks status={msg.status} isOutbound={isOutbound} />
-</div>
+                              className={`flex items-center gap-1 mt-1 self-end opacity-90 font-medium ${msg.message_type === "template" ? "px-3 pb-2" : ""
+                                }`}
+                            >
+                              <span
+                                className={`text-[9px] ${isOutbound
+                                  ? "text-primary-foreground/90"
+                                  : "text-muted-foreground"
+                                  }`}
+                              >
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <MessageTicks status={msg.status} isOutbound={isOutbound} />
+                            </div>
                           </div>
+
                           {msg.status === "failed" && msg.error_details && (
-                            <div className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1">
-                              <RefreshCw className="w-2.5 h-2.5" />
-                              Failed: {msg.error_details}
+                            <div className="relative group flex items-center mt-1 px-1">
+                              <div className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center cursor-pointer shrink-0">
+                                <span className="text-[9px] font-bold text-white leading-none">!</span>
+                              </div>
+                              {/* Tooltip */}
+                              <div className="absolute bottom-50 right-0 z-50 hidden group-hover:block w-56 bg-popover border border-border rounded-xl shadow-lg p-3">
+                                <p className="text-[11px] font-semibold text-destructive mb-1">Message Failed</p>
+                                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                  {msg.error_details}
+                                </p>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1112,7 +1116,7 @@ const Inbox = () => {
                           const bodyText =
                             (Array.isArray(t.components)
                               ? t.components.find((c) => c.type === "BODY")
-                                  ?.text
+                                ?.text
                               : t.body_text) || "";
 
                           const headerComp = Array.isArray(t.components)
