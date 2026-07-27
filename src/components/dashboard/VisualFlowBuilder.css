@@ -685,7 +685,45 @@
 }
 
 @media (max-width: 640px) {
+  .vfb-body {
+    flex-direction: column-reverse;
+  }
+
   .vfb-sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid hsl(222 25% 14%);
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0;
+  }
+  
+  .vfb-sidebar-header {
+    padding: 10px;
+    white-space: nowrap;
+    border-right: 1px solid hsl(222 25% 14%);
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  
+  .vfb-sidebar-nodes {
+    flex-direction: row;
+    padding: 10px;
+    gap: 8px;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  .vfb-sidebar-node {
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+  
+  .vfb-sidebar-node-desc {
     display: none;
   }
 
