@@ -53,14 +53,14 @@ const Billing = () => {
   const [upgrading, setUpgrading] = React.useState(null);
 
   const { data: dashData, isLoading: planLoading } = useQuery({
-  queryKey: ["wa-setup-status", user?.id],
-  queryFn: () => apiGet("/api/admin/me"),
-  enabled: !!user,
-});
+    queryKey: ["wa-setup-status", user?.id],
+    queryFn: () => apiGet("/api/admin/me"),
+    enabled: !!user,
+  });
 
-// ✅ Replace with just these two lines:
-const subscription = dashData?.subscription;
-const currentPlan = subscription?.plan || "free";
+  // ✅ Replace with just these two lines:
+  const subscription = dashData?.subscription;
+  const currentPlan = subscription?.plan || "free";
 
 
   const handleUpgrade = async (planId) => {
@@ -132,142 +132,147 @@ const currentPlan = subscription?.plan || "free";
         <p className="text-muted-foreground">
           Manage your subscription and upgrade to unlock more features.
         </p>
-        {currentPlan === 'free' && (
-          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
-            You are currently on the Free Trial. Upgrade anytime to the Paid Plan for unlimited contacts, campaigns, and automation.
-          </div>
-        )}
-      </div>
-
-      {/* Current Plan Card */}
-      {/* Current Plan Card */}
-<Card className="shadow-sm border-primary/20">
-  <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <p className="text-sm text-muted-foreground font-medium">
-          Current Plan
-        </p>
         {planLoading ? (
-          <div className="h-5 w-16 bg-muted rounded animate-pulse" />
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+          </div>
         ) : (
-          <Badge className={`capitalize ${
-            currentPlan === "free"
-              ? "bg-gray-100 text-gray-700"
-              : "bg-primary/10 text-primary"
-          } border-none font-bold`}>
-            {currentPlan}
-          </Badge>
+          currentPlan === 'free' && (
+            <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+              You are currently on the Free Trial. Upgrade anytime to the Paid Plan for unlimited contacts, campaigns, and automation.
+            </div>
+          )
         )}
       </div>
-      {planLoading ? (
-        <div className="h-8 w-32 bg-muted rounded animate-pulse mt-1" />
-      ) : (
-        <p className="text-2xl font-black text-foreground">
-          {currentPlan === "free" ? "Free Trial" : "Paid Plan"}
-        </p>
-      )}
-      {!planLoading && currentPlan === "free" && (
-        <p className="text-sm text-muted-foreground mt-1">
-          Limited to 10 contacts.
-        </p>
-      )}
-    </div>
-  </CardContent>
-</Card>
 
-{planLoading ? (
-  <div className="grid sm:grid-cols-3 gap-5">
-    {[1, 2].map((i) => (
-      <Card key={i} className="border-2 animate-pulse">
-        <CardHeader className="pb-3 pt-7">
-          <div className="h-6 bg-muted rounded w-24 mb-2" />
-          <div className="h-8 bg-muted rounded w-16" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3].map((j) => (
-              <div key={j} className="h-4 bg-muted rounded w-full" />
-            ))}
+      {/* Current Plan Card */}
+      {/* Current Plan Card */}
+      <Card className="shadow-sm border-primary/20">
+        <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-muted-foreground font-medium">
+                Current Plan
+              </p>
+              {planLoading ? (
+                <div className="h-5 w-16 bg-muted rounded animate-pulse" />
+              ) : (
+                <Badge className={`capitalize ${currentPlan === "free"
+                    ? "bg-gray-100 text-gray-700"
+                    : "bg-primary/10 text-primary"
+                  } border-none font-bold`}>
+                  {currentPlan}
+                </Badge>
+              )}
+            </div>
+            {planLoading ? (
+              <div className="h-8 w-32 bg-muted rounded animate-pulse mt-1" />
+            ) : (
+              <p className="text-2xl font-black text-foreground">
+                {currentPlan === "free" ? "Free Trial" : "Paid Plan"}
+              </p>
+            )}
+            {!planLoading && currentPlan === "free" && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Limited to 10 contacts.
+              </p>
+            )}
           </div>
-          <div className="h-10 bg-muted rounded w-full mt-4" />
         </CardContent>
       </Card>
-    ))}
-  </div>
-) : (
-  // ✅ Your existing plan cards grid here
-  <div className="grid sm:grid-cols-3 gap-5">
-        {PLANS.map((plan) => {
-          const Icon = plan.icon;
-          const isCurrent = currentPlan === plan.id;
-          return (
-            <Card
-              key={plan.id}
-              className={`relative border-2 ${plan.color} transition-all`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground font-bold shadow-sm text-xs px-3">
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
+
+      {planLoading ? (
+        <div className="grid sm:grid-cols-3 gap-5">
+          {[1, 2].map((i) => (
+            <Card key={i} className="border-2 animate-pulse">
               <CardHeader className="pb-3 pt-7">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{plan.name}</CardTitle>
-                </div>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-black text-foreground">{plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString()}`}</span>
-                  <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}</span>
-                </div>
+                <div className="h-6 bg-muted rounded w-24 mb-2" />
+                <div className="h-8 bg-muted rounded w-16" />
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2.5">
-                  {plan.features.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2 text-sm text-foreground"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                      {f}
-                    </li>
+              <CardContent>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} className="h-4 bg-muted rounded w-full" />
                   ))}
-                </ul>
-                <Button
-                  className="w-full rounded-xl font-bold"
-                  variant={isCurrent ? "outline" : "default"}
-                  disabled={isCurrent || upgrading === plan.id || (plan.id === 'free' && currentPlan === 'paid')}
-                  onClick={() => {
-                    if (plan.id === 'paid') { // Only call handleUpgrade for the paid plan
-                      handleUpgrade(plan.id);
-                    } else if (plan.id === 'free' && currentPlan === 'paid') {
-                      // Optionally, navigate to a support page or show a toast for downgrade
-                      toast({ title: "Downgrade not supported via button", description: "Please contact support to downgrade your plan.", variant: "info" });
-                    }
-                  }}
-                >
-                  {isCurrent
-                    ? "Current Plan"
-                    : upgrading === plan.id
-                      ? "Processing..."
-                      : plan.id === 'free' && currentPlan === 'paid'
-                        ? "Downgrade (Contact Support)"
-                        : plan.id === 'free'
-                          ? "Start Free Trial"
-                          : "Upgrade Now"}
-                </Button>
+                </div>
+                <div className="h-10 bg-muted rounded w-full mt-4" />
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
-)}
+          ))}
+        </div>
+      ) : (
+        // ✅ Your existing plan cards grid here
+        <div className="grid sm:grid-cols-3 gap-5">
+          {PLANS.map((plan) => {
+            const Icon = plan.icon;
+            const isCurrent = currentPlan === plan.id;
+            return (
+              <Card
+                key={plan.id}
+                className={`relative border-2 ${plan.color} transition-all`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground font-bold shadow-sm text-xs px-3">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader className="pb-3 pt-7">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg">{plan.name}</CardTitle>
+                  </div>
+                  <div className="flex items-end gap-1">
+                    <span className="text-3xl font-black text-foreground">{plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString()}`}</span>
+                    <span className="text-sm text-muted-foreground mb-0.5">{plan.price === 0 ? "" : "/year"}</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2.5">
+                    {plan.features.map((f) => (
+                      <li
+                        key={f}
+                        className="flex items-start gap-2 text-sm text-foreground"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="w-full rounded-xl font-bold"
+                    variant={isCurrent ? "outline" : "default"}
+                    disabled={isCurrent || upgrading === plan.id || (plan.id === 'free' && currentPlan === 'paid')}
+                    onClick={() => {
+                      if (plan.id === 'paid') { // Only call handleUpgrade for the paid plan
+                        handleUpgrade(plan.id);
+                      } else if (plan.id === 'free' && currentPlan === 'paid') {
+                        // Optionally, navigate to a support page or show a toast for downgrade
+                        toast({ title: "Downgrade not supported via button", description: "Please contact support to downgrade your plan.", variant: "info" });
+                      }
+                    }}
+                  >
+                    {isCurrent
+                      ? "Current Plan"
+                      : upgrading === plan.id
+                        ? "Processing..."
+                        : plan.id === 'free' && currentPlan === 'paid'
+                          ? "Downgrade (Contact Support)"
+                          : plan.id === 'free'
+                            ? "Start Free Trial"
+                            : "Upgrade Now"}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
       {/* Plan Cards */}
-     
+
 
       <p className="text-xs text-muted-foreground text-center pt-2">
         All plans include 256-bit encryption, GDPR compliance, and Meta-approved
