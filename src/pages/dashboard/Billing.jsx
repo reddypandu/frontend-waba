@@ -37,7 +37,7 @@ const PLANS = [
     badge: "Popular",
     features: [
       "Send bulk WhatsApp campaigns",
-      "Manage chats in a Shared Team Inbox & set up simple greeting / OOO automations",
+      "Manage chats & set up simple greeting / OOO automations",
       "Unlimited Messages (Based on your WhatsApp Number)",
       "Unlimited Contacts",
       "Auto Replies",
@@ -158,8 +158,8 @@ const Billing = () => {
                 <div className="h-5 w-16 bg-muted rounded animate-pulse" />
               ) : (
                 <Badge className={`capitalize ${currentPlan === "free"
-                    ? "bg-gray-100 text-gray-700"
-                    : "bg-primary/10 text-primary"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-primary/10 text-primary"
                   } border-none font-bold`}>
                   {currentPlan}
                 </Badge>

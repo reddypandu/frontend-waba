@@ -25,7 +25,7 @@ const plans = [
     description: "Unlock full potential",
     features: [
       "Send bulk WhatsApp campaigns",
-      "Manage chats in a Shared Team Inbox & set up simple greeting / OOO automations",
+      "Manage chats & set up simple greeting / OOO automations",
       "Unlimited Messages (Based on your WhatsApp Number)",
       "Unlimited Contacts",
       "Auto Replies",
@@ -83,11 +83,10 @@ const PricingSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
-              className={`relative rounded-3xl p-8 border transition-all duration-300 ${
-                plan.popular
+              className={`relative rounded-3xl p-8 border transition-all duration-300 ${plan.popular
                   ? "border-primary bg-card shadow-xl scale-105"
                   : "border-border bg-card/60 hover:border-primary/50"
-              }`}
+                }`}
             >
               {/* Popular badge */}
               {plan.popular && (

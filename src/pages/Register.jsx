@@ -140,7 +140,7 @@ const Register = () => {
               <Link to="/login" className="text-primary hover:underline">Sign in</Link>
             </p>
             <p className="text-sm text-muted-foreground mt-3">
-              Your new account starts on the Starter plan trial so you can launch campaigns, manage templates, and use the shared inbox right away.
+              Your new account starts on the Starter plan trial so you can launch campaigns, manage templates, right away.
             </p>
           </div>
 
