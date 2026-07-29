@@ -43,7 +43,7 @@ const Wallet = () => {
         key: razorpayKey,
         amount: orderData.amount,
         currency: "INR",
-        name: "Connectly Chat",
+        name: "Yestick AI",
         description: "Wallet Recharge",
         order_id: orderData.id,
         handler: async (response) => {

@@ -82,7 +82,7 @@ const Billing = () => {
         key: razorpayKey,
         amount: orderData.amount,
         currency: "INR",
-        name: "Connectly Chat",
+        name: "Yestick AI",
         description: `${plan.name} Plan Subscription`,
         order_id: orderData.id,
         handler: async (response) => {
@@ -132,7 +132,7 @@ const Billing = () => {
         <p className="text-muted-foreground">
           Manage your subscription and upgrade to unlock more features.
         </p>
-        {planLoading ? (
+        {/* {planLoading ? (
           <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
           </div>
@@ -142,7 +142,7 @@ const Billing = () => {
               You are currently on the Free Trial. Upgrade anytime to the Paid Plan for unlimited contacts, campaigns, and automation.
             </div>
           )
-        )}
+        )} */}
       </div>
 
       {/* Current Plan Card */}
