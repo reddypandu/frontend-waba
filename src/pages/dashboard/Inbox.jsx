@@ -112,7 +112,9 @@ const Inbox = () => {
     refetchOnWindowFocus: true,
     staleTime: 0,
   });
-
+  // Add this helper near the top of the component (or as a module-level function)
+  const normalizePhone = (phone) =>
+    (phone || "").toString().replace(/[^\d]/g, "").replace(/^0+/, "");
   const conversations = convsData?.conversations || [];
   const contacts = contactsData || [];
 
@@ -183,16 +185,45 @@ const Inbox = () => {
     enabled: !!user,
   });
 
-  // Filtered list: show conversations first, then contacts who don't have a conversation yet
   const filteredList = React.useMemo(() => {
-    let list = conversations.map((c) => ({ ...c, isConv: true }));
-    const convPhones = new Set(
-      conversations.map((c) => c.phone_number || c.contact_id?.phone_number),
-    );
+    const convByPhone = new Map();
+    conversations.forEach((c) => {
+      const phone = normalizePhone(c.phone_number || c.contact_id?.phone_number);
+      if (!phone) return;
+      const existing = convByPhone.get(phone);
+      const currentTime = new Date(
+        c.updatedAt || c.last_message_at || c.createdAt || 0,
+      ).getTime();
+      const existingTime = existing
+        ? new Date(
+          existing.updatedAt || existing.last_message_at || existing.createdAt || 0,
+        ).getTime()
+        : -1;
+      if (!existing || currentTime > existingTime) {
+        convByPhone.set(phone, c);
+      }
+    });
 
-    // Add contacts who aren't in conversations
+    // Build a lookup of contacts by normalized phone number
+    const contactByPhone = new Map();
     contacts.forEach((contact) => {
-      if (!convPhones.has(contact.phone_number)) {
+      contactByPhone.set(normalizePhone(contact.phone_number), contact);
+    });
+
+    let list = Array.from(convByPhone.entries()).map(([phone, c]) => {
+      // If the conversation's contact_id is missing/stale, patch in the matching contact
+      const matchedContact = contactByPhone.get(phone);
+      return {
+        ...c,
+        isConv: true,
+        contact_id: c.contact_id || matchedContact || null,
+      };
+    });
+
+    const convPhones = new Set(convByPhone.keys());
+
+    contacts.forEach((contact) => {
+      if (!convPhones.has(normalizePhone(contact.phone_number))) {
         list.push({
           _id: `contact-${contact._id}`,
           contact_id: contact,
