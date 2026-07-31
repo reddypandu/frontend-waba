@@ -272,7 +272,7 @@ const CampaignDetail = () => {
 
   const statusStyle = statusStyles[campaign.status] || statusStyles.draft;
   const isProcessing = campaign.status === "running";
-  const totalCost = (statsData?.sent || 0) * 0.9; // Dynamic scale logic could be added
+  const totalCost = (statsData?.sent || 0) * 0.86; // Dynamic scale logic could be added
 
   const stats = [
     {
