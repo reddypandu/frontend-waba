@@ -20,7 +20,22 @@ const DashboardOverview = () => {
     enabled: !!user,
   });
 
+  // ADDED: fetch all campaigns to sum spend across every campaign
+  const { data: campaignsData } = useQuery({
+    queryKey: ["all-campaigns-spend", user?.id],
+    queryFn: () => apiGet("/api/campaigns"),
+    enabled: !!user,
+  });
+
   const { waAccount, wallet, profile, messageStats, chartData } = dashboardData || {};
+
+
+  // ADDED: total sent across all campaigns, and derived spend
+  const totalSent = (campaignsData?.campaigns || campaignsData || []).reduce((sum, c) => {
+    const sentCount = c.stats?.sent ?? c.sent ?? 0;
+    return sum + sentCount;
+  }, 0);
+  const amountSpent = (totalSent * 0.9).toFixed(2);
 
   const readRate = useMemo(() => {
     if (!messageStats || !messageStats.sent) return 0;
@@ -32,9 +47,9 @@ const DashboardOverview = () => {
 
   const stats = [
     {
-      title: "Current Balance",
-      value: `₹${wallet?.balance || 0}`,
-      sub: "Available for messaging",
+      title: "Total Campaign Spend",
+      value: `₹${Number(amountSpent).toLocaleString("en-IN")}`, // CHANGED
+      sub: "Total spent across campaigns",
       icon: Zap,
       gradient: "from-blue-500 to-cyan-600",
     },
