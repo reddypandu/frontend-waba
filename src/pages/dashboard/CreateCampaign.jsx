@@ -634,7 +634,7 @@ const CreateCampaign = () => {
                       <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                         <li><strong>Name</strong> column (Required)</li>
                         <li><strong>Number</strong> column (Required)</li>
-                        <li>Phone numbers can be with or without country code.</li>
+                        <li>Phone numbers must be with country code(91).</li>
                         <li>One contact per row.</li>
                       </ul>
 
