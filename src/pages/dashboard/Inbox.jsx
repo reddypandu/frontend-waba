@@ -556,12 +556,12 @@ const Inbox = () => {
               </h3>
             </div>
             <CardContent className="p-6 space-y-6">
-              <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 overflow-x-scroll h-[40vh]">
                 <p className="text-[10px] font-bold text-primary uppercase mb-2">
                   Message Preview
                 </p>
                 {activeTemplate.isMediaHeader && (
-                  <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-3 overflow-hidden">
+                  <div className="w-full aspect-[4/4] rounded-lg bg-muted border border-border flex items-center justify-center mb-3 overflow-hidden">
                     {templateMappings.header_url ? (
                       activeTemplate.headerFormat === "IMAGE" ? (
                         <img
@@ -610,6 +610,41 @@ const Inbox = () => {
                     },
                   )}
                 </p>
+                {/* Footer */}
+                {activeTemplate.footer && (
+                  <p className="text-[11px] text-muted-foreground mt-3 pt-2 border-t border-border">
+                    {activeTemplate.footer}
+                  </p>
+                )}
+
+                {/* Buttons */}
+                {activeTemplate.buttons && activeTemplate.buttons.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-border flex flex-col gap-2">
+                    {activeTemplate.buttons.map((btn, idx) => {
+                      const isLink = btn.type === "URL";
+                      const isPhone = btn.type === "PHONE_NUMBER";
+                      const href = isLink
+                        ? btn.url
+                        : isPhone
+                          ? `tel:${btn.phone_number}`
+                          : undefined;
+
+                      return (
+                        <a
+                          key={idx}
+                          href={href}
+                          target={isLink ? "_blank" : undefined}
+                          rel={isLink ? "noopener noreferrer" : undefined}
+                          className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold bg-muted hover:bg-muted/80 text-primary transition-colors"
+                        >
+                          {isLink && <ExternalLink className="w-3.5 h-3.5" />}
+                          {isPhone && <Phone className="w-3.5 h-3.5" />}
+                          {btn.text}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -1177,6 +1212,17 @@ const Inbox = () => {
                           const mediaFormats = ["IMAGE", "VIDEO", "DOCUMENT"];
                           const isMediaHeader =
                             mediaFormats.includes(headerFormat);
+                          const footerComp = Array.isArray(t.components)
+                            ? t.components.find((c) => c.type === "FOOTER")
+                            : null;
+
+                          const footer = footerComp?.text || t.footer_text || "";
+
+                          const buttonsComp = Array.isArray(t.components)
+                            ? t.components.find((c) => c.type === "BUTTONS")
+                            : null;
+
+                          const buttons = buttonsComp?.buttons || t.buttons || [];
 
                           if (
                             vars.length > 0 ||
@@ -1191,6 +1237,8 @@ const Inbox = () => {
                               headerText,
                               headerVars,
                               isMediaHeader,
+                              footer,
+                              buttons,
                             });
                             setTemplateMappings({ header_url: localUrl });
                           } else {
