@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
 import * as XLSX from "xlsx";
+import { MessageSquare } from "lucide-react";
+
 
 const CreateCampaign = () => {
   const { user } = useAuth();
@@ -29,7 +31,7 @@ const CreateCampaign = () => {
   const [openSection, setOpenSection] = useState("type");
   const [campaignType, setCampaignType] = useState("");
   const [templateId, setTemplateId] = useState("");
-  
+
   // Handle template selection change
   const handleTemplateChange = (val) => {
     setTemplateId(val);
@@ -50,6 +52,7 @@ const CreateCampaign = () => {
   const [nameVariables, setNameVariables] = useState({});
   const [requiresFollowUp, setRequiresFollowUp] = useState(false);
   const [interactiveParams, setInteractiveParams] = useState({ header_image_url: "", offer_code: "" });
+  const [contactSearch, setContactSearch] = useState("");
 
   const [completedSections, setCompletedSections] = useState(new Set());
 
@@ -143,16 +146,16 @@ const CreateCampaign = () => {
       const hComp = Array.isArray(selectedTemplate.components)
         ? selectedTemplate.components.find(c => c.type === 'HEADER')
         : null;
-      
-      const hUrl = selectedTemplate.local_url || 
-                   hComp?.local_url || 
-                   hComp?.example?.header_handle?.[0] || 
-                   hComp?.example?.header_url || 
-                   "";
-      
-      setVariableMappings(prev => ({ 
-        ...prev, 
-        header_url: hUrl || prev.header_url || "" 
+
+      const hUrl = selectedTemplate.local_url ||
+        hComp?.local_url ||
+        hComp?.example?.header_handle?.[0] ||
+        hComp?.example?.header_url ||
+        "";
+
+      setVariableMappings(prev => ({
+        ...prev,
+        header_url: hUrl || prev.header_url || ""
       }));
     }
   }, [templateId, selectedTemplate]);
@@ -198,7 +201,7 @@ const CreateCampaign = () => {
 
       // Convert mappings to Meta components structure
       const components = [];
-      
+
       // Add Header Parameters
       if (headerFormat) {
         if (isMediaHeader) {
@@ -213,8 +216,8 @@ const CreateCampaign = () => {
         } else if (headerFormat === "TEXT" && headerVars.length > 0) {
           components.push({
             type: "header",
-            parameters: headerVars.map(v => ({ 
-              type: "text", 
+            parameters: headerVars.map(v => ({
+              type: "text",
               text: nameVariables[`h${v}`] ? `{{name|${variableMappings[`h${v}`] || ""}}}` : (variableMappings[`h${v}`] || "")
             }))
           });
@@ -240,8 +243,8 @@ const CreateCampaign = () => {
         scheduled_at: scheduleType === 'scheduled' ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString() : null,
         contacts: finalContacts,
         requires_follow_up: requiresFollowUp,
-        interactive_params: (interactiveParams.header_image_url || interactiveParams.offer_code) && !headerFormat 
-          ? interactiveParams 
+        interactive_params: (interactiveParams.header_image_url || interactiveParams.offer_code) && !headerFormat
+          ? interactiveParams
           : (interactiveParams.offer_code ? { offer_code: interactiveParams.offer_code } : null),
         components // Added for variables
       };
@@ -277,30 +280,61 @@ const CreateCampaign = () => {
       </button>
     );
   };
+  const filteredContacts = contacts.filter((contact) => {
+    const search = contactSearch.toLowerCase();
 
+    return (
+      contact.name?.toLowerCase().includes(search) ||
+      contact.phone_number?.includes(search)
+    );
+  });
+
+  const downloadSampleExcel = () => {
+    const data = [
+      {
+        Name: "John Doe",
+        Number: "919876543210",
+      },
+      {
+        Name: "Priya Sharma",
+        Number: "918765432109",
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, ws, "Contacts");
+
+    XLSX.writeFile(wb, "Sample_Contacts.xlsx");
+  };
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/campaigns")}><ArrowLeft className="w-5 h-5" /></Button>
-          <Input
-            value={campaignName}
-            onChange={e => setCampaignName(e.target.value)}
-            placeholder="Untitled Campaign"
-            className="h-10 text-lg font-bold border-none focus-visible:ring-0 px-0 translate-y-[-2px] uppercase tracking-tight"
-          />
+          <div className="flex-1 min-w-0">
+            <Input
+              value={campaignName}
+              onChange={e => setCampaignName(e.target.value)}
+              placeholder="Enter Campaign Name"
+              className="h-10 text-lg px-3 font-bold border-none focus-visible:ring-0  translate-y-[-2px] uppercase tracking-tight"
+            />
+            <p className="text-xs text-muted-foreground mt-0.5">NOTE: (Add Name Without Spaces, Use Underscores instead of spaces)</p>
+          </div>
+
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => createMutation.mutate()} disabled={!campaignName}>Save Draft</Button>
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => createMutation.mutate()} 
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => createMutation.mutate()}
             disabled={
-              !campaignName || 
-              !templateId || 
-              totalRecipients === 0 || 
-              templateVars.some(v => !variableMappings[v]) || 
+              !campaignName ||
+              !templateId ||
+              totalRecipients === 0 ||
+              templateVars.some(v => !variableMappings[v]) ||
               (isMediaHeader && !variableMappings.header_url) ||
               (headerFormat === "TEXT" && headerVars.some(v => !variableMappings[`h${v}`]))
             }
@@ -324,12 +358,12 @@ const CreateCampaign = () => {
                     <p className="font-bold text-sm">One Time</p>
                     <p className="text-[10px] text-muted-foreground">Broadcast to selected audience</p>
                   </Label>
-                  <Label htmlFor="ongoing" className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
+                  {/* <Label htmlFor="ongoing" className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <RadioGroupItem value="ongoing" id="ongoing" disabled className="sr-only" />
                     <Zap className="w-5 h-5 text-muted-foreground mb-2" />
                     <p className="font-bold text-sm">Ongoing</p>
                     <p className="text-[10px] text-muted-foreground">Triggered by external events</p>
-                  </Label>
+                  </Label> */}
                 </RadioGroup>
                 <div className="flex justify-end"><Button size="sm" disabled={!campaignType} onClick={() => { markComplete("type"); setOpenSection("template"); }}>Continue</Button></div>
               </CardContent>
@@ -377,11 +411,11 @@ const CreateCampaign = () => {
                     {headerFormat && (
                       <div className="space-y-3 pt-3 border-t border-border">
                         <p className="text-[10px] font-bold text-primary uppercase">Header {isMediaHeader ? `Media (${headerFormat})` : 'Text'}</p>
-                        
+
                         {isMediaHeader && (
                           <div className="space-y-1">
                             <Label className="text-[10px]">Media URL</Label>
-                            <Input 
+                            <Input
                               placeholder={`https://.../file.${headerFormat.toLowerCase() === 'image' ? 'jpg' : headerFormat.toLowerCase() === 'video' ? 'mp4' : 'pdf'}`}
                               className="h-8 text-xs"
                               value={variableMappings.header_url || ""}
@@ -495,37 +529,144 @@ const CreateCampaign = () => {
                   </Label>
                 </RadioGroup>
 
-                {dataSource === 'manual' && (
-                  <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
-                    {contacts.map(c => (
-                      <div key={c._id} className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-muted/30">
-                        <input
-                          type="checkbox"
-                          checked={selectedContacts.includes(c._id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedContacts(prev => [...prev, c._id]);
-                            else setSelectedContacts(prev => prev.filter(id => id !== c._id));
-                          }}
-                          className="w-4 h-4 accent-primary"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate">{c.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{c.phone_number}</p>
+                {dataSource === "manual" && (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-sm font-semibold">
+                          Existing Contacts:
+                        </span>
+                        {filteredContacts.length}
+                      </p>
+
+                      <p className="text-xs font-semibold text-primary">
+                        Selected: {selectedContacts.length}
+                      </p>
+                    </div>
+                    <div className="mb-3">
+                      <Input
+                        type="text"
+                        placeholder="Search by name or phone..."
+                        value={contactSearch}
+                        onChange={(e) => setContactSearch(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
+                      {filteredContacts.length > 0 ? (
+                        filteredContacts.map((c) => (
+                          <div
+                            key={c._id}
+                            className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-muted/30"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedContacts.includes(c._id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedContacts((prev) => [...prev, c._id]);
+                                } else {
+                                  setSelectedContacts((prev) =>
+                                    prev.filter((id) => id !== c._id)
+                                  );
+                                }
+                              }}
+                              className="w-4 h-4 accent-primary"
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate">{c.name}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {c.phone_number}
+                              </p>
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary"
+                              onClick={() =>
+                                navigate(`/dashboard/inbox?phone=${c.phone_number}`)
+                              }
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center text-sm text-muted-foreground">
+                          No contacts found.
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 {dataSource === 'excel' && (
-                  <div className="space-y-3">
-                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
-                    <Button variant="outline" className="w-full h-24 border-dashed border-2 bg-card group" onClick={() => fileInputRef.current.click()}>
+                  <div className="space-y-4">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={handleExcelUpload}
+                    />
+
+                    <Button
+                      variant="outline"
+                      className="w-full h-24 border-dashed border-2 bg-card group"
+                      onClick={() => fileInputRef.current.click()}
+                    >
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="text-xs text-muted-foreground">{excelContacts.length > 0 ? `${excelContacts.length} numbers loaded` : "Select Excel/CSV file"}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {excelContacts.length > 0
+                            ? `${excelContacts.length} contacts loaded`
+                            : "Click to upload Excel / CSV"}
+                        </span>
                       </div>
                     </Button>
+
+                    <div className="rounded-lg border bg-muted/30 p-3 text-xs space-y-2">
+                      <p className="font-semibold">📋 Excel Format</p>
+
+                      <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                        <li><strong>Name</strong> column (Required)</li>
+                        <li><strong>Number</strong> column (Required)</li>
+                        <li>Phone numbers can be with or without country code.</li>
+                        <li>One contact per row.</li>
+                      </ul>
+
+                      <div className="mt-3 rounded border bg-background overflow-hidden">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="border p-2 text-left">Name</th>
+                              <th className="border p-2 text-left">Number</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border p-2">John Doe</td>
+                              <td className="border p-2">919876543210</td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">Priya Sharma</td>
+                              <td className="border p-2">918765432109</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <Button
+                        variant="link"
+                        className="px-0 h-auto text-primary"
+                        onClick={downloadSampleExcel}
+                      >
+                        📥 Download Sample Excel
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div className="flex justify-end"><Button size="sm" disabled={totalRecipients === 0} onClick={() => { markComplete("audience"); setOpenSection("schedule"); }}>Continue</Button></div>
@@ -589,13 +730,13 @@ const CreateCampaign = () => {
                 <div className="max-w-[85%] bg-white rounded-xl p-3 shadow-sm relative animate-in slide-in-from-left duration-300">
                   {headerFormat && (
                     <div className="w-full aspect-video rounded-lg bg-muted border border-border flex items-center justify-center mb-2 overflow-hidden">
-                       {variableMappings.header_url ? (
-                         headerFormat === 'IMAGE' ? <img src={variableMappings.header_url} className="w-full h-full object-cover" alt="Header Preview" /> :
-                         headerFormat === 'VIDEO' ? <video src={variableMappings.header_url} className="w-full h-full object-cover" /> :
-                         <div className="flex flex-col items-center gap-1 opacity-40"><Paperclip className="w-6 h-6" /><p className="text-[8px]">DOCUMENT</p></div>
-                       ) : (
-                         <p className="text-[9px] text-muted-foreground uppercase font-bold">{headerFormat} PREVIEW</p>
-                       )}
+                      {variableMappings.header_url ? (
+                        headerFormat === 'IMAGE' ? <img src={variableMappings.header_url} className="w-full h-full object-cover" alt="Header Preview" /> :
+                          headerFormat === 'VIDEO' ? <video src={variableMappings.header_url} className="w-full h-full object-cover" /> :
+                            <div className="flex flex-col items-center gap-1 opacity-40"><Paperclip className="w-6 h-6" /><p className="text-[8px]">DOCUMENT</p></div>
+                      ) : (
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">{headerFormat} PREVIEW</p>
+                      )}
                     </div>
                   )}
                   <p className="text-[11px] leading-relaxed text-black whitespace-pre-wrap">
@@ -610,10 +751,10 @@ const CreateCampaign = () => {
                       </strong>
                     )}
                     {(templateBody || "Select a template...").replace(/\{\{(\d+)\}\}/g, (match, p1) => {
-                       const val = variableMappings[p1];
-                       const useName = nameVariables[p1];
-                       if (useName) return <strong key={p1} className="text-primary">[Contact Name or "{val || ""}"]</strong>;
-                       return val ? <strong key={p1} className="text-primary">{val}</strong> : match;
+                      const val = variableMappings[p1];
+                      const useName = nameVariables[p1];
+                      if (useName) return <strong key={p1} className="text-primary">[Contact Name or "{val || ""}"]</strong>;
+                      return val ? <strong key={p1} className="text-primary">{val}</strong> : match;
                     }) || "Select a template to preview your message here..."}
                   </p>
                   <p className="text-[9px] text-muted-foreground text-right mt-1">10:45 AM</p>
@@ -662,9 +803,9 @@ const CreateCampaign = () => {
                           if (templateVars.length > 0) {
                             components.push({
                               type: "body",
-                              parameters: templateVars.map(v => ({ 
-                                type: "text", 
-                                text: nameVariables[v] ? `{{name|${variableMappings[v] || ""}}}` : (variableMappings[v] || "") 
+                              parameters: templateVars.map(v => ({
+                                type: "text",
+                                text: nameVariables[v] ? `{{name|${variableMappings[v] || ""}}}` : (variableMappings[v] || "")
                               }))
                             });
                           }

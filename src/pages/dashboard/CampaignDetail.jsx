@@ -639,8 +639,24 @@ const CampaignDetail = () => {
                     <TableCell className="text-xs text-muted-foreground">
                       {i + 1}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {log.phone_number}
+                    <TableCell>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs">
+                          {log.phone_number}
+                        </span>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() =>
+                            navigate(`/dashboard/inbox?phone=${log.phone_number}`)
+                          }
+                          title="Open Chat"
+                        >
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/lib/api";
 
 
+
 const MessageTicks = ({ status, isOutbound }) => {
   if (!isOutbound) return null;
 
@@ -85,6 +86,7 @@ const Inbox = () => {
   const [activeTemplate, setActiveTemplate] = React.useState(null);
   const [templateMappings, setTemplateMappings] = React.useState({});
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
+  const [filter, setFilter] = React.useState("all");
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
   const scrollStateRef = React.useRef({
@@ -242,8 +244,24 @@ const Inbox = () => {
           (item.last_message || "").toLowerCase().includes(s),
       );
     }
+    if (filter === "unread") {
+      list = list.filter(
+        (item) => item.isConv && (item.unread_count || 0) > 0
+      );
+    }
+
+    if (filter === "read") {
+      list = list.filter(
+        (item) => item.isConv && (item.unread_count || 0) === 0
+      );
+    }
+
+    if (filter === "new") {
+      list = list.filter((item) => !item.isConv);
+    }
     return list;
-  }, [conversations, contacts, search]);
+  }, [conversations, contacts, search, filter]);
+
 
   // Handle ?phone= parameter
   React.useEffect(() => {
@@ -760,6 +778,25 @@ const Inbox = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+
+          </div>
+          <div className="flex gap-2 mt-3">
+            {[
+              { key: "all", label: "All" },
+              { key: "unread", label: "Unread" },
+              { key: "read", label: "Read" },
+              { key: "new", label: "New" },
+            ].map((tab) => (
+              <Button
+                key={tab.key}
+                variant={filter === tab.key ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter(tab.key)}
+                className="rounded-full h-8 px-4 text-xs"
+              >
+                {tab.label}
+              </Button>
+            ))}
           </div>
         </div>
         <ScrollArea className="flex-1">

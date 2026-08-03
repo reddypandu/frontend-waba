@@ -168,13 +168,27 @@ const CreateTemplate = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="text-2xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0 placeholder:opacity-30"
-            placeholder="Enter template name..."
-          />
-          <p className="text-xs text-muted-foreground mt-0.5">WhatsApp · Create & Submit for Approval</p>
+          <div className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-all focus-within:border-primary focus-within:shadow-md">
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Enter template name..."
+              className="
+      h-auto
+      border-0
+      bg-transparent
+      p-0
+      text-3xl
+      font-bold
+      tracking-tight
+      text-foreground
+      placeholder:text-muted-foreground/50
+      shadow-none
+      focus-visible:ring-0
+    "
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">WhatsApp · Create & Submit for Approval, <span className="text-red-500">NOTE: (Add Name Without Spaces, Use Underscores instead of spaces)</span></p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate("/dashboard/templates")}>Cancel</Button>
@@ -243,16 +257,64 @@ const CreateTemplate = () => {
                     className="h-10 rounded-lg"
                   />
                 )}
-
                 {['image', 'video', 'document'].includes(form.headerType) && (
-                  <div className="border-2 border-dashed rounded-xl p-6 text-center space-y-2 bg-muted/20 relative group">
-                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} />
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary group-hover:scale-110 transition-transform">
-                      {form.headerType === 'image' ? <ImageIcon className="h-5 w-5" /> : form.headerType === 'video' ? <Video className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                  <>
+                    <div className="border-2 border-dashed rounded-xl p-6 text-center space-y-2 bg-muted/20 relative group">
+                      <input
+                        type="file"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={handleFileChange}
+                      />
+
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary group-hover:scale-110 transition-transform">
+                        {form.headerType === "image" ? (
+                          <ImageIcon className="h-5 w-5" />
+                        ) : form.headerType === "video" ? (
+                          <Video className="h-5 w-5" />
+                        ) : (
+                          <FileText className="h-5 w-5" />
+                        )}
+                      </div>
+
+                      <p className="text-xs font-bold">
+                        Click to upload {form.headerType}
+                      </p>
+
+                      <p className="text-[10px] text-muted-foreground">
+                        {headerFile
+                          ? headerFile.name
+                          : "Supported formats based on selection"}
+                      </p>
                     </div>
-                    <p className="text-xs font-bold">Click to upload {form.headerType}</p>
-                    <p className="text-[10px] text-muted-foreground">{headerFile ? headerFile.name : "Supported formats based on selection"}</p>
-                  </div>
+
+                    <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-700">
+                      {form.headerType === "image" && (
+                        <>
+                          <strong>📌 Image Guidelines:</strong> Use a <strong>1:1 (Square)</strong> image for the best WhatsApp display.
+                          <br />
+                          Recommended: <strong>1080 × 1080 px</strong> • JPG/PNG • Max <strong>5 MB</strong>.
+                        </>
+                      )}
+
+                      {form.headerType === "video" && (
+                        <>
+                          <strong>📌 Video Guidelines:</strong> Use an <strong>MP4 (H.264)</strong> video.
+                          <br />
+                          Recommended Resolution: <strong>1920 × 1080 (1080p)</strong> or <strong>1280 × 720 (720p)</strong>.
+                          <br />
+                          Aspect Ratio: <strong>16:9</strong> • Max Size: <strong>16 MB</strong> • Recommended Duration: <strong>15–30 seconds</strong>.
+                        </>
+                      )}
+
+                      {form.headerType === "document" && (
+                        <>
+                          <strong>📌 Document Guidelines:</strong> Upload a <strong>PDF</strong> document with a clear file name.
+                          <br />
+                          Maximum supported size: <strong>100 MB</strong>.
+                        </>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
