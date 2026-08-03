@@ -68,15 +68,15 @@ const buildTemplateSnapshot = (templateRecord, sentComponents = []) => {
     category: templateRecord?.category,
     header: header
       ? {
-          format: header.format,
-          text:
-            header.format === "TEXT"
-              ? replaceTemplateParams(header.text || "", sentHeader?.parameters)
-              : header.text || "",
-          media_url: ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format)
-            ? mediaUrl
-            : null,
-        }
+        format: header.format,
+        text:
+          header.format === "TEXT"
+            ? replaceTemplateParams(header.text || "", sentHeader?.parameters)
+            : header.text || "",
+        media_url: ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format)
+          ? mediaUrl
+          : null,
+      }
       : null,
     body: replaceTemplateParams(
       body?.text || templateRecord?.body_text || "",

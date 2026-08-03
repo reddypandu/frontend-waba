@@ -88,13 +88,18 @@ const Inbox = () => {
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
   const [filter, setFilter] = React.useState("all");
 
+
   const [newChatPhone, setNewChatPhone] = React.useState(null);
   const scrollStateRef = React.useRef({
     conversationId: null,
     messageCount: 0,
   });
 
-  const { data: convsData, isLoading: convsLoading } = useQuery({
+  const {
+    data: convsData,
+    isLoading: convsLoading,
+    isFetching: convsFetching,
+  } = useQuery({
     queryKey: ["conversations", user?.id],
     queryFn: () => apiGet("/api/whatsapp/conversations"),
     enabled: !!user,
@@ -103,7 +108,10 @@ const Inbox = () => {
     staleTime: 0,
   });
 
-  const { data: contactsData, isLoading: contactsLoading } = useQuery({
+  const {
+    data: contactsData,
+    isLoading: contactsLoading,
+  } = useQuery({
     queryKey: ["contacts", user?.id],
     queryFn: async () => {
       const data = await apiGet("/api/contacts");
@@ -119,6 +127,9 @@ const Inbox = () => {
     (phone || "").toString().replace(/[^\d]/g, "").replace(/^0+/, "");
   const conversations = convsData?.conversations || [];
   const contacts = contactsData || [];
+
+  const showLoading =
+    (convsLoading || convsFetching) && conversations.length === 0;
 
   const getCurrentTargetPhone = React.useCallback(() => {
     let to = newChatPhone;
@@ -224,16 +235,18 @@ const Inbox = () => {
 
     const convPhones = new Set(convByPhone.keys());
 
-    contacts.forEach((contact) => {
-      if (!convPhones.has(normalizePhone(contact.phone_number))) {
-        list.push({
-          _id: `contact-${contact._id}`,
-          contact_id: contact,
-          phone_number: contact.phone_number,
-          isConv: false,
-        });
-      }
-    });
+    if (conversations.length > 0) {
+      contacts.forEach((contact) => {
+        if (!convPhones.has(normalizePhone(contact.phone_number))) {
+          list.push({
+            _id: `contact-${contact._id}`,
+            contact_id: contact,
+            phone_number: contact.phone_number,
+            isConv: false,
+          });
+        }
+      });
+    }
 
     if (search) {
       const s = search.toLowerCase();
@@ -259,6 +272,24 @@ const Inbox = () => {
     if (filter === "new") {
       list = list.filter((item) => !item.isConv);
     }
+
+    /* ADD THIS HERE */
+    list.sort((a, b) => {
+      // Conversations first
+      if (a.isConv && !b.isConv) return -1;
+      if (!a.isConv && b.isConv) return 1;
+
+      // Latest conversation first
+      const aTime = new Date(
+        a.updatedAt || a.last_message_at || a.createdAt || 0
+      ).getTime();
+
+      const bTime = new Date(
+        b.updatedAt || b.last_message_at || b.createdAt || 0
+      ).getTime();
+
+      return bTime - aTime;
+    });
     return list;
   }, [conversations, contacts, search, filter]);
 
@@ -800,9 +831,9 @@ const Inbox = () => {
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {isLoading ? (
+          {showLoading ? (
             <div className="p-8 text-center text-muted-foreground">
-              Loading...
+              Loading conversations...
             </div>
           ) : filteredList.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
