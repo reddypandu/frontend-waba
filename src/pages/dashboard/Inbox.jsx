@@ -592,7 +592,12 @@ const Inbox = () => {
       )
       .finally(() => setSendingTemplate(false));
   };
-
+  const unreadCount = React.useMemo(() => {
+    return conversations.reduce(
+      (count, conv) => count + (conv.unread_count || 0),
+      0
+    );
+  }, [conversations]);
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-0 rounded-xl overflow-hidden border border-border bg-background">
       {activeTemplate && (
@@ -814,18 +819,27 @@ const Inbox = () => {
           <div className="flex gap-2 mt-3">
             {[
               { key: "all", label: "All" },
-              { key: "unread", label: "Unread" },
-              { key: "read", label: "Read" },
-              { key: "new", label: "New" },
+              { key: "unread", label: "Unread", count: unreadCount },
             ].map((tab) => (
               <Button
                 key={tab.key}
                 variant={filter === tab.key ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter(tab.key)}
-                className="rounded-full h-8 px-4 text-xs"
+                className="rounded-full h-8 px-4 text-xs flex items-center gap-2"
               >
-                {tab.label}
+                <span>{tab.label}</span>
+
+                {tab.key === "unread" && unreadCount > 0 && (
+                  <span
+                    className={`flex items-center justify-center min-w-5 h-5 rounded-full text-[10px] font-semibold ${filter === "unread"
+                      ? "bg-white text-black"
+                      : "bg-primary text-primary-foreground"
+                      }`}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
               </Button>
             ))}
           </div>
