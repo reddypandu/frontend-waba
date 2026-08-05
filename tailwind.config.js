@@ -72,6 +72,18 @@ export default {
           DEFAULT: "hsl(var(--hero-bg))",
           foreground: "hsl(var(--hero-foreground))",
         },
+        "brand-green": {
+          50: "#f3f7ef",
+          100: "#e4eedb",
+          200: "#caddba",
+          300: "#abc394",
+          400: "#8eb66b",
+          500: "#6da72b",
+          600: "#5b8c23",
+          700: "#48711c",
+          800: "#385616",
+          900: "#2a4211",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

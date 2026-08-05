@@ -2,273 +2,242 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
-  MessageSquare,
+  Play,
+  CheckCircle2,
   Users,
-  BarChart3,
-  Zap,
-  Star,
-  Shield,
+  Bot,
+  MessageCircle,
+  Send,
+  Instagram,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const floatingMessages = [
-  {
-    name: "Priya S.",
-    msg: "Order confirmed 🎉",
-    time: "2m ago",
-    avatar: "P",
-    color: "from-green-500 to-emerald-600",
-  },
-  {
-    name: "Raj M.",
-    msg: "Thanks for the update!",
-    time: "5m ago",
-    avatar: "R",
-    color: "from-blue-500 to-cyan-600",
-  },
-  {
-    name: "Neha K.",
-    msg: "When will it arrive?",
-    time: "8m ago",
-    avatar: "N",
-    color: "from-purple-500 to-pink-600",
-  },
-];
-
 const stats = [
-  { icon: Users, value: "....", label: "Businesses", color: "text-green-400" },
-  {
-    icon: MessageSquare,
-    value: "....",
-    label: "Messages Sent",
-    color: "text-blue-400",
-  },
-  {
-    icon: BarChart3,
-    value: "....",
-    label: "Delivery Rate",
-    color: "text-yellow-400",
-  },
-  {
-    icon: Zap,
-    value: "....",
-    label: "Faster Growth",
-    color: "text-purple-400",
-  },
+  { icon: Users, value: "50,000+", label: "Active Businesses", iconColor: "text-brand-green-500", iconBg: "bg-brand-green-50" },
+  { icon: MessageSquare, value: "5+", label: "Platforms Connected", iconColor: "text-brand-green-500", iconBg: "bg-brand-green-50" },
+  { icon: CheckCircle2, value: "99.99%", label: "Reliability", iconColor: "text-brand-green-500", iconBg: "bg-brand-green-50" },
+  { icon: Bot, value: "24/7", label: "AI Support", iconColor: "text-blue-500", iconBg: "bg-blue-50" },
 ];
-
-const AnimatedDots = () => (
-  <span className="inline-flex tracking-widest">
-    {[0, 1, 2, 3].map((i) => (
-      <motion.span
-        key={i}
-        animate={{ opacity: [0.2, 1, 0.2] }}
-        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-      >
-        .
-      </motion.span>
-    ))}
-  </span>
-);
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background layers */}
-      <div className="absolute inset-0 bg-background" />
-      <div className="absolute inset-0 animated-grid opacity-40" />
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
-
-      {/* Glowing orbs */}
-      <div
-        className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-        style={{
-          background: "radial-gradient(circle, hsl(93 69% 41%), transparent)",
-        }}
-      />
-      <div
-        className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full opacity-10 blur-3xl"
-        style={{
-          background: "radial-gradient(circle, hsl(210 100% 60%), transparent)",
-        }}
-      />
-
-      <div className="container relative mx-auto px-4 py-32 lg:py-40">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left: Text Content */}
+    <section className="relative bg-slate-50 overflow-hidden pt-28 pb-12 lg:pt-28 lg:pb-12 xl:pt-40 xl:pb-24">
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-20 items-center">
+          
+          {/* Left Column: Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            className="max-w-xl"
           >
-            {/* Badge */}
+            {/* Top Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 mb-8"
+              className="inline-flex items-center gap-1.5 mb-6 px-3 py-1.5 rounded-full bg-brand-green-100 text-brand-green-800 text-xs font-semibold"
             >
-              <span className="badge-primary">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                #1 WhatsApp Business API Platform
-              </span>
+              <Sparkles className="w-3.5 h-3.5" />
+              Complete CRM & Marketing Suite
             </motion.div>
 
             {/* Headline */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.1] mb-6">
-              Scale Your Brand
-              <br />
-              <span className="text-gradient">on WhatsApp</span>
-              <br />
-              <span className="text-foreground/70 text-4xl md:text-5xl lg:text-6xl">
-                like Never Before
-              </span>
+            <h1 className="text-4xl md:text-5xl lg:text-5xl xl:text-7xl font-extrabold text-[#1a202c] leading-[1.1] mb-4 xl:mb-6 tracking-tight">
+              The Complete <br />
+              <span className="text-brand-green-500">Omnichannel</span> Inbox <br />
+              & Smart Chatbot
             </h1>
 
-            <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-lg">
-              Send bulk messages, automate conversations, and track campaigns in
-              real-time — all powered by the official Meta WhatsApp Business
-              API.
+            {/* Subtitle */}
+            <p className="text-base lg:text-lg text-slate-500 leading-relaxed mb-6 xl:mb-8 max-w-lg">
+              Broadcast messages at scale, build intelligent AI agents, collaborate in a shared team inbox, and fully automate your customer engagement — without writing a single line of code.
             </p>
 
+            {/* Tags/Pills */}
+            <div className="flex flex-wrap gap-2 mb-6 xl:mb-10">
+              {['WhatsApp API', 'WhatsApp Business', 'Telegram', 'Instagram', 'FB Messenger'].map((tag) => (
+                <span key={tag} className="px-3 py-1 rounded-full bg-brand-green-50 text-brand-green-700 text-xs font-medium border border-brand-green-100/50">
+                  {tag}
+                </span>
+              ))}
+            </div>
+
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
                 asChild
-                className="text-base px-8 h-14 rounded-xl font-bold shadow-btn hover:shadow-glow hover:scale-105 transition-all duration-200"
+                className="text-base px-8 h-12 rounded-xl font-semibold bg-brand-green-500 hover:bg-brand-green-600 text-white shadow-lg shadow-brand-green-500/20 transition-all duration-200"
               >
                 <Link to="/login">
-                  Start Free — No Card Needed{" "}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  Get started free <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button
                 size="lg"
-                variant="ghost"
+                variant="outline"
                 asChild
-                className="text-base px-8 h-14 rounded-xl font-semibold glass-light hover:bg-white/8 transition-all duration-200 border border-white/10"
+                className="text-base px-8 h-12 rounded-xl font-semibold border-slate-200 text-slate-700 hover:bg-slate-100 transition-all duration-200 bg-white"
               >
                 <a href="#features">See All Features</a>
               </Button>
             </div>
-
-            {/* Micro trust signals */}
-            <div className="flex items-center gap-6 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                  />
-                ))}
-                <span className="text-sm text-muted-foreground ml-1">
-                  4.9/5 rating
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Shield className="w-4 h-4 text-green-400" />
-                Meta Official Partner
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                14-day free trial
-              </div>
-            </div>
           </motion.div>
 
-          {/* Right: Animated UI Mockup */}
+          {/* Right Column: UI Mockup */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="relative hidden lg:block"
+            className="relative w-full max-w-[500px] xl:max-w-[600px] mx-auto lg:ml-auto"
           >
-            {/* Main Dashboard Card */}
-            <div className="relative glass rounded-3xl p-6 shadow-elevated animate-float-slow">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Campaign Performance
-                  </p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">
-                    Diwali Sale 2025
-                  </p>
+            {/* Background decorative blob */}
+            <div className="absolute -inset-4 bg-brand-green-100/50 rounded-full blur-3xl -z-10 opacity-70" />
+
+            {/* Floating Badges */}
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="absolute -top-4 -left-4 z-20 bg-white rounded-full py-2 px-3 flex items-center gap-2 shadow-lg border border-slate-100"
+            >
+              <div className="w-6 h-6 rounded-full bg-brand-green-100 flex items-center justify-center">
+                <MessageCircle className="w-3.5 h-3.5 text-brand-green-600 fill-brand-green-600" />
+              </div>
+              <span className="text-xs font-bold text-slate-700 pr-1">WhatsApp</span>
+            </motion.div>
+
+            <motion.div 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="absolute -bottom-4 -right-4 z-20 bg-white rounded-full py-2 px-3 flex items-center gap-2 shadow-lg border border-slate-100"
+            >
+              <div className="w-6 h-6 rounded-full bg-brand-green-50 flex items-center justify-center">
+                <Bot className="w-3.5 h-3.5 text-brand-green-600" />
+              </div>
+              <span className="text-xs font-bold text-slate-700 pr-1">AI Chatbot</span>
+            </motion.div>
+
+            {/* Main Mockup Window */}
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative z-10 w-full aspect-[4/3] max-h-[450px]">
+              
+              {/* Window Controls */}
+              <div className="h-10 bg-slate-50 border-b border-slate-100 flex items-center px-4 gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                 </div>
-                <div className="badge-primary">Live ●</div>
+                <div className="mx-auto text-[10px] font-medium text-slate-400 flex items-center gap-1.5 pr-8">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-green-400" />
+                  Omnichannel Workspace
+                </div>
               </div>
 
-              {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                {[
-                  { label: "Sent", value: "12,450", color: "text-blue-400" },
-                  {
-                    label: "Delivered",
-                    value: "12,201",
-                    color: "text-green-400",
-                  },
-                  { label: "Read", value: "9,843", color: "text-yellow-400" },
-                ].map((s) => (
-                  <div
-                    key={s.label}
-                    className="bg-white/5 rounded-xl p-3 text-center"
-                  >
-                    <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
+              {/* Mockup Body */}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Sidebar */}
+                <div className="w-14 border-r border-slate-100 bg-slate-50/50 flex flex-col items-center py-4 gap-4 shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-brand-green-100 flex items-center justify-center cursor-pointer shadow-sm">
+                    <MessageCircle className="w-4 h-4 text-brand-green-600 fill-brand-green-600" />
                   </div>
-                ))}
-              </div>
+                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <Send className="w-4 h-4 text-sky-500 fill-sky-500" />
+                  </div>
+                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <Instagram className="w-4 h-4 text-pink-500" />
+                  </div>
+                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <MessageSquare className="w-4 h-4 text-blue-600 fill-blue-600" />
+                  </div>
+                </div>
 
-              {/* Progress bar */}
-              <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-                <span>Delivery Rate</span>
-                <span className="text-green-400 font-semibold">98.0%</span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "98%" }}
-                  transition={{ delay: 1, duration: 1.5, ease: "easeOut" }}
-                  className="h-full rounded-full gradient-primary"
-                />
+                {/* Inbox List */}
+                <div className="w-[45%] border-r border-slate-100 bg-white flex flex-col shrink-0">
+                  <div className="p-3 border-b border-slate-100">
+                    <h3 className="text-xs font-bold text-slate-800">Unified Inbox</h3>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Active Item */}
+                    <div className="p-3 bg-brand-green-50/50 border-b border-slate-100 cursor-pointer">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-slate-800">Vikram Singh</span>
+                        <span className="text-[9px] text-brand-green-600 font-medium">now</span>
+                      </div>
+                      <p className="text-[10px] text-brand-green-700/80 truncate">Can we schedule a product demo?</p>
+                    </div>
+
+                    {/* Inactive Items */}
+                    <div className="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-slate-700">Sarah Lee</span>
+                        <span className="text-[9px] text-slate-400">2m</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate">I'd like to upgrade my plan.</p>
+                    </div>
+
+                    <div className="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-slate-700">System Alerts</span>
+                        <span className="text-[9px] text-slate-400">5m</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate">Payment webhook received...</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chat View */}
+                <div className="flex-1 bg-white flex flex-col relative min-w-0">
+                  {/* Chat Header */}
+                  <div className="p-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/30">
+                    <div className="w-7 h-7 rounded-full bg-brand-green-500 flex items-center justify-center text-white shrink-0">
+                      <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 truncate">Vikram Singh</h4>
+                      <p className="text-[9px] text-brand-green-500 font-medium truncate">WhatsApp via API</p>
+                    </div>
+                  </div>
+
+                  {/* Chat Content */}
+                  <div className="flex-1 p-3 flex flex-col gap-3 relative overflow-hidden bg-slate-50/30">
+                    {/* Info Box */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.2 }}
+                      className="bg-[#f0f4ff] border border-blue-100 rounded-lg p-2.5 shadow-sm"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Bot className="w-3 h-3 text-blue-600" />
+                        <span className="text-[10px] font-bold text-blue-700">Chatbot Flow Active</span>
+                      </div>
+                      <p className="text-[9px] text-slate-500 leading-relaxed">
+                        Trigger matched: "Schedule Demo". AI assistant is parsing availability and preparing a response.
+                      </p>
+                    </motion.div>
+
+                    {/* Chat Bubble */}
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, originX: 1, originY: 1 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.6 }}
+                      className="bg-brand-green-500 text-white rounded-2xl rounded-tr-sm p-3 self-end max-w-[85%] shadow-sm mt-auto"
+                    >
+                      <p className="text-[10px] leading-relaxed font-medium">
+                        Hi Vikram! I'd love to help. Would 10:00 AM or 2:00 PM tomorrow work for you?
+                      </p>
+                    </motion.div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Floating Message Cards */}
-            {floatingMessages.map((msg, i) => (
-              <motion.div
-                key={msg.name}
-                initial={{ opacity: 0, x: 30, y: 20 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ delay: 0.6 + i * 0.2, duration: 0.5 }}
-                className={`absolute glass rounded-2xl p-3 flex items-center gap-3 shadow-card min-w-[200px]`}
-                style={{
-                  bottom: i === 0 ? "-20px" : "auto",
-                  top: i === 1 ? "40px" : i === 2 ? "140px" : "auto",
-                  right: i === 0 ? "10px" : "-40px",
-                  left: i === 2 ? "-50px" : "auto",
-                  animationDelay: `${i * 0.5}s`,
-                }}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${msg.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}
-                >
-                  {msg.avatar}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {msg.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {msg.msg}
-                  </p>
-                </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {msg.time}
-                </span>
-              </motion.div>
-            ))}
           </motion.div>
         </div>
 
@@ -277,7 +246,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-24 pt-12 border-t border-border/50"
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 lg:mt-16 xl:mt-24"
         >
           {stats.map((s, i) => (
             <motion.div
@@ -285,15 +254,19 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 + i * 0.1 }}
-              className="text-center"
+              className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow"
             >
-              <s.icon className={`w-5 h-5 ${s.color} mx-auto mb-2`} />
-              <p
-                className={`text-2xl font-extrabold flex items-center justify-center ${s.color}`}
-              >
-                {s.value === "...." ? <AnimatedDots /> : s.value}
-              </p>
-              <p className="text-sm text-muted-foreground">{s.label}</p>
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${s.iconBg}`}>
+                <s.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${s.iconColor}`} />
+              </div>
+              <div>
+                <p className="text-lg sm:text-xl font-bold text-slate-800">
+                  {s.value}
+                </p>
+                <p className="text-[10px] sm:text-xs text-slate-500 font-medium">
+                  {s.label}
+                </p>
+              </div>
             </motion.div>
           ))}
         </motion.div>
