@@ -124,7 +124,10 @@ const Footer = () => (
       {/* Bottom bar */}
       <div className="border-t border-border/40 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
-          © 2026 Yestick AI. All rights reserved.
+          © 2026 Yestick AI. All rights reserved. Powered by{" "}
+          <a href="https://thepatternscompany.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+            Patterns Infotech Pvt Ltd.
+          </a>
         </p>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
