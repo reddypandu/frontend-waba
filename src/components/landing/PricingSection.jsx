@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Zap, Crown } from "lucide-react"; // Import Crown icon
+import { Check, Zap, Crown, Building2 } from "lucide-react"; // Import Crown icon
 import { Link } from "react-router-dom";
 
 const plans = [
@@ -35,6 +35,32 @@ const plans = [
     cta: "Upgrade Now",
     popular: true,
     gradient: "from-blue-500 to-cyan-600",
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    description: "For large scale operations",
+    features: [
+      { text: "All Basic features, paid:", bold: true },
+      { text: "Up to 100 Tags & 20 Custom Attributes", info: true },
+      { text: "Create 10 Audience Segments", info: true },
+      { text: "Campaign Scheduler", info: true },
+      { text: "Campaign Click Tracking", info: true },
+      { text: "Smart Agent Routing", info: true },
+      { text: "Campaign Budget & Analytics", info: true },
+      { text: "Project APIs", info: true },
+      { text: "Custom Agent Rules", info: true },
+      { text: "Carousel Template Click Tracking", info: true },
+      { text: "CSV Campaign Scheduler", info: true },
+      { text: "User Access Control", info: true },
+      { text: "Automatic Failed Message Retry", info: true },
+      { text: "Add Time Delay in Chatflow", info: true },
+      { text: "Add Timeout in Chatflow", info: true },
+    ],
+    cta: "Contact Sales",
+    popular: false,
+    gradient: "from-purple-500 to-indigo-600",
   },
 ];
 
@@ -85,8 +111,8 @@ const PricingSection = () => {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
               className={`relative rounded-3xl p-8 border transition-all duration-300 ${plan.popular
-                  ? "border-primary bg-card shadow-xl scale-105"
-                  : "border-border bg-card/60 hover:border-primary/50"
+                ? "border-primary bg-card shadow-xl scale-105"
+                : "border-border bg-card/60 hover:border-primary/50"
                 }`}
             >
               {/* Popular badge */}
@@ -102,7 +128,9 @@ const PricingSection = () => {
               <div
                 className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-4 shadow-lg`}
               >
-                {plan.name === "Free Trial" ? <Zap className="w-5 h-5 text-white" /> : <Crown className="w-5 h-5 text-white" />}
+                {plan.name === "Free Trial" && <Zap className="w-5 h-5 text-white" />}
+                {plan.name === "Paid Plan" && <Crown className="w-5 h-5 text-white" />}
+                {plan.name === "Enterprise" && <Building2 className="w-5 h-5 text-white" />}
               </div>
               <h3 className="text-2xl font-extrabold text-foreground">
                 {plan.name}
@@ -136,16 +164,25 @@ const PricingSection = () => {
               </Button>
 
               {/* Features */}
-              <ul className="space-y-3">
-                {plan.features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-2.5 text-sm text-foreground/80"
-                  >
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
+              <ul className="space-y-4">
+                {plan.features.map((f, idx) => {
+                  const isObj = typeof f === 'object';
+                  const text = isObj ? f.text : f;
+                  const isBold = isObj ? f.bold : false;
+                  const hasInfo = isObj ? f.info : false;
+
+                  return (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-3 text-sm text-slate-600 leading-tight"
+                    >
+                      <Check className="h-4 w-4 text-brand-green-500 shrink-0 mt-0.5 stroke-[3]" />
+                      <span className={`flex-1 flex items-center flex-wrap gap-1.5 ${isBold ? 'font-bold text-slate-900' : ''}`}>
+                        {text}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </motion.div>
           ))}
