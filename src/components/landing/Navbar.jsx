@@ -26,16 +26,13 @@ const Navbar = () => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-        ? "bg-background/80 backdrop-blur-md border-b border-border shadow-sm"
-        : "bg-transparent border-transparent"
-        }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-brand-green-500 shadow-md ${scrolled ? 'py-0' : 'py-1'}`}
     >
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
+      <div className="container mx-auto flex items-center justify-between h-20 px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-50 h-12  rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-            <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
+          <div className="h-16 rounded-xl flex items-center justify-center transition-all duration-300">
+            <img src={Logo} alt="Logo" className="w-auto h-full object-contain scale-125 origin-left" />
           </div>
         </Link>
 
@@ -45,27 +42,27 @@ const Navbar = () => {
             <a
               key={link.label}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 relative group"
+              className="text-sm font-semibold text-brand-green-50 hover:text-white transition-colors duration-200 relative group"
             >
               {link.label}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
             </a>
           ))}
         </div>
 
         {/* Actions */}
-        <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" asChild size="sm">
+        <div className="hidden md:flex items-center gap-4">
+          <Button variant="ghost" asChild size="sm" className="text-white hover:text-brand-green-700 hover:bg-white font-medium">
             <Link to="/login">Sign In</Link>
           </Button>
-          <Button asChild size="sm" className="gradient-primary border-none text-white font-bold">
+          <Button asChild size="sm" className="bg-white text-brand-green-600 hover:bg-slate-50 font-bold border-none shadow-sm">
             <Link to="/">Start Free Trial</Link>
           </Button>
         </div>
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden p-2 rounded-lg border bg-background/50 text-foreground"
+          className="md:hidden p-2 rounded-lg border border-brand-green-400 bg-brand-green-600 text-white"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
