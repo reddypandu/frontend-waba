@@ -9,7 +9,7 @@ const tabs = [
 ];
 
 const SmartInboxMockup = () => (
-  <div className="w-full overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
+  <div className="overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0 w-full min-w-0">
     <div className="relative min-w-[800px] w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-100 origin-top-left md:origin-top">
     {/* Floating Badges */}
     <div className="hidden md:flex absolute -left-12 top-24 bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 items-center gap-2 z-10 animate-float">
@@ -237,7 +237,7 @@ const SmartInboxMockup = () => (
 
 
 const FlowBuilderMockup = () => (
-  <div className="w-full overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
+  <div className="overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0 w-full min-w-0">
     <div className="relative min-w-[800px] w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-100 origin-top-left md:origin-top">
       <div className="bg-slate-100 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col h-[500px] relative">
       {/* Window Header */}
@@ -396,7 +396,7 @@ const FlowBuilderMockup = () => (
 );
 
 const CampaignsMockup = () => (
-  <div className="relative w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top flex flex-col md:flex-row gap-6 justify-center">
+  <div className="relative w-full min-w-0 max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top flex flex-col md:flex-row gap-6 justify-center">
     
     {/* Card 1 */}
     <div className="flex-1 bg-white rounded-3xl p-8 shadow-card border border-slate-100 hover:shadow-elevated transition-all duration-300 card-hover">
@@ -447,7 +447,7 @@ const CampaignsMockup = () => (
 );
 
 const VoiceCallingMockup = () => (
-  <div className="relative w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top flex flex-col md:flex-row items-center gap-12 lg:gap-24">
+  <div className="relative w-full min-w-0 max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top flex flex-col md:flex-row items-center gap-12 lg:gap-24">
     
     {/* Left: Features List */}
     <div className="flex-1 space-y-4 w-full">
@@ -606,7 +606,7 @@ const FeatureShowcaseSection = () => {
       <div className="container mx-auto px-6 relative z-10">
         
         {/* Tabs */}
-        <div className="w-full overflow-x-auto no-scrollbar mb-8 pb-2 -mx-6 px-6 md:mx-0 md:px-0">
+        <div className="overflow-x-auto no-scrollbar mb-8 pb-2 -mx-6 px-6 md:mx-0 md:px-0">
           <div className="flex md:justify-center w-max min-w-full">
             <div className="bg-white rounded-full p-2.5 shadow-sm border border-slate-200 inline-flex gap-2">
             {tabs.map((tab) => {
@@ -644,7 +644,7 @@ const FeatureShowcaseSection = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="min-h-[400px] flex justify-center w-full">
+        <div className="min-h-[400px] flex justify-center w-full min-w-0 overflow-hidden">
           {activeTab === 'inbox' && <SmartInboxMockup />}
           {activeTab === 'flow' && <FlowBuilderMockup />}
           {activeTab === 'campaigns' && <CampaignsMockup />}
