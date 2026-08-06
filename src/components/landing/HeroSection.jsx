@@ -46,7 +46,7 @@ const HeroSection = () => {
             </motion.div>
 
             {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-5xl xl:text-7xl font-extrabold text-[#1a202c] leading-[1.1] mb-4 xl:mb-6 tracking-tight">
+            <h1 className="text-[32px] sm:text-4xl md:text-5xl lg:text-5xl xl:text-7xl font-extrabold text-[#1a202c] leading-[1.1] mb-4 xl:mb-6 tracking-tight">
               The Complete <br />
               <span className="text-brand-green-500">Omnichannel</span> Inbox <br />
               & Smart Chatbot
@@ -124,18 +124,17 @@ const HeroSection = () => {
             </motion.div>
 
             {/* Main Mockup Window */}
-            <div className="w-full overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative z-10 min-w-[500px] aspect-[4/3] max-h-[450px] md:min-w-0 md:w-full">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative z-10 w-full aspect-[4/3] max-h-[450px]">
               
               {/* Window Controls */}
-              <div className="h-10 bg-slate-50 border-b border-slate-100 flex items-center px-4 gap-2">
+              <div className="h-8 sm:h-10 bg-slate-50 border-b border-slate-100 flex items-center px-3 sm:px-4 gap-2 shrink-0">
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-400" />
+                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-400" />
+                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-400" />
                 </div>
-                <div className="mx-auto text-[10px] font-medium text-slate-400 flex items-center gap-1.5 pr-8">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-green-400" />
+                <div className="mx-auto text-[8px] sm:text-[10px] font-medium text-slate-400 flex items-center gap-1.5 pr-6 sm:pr-8">
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-brand-green-400" />
                   Omnichannel Workspace
                 </div>
               </div>
@@ -143,52 +142,52 @@ const HeroSection = () => {
               {/* Mockup Body */}
               <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
-                <div className="w-14 border-r border-slate-100 bg-slate-50/50 flex flex-col items-center py-4 gap-4 shrink-0">
-                  <div className="w-8 h-8 rounded-xl bg-brand-green-100 flex items-center justify-center cursor-pointer shadow-sm">
-                    <MessageCircle className="w-4 h-4 text-brand-green-600 fill-brand-green-600" />
+                <div className="w-10 sm:w-14 border-r border-slate-100 bg-slate-50/50 flex flex-col items-center py-3 sm:py-4 gap-3 sm:gap-4 shrink-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-brand-green-100 flex items-center justify-center cursor-pointer shadow-sm">
+                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-brand-green-600 fill-brand-green-600" />
                   </div>
-                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
-                    <Send className="w-4 h-4 text-sky-500 fill-sky-500" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <Send className="w-3 h-3 sm:w-4 sm:h-4 text-sky-500 fill-sky-500" />
                   </div>
-                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
-                    <Instagram className="w-4 h-4 text-pink-500" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <Instagram className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500" />
                   </div>
-                  <div className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
-                    <MessageSquare className="w-4 h-4 text-blue-600 fill-blue-600" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors">
+                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 fill-blue-600" />
                   </div>
                 </div>
 
                 {/* Inbox List */}
-                <div className="w-[45%] border-r border-slate-100 bg-white flex flex-col shrink-0">
-                  <div className="p-3 border-b border-slate-100">
-                    <h3 className="text-xs font-bold text-slate-800">Unified Inbox</h3>
+                <div className="w-[120px] sm:w-[45%] border-r border-slate-100 bg-white flex flex-col shrink-0 min-w-0">
+                  <div className="p-2 sm:p-3 border-b border-slate-100 shrink-0">
+                    <h3 className="text-[10px] sm:text-xs font-bold text-slate-800 truncate">Unified Inbox</h3>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto">
                     {/* Active Item */}
-                    <div className="p-3 bg-brand-green-50/50 border-b border-slate-100 cursor-pointer">
+                    <div className="p-2 sm:p-3 bg-brand-green-50/50 border-b border-slate-100 cursor-pointer min-w-0">
                       <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-slate-800">Vikram Singh</span>
-                        <span className="text-[9px] text-brand-green-600 font-medium">now</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-800 truncate">Vikram Singh</span>
+                        <span className="text-[8px] sm:text-[9px] text-brand-green-600 font-medium shrink-0 ml-1">now</span>
                       </div>
-                      <p className="text-[10px] text-brand-green-700/80 truncate">Can we schedule a product demo?</p>
+                      <p className="text-[9px] sm:text-[10px] text-brand-green-700/80 truncate">Can we schedule a product demo?</p>
                     </div>
 
                     {/* Inactive Items */}
-                    <div className="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                    <div className="p-2 sm:p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors min-w-0">
                       <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-slate-700">Sarah Lee</span>
-                        <span className="text-[9px] text-slate-400">2m</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 truncate">Sarah Lee</span>
+                        <span className="text-[8px] sm:text-[9px] text-slate-400 shrink-0 ml-1">2m</span>
                       </div>
-                      <p className="text-[10px] text-slate-500 truncate">I'd like to upgrade my plan.</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-500 truncate">I'd like to upgrade my plan.</p>
                     </div>
 
-                    <div className="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                    <div className="p-2 sm:p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors min-w-0">
                       <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-slate-700">System Alerts</span>
-                        <span className="text-[9px] text-slate-400">5m</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 truncate">System Alerts</span>
+                        <span className="text-[8px] sm:text-[9px] text-slate-400 shrink-0 ml-1">5m</span>
                       </div>
-                      <p className="text-[10px] text-slate-500 truncate">Payment webhook received...</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-500 truncate">Payment webhook received...</p>
                     </div>
                   </div>
                 </div>
@@ -196,30 +195,30 @@ const HeroSection = () => {
                 {/* Chat View */}
                 <div className="flex-1 bg-white flex flex-col relative min-w-0">
                   {/* Chat Header */}
-                  <div className="p-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/30">
-                    <div className="w-7 h-7 rounded-full bg-brand-green-500 flex items-center justify-center text-white shrink-0">
-                      <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                  <div className="p-2 sm:p-3 border-b border-slate-100 flex items-center gap-1.5 sm:gap-2 bg-slate-50/30 shrink-0 min-w-0">
+                    <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-brand-green-500 flex items-center justify-center text-white shrink-0">
+                      <MessageCircle className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 fill-white" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-xs font-bold text-slate-800 truncate">Vikram Singh</h4>
-                      <p className="text-[9px] text-brand-green-500 font-medium truncate">WhatsApp via API</p>
+                      <h4 className="text-[10px] sm:text-xs font-bold text-slate-800 truncate">Vikram Singh</h4>
+                      <p className="text-[8px] sm:text-[9px] text-brand-green-500 font-medium truncate">WhatsApp via API</p>
                     </div>
                   </div>
 
                   {/* Chat Content */}
-                  <div className="flex-1 p-3 flex flex-col gap-3 relative overflow-hidden bg-slate-50/30">
+                  <div className="flex-1 p-2 sm:p-3 flex flex-col gap-2 sm:gap-3 relative overflow-hidden bg-slate-50/30">
                     {/* Info Box */}
                     <motion.div 
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 1.2 }}
-                      className="bg-[#f0f4ff] border border-blue-100 rounded-lg p-2.5 shadow-sm"
+                      className="bg-[#f0f4ff] border border-blue-100 rounded-lg p-1.5 sm:p-2.5 shadow-sm"
                     >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Bot className="w-3 h-3 text-blue-600" />
-                        <span className="text-[10px] font-bold text-blue-700">Chatbot Flow Active</span>
+                      <div className="flex items-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+                        <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-600 shrink-0" />
+                        <span className="text-[8px] sm:text-[10px] font-bold text-blue-700 leading-tight">Chatbot Flow Active</span>
                       </div>
-                      <p className="text-[9px] text-slate-500 leading-relaxed">
+                      <p className="text-[7px] sm:text-[9px] text-slate-500 leading-tight">
                         Trigger matched: "Schedule Demo". AI assistant is parsing availability and preparing a response.
                       </p>
                     </motion.div>
@@ -229,15 +228,14 @@ const HeroSection = () => {
                       initial={{ opacity: 0, scale: 0.95, originX: 1, originY: 1 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 1.6 }}
-                      className="bg-brand-green-500 text-white rounded-2xl rounded-tr-sm p-3 self-end max-w-[85%] shadow-sm mt-auto"
+                      className="bg-brand-green-500 text-white rounded-2xl rounded-tr-sm p-2 sm:p-3 self-end max-w-[90%] sm:max-w-[85%] shadow-sm mt-auto"
                     >
-                      <p className="text-[10px] leading-relaxed font-medium">
+                      <p className="text-[8px] sm:text-[10px] leading-tight sm:leading-relaxed font-medium">
                         Hi Vikram! I'd love to help. Would 10:00 AM or 2:00 PM tomorrow work for you?
                       </p>
                     </motion.div>
                   </div>
                 </div>
-              </div>
               </div>
             </div>
           </motion.div>
@@ -256,16 +254,16 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 + i * 0.1 }}
-              className="bg-white border border-slate-100 rounded-2xl p-2 sm:p-5 flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-4 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white border border-slate-100 rounded-2xl p-3 sm:p-5 flex flex-row items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${s.iconBg}`}>
-                <s.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${s.iconColor}`} />
+              <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${s.iconBg}`}>
+                <s.icon className={`w-4 h-4 sm:w-6 sm:h-6 ${s.iconColor}`} />
               </div>
-              <div>
-                <p className="text-lg sm:text-xl font-bold text-slate-800">
+              <div className="min-w-0">
+                <p className="text-sm sm:text-xl font-bold text-slate-800">
                   {s.value}
                 </p>
-                <p className="text-[10px] sm:text-xs text-slate-500 font-medium">
+                <p className="text-[9px] sm:text-xs text-slate-500 font-medium truncate">
                   {s.label}
                 </p>
               </div>
