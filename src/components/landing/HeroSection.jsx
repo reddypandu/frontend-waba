@@ -124,7 +124,8 @@ const HeroSection = () => {
             </motion.div>
 
             {/* Main Mockup Window */}
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative z-10 w-full aspect-[4/3] max-h-[450px]">
+            <div className="w-full overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative z-10 min-w-[500px] aspect-[4/3] max-h-[450px] md:min-w-0 md:w-full">
               
               {/* Window Controls */}
               <div className="h-10 bg-slate-50 border-b border-slate-100 flex items-center px-4 gap-2">
@@ -237,6 +238,7 @@ const HeroSection = () => {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -246,7 +248,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 lg:mt-16 xl:mt-24"
+          className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-12 lg:mt-16 xl:mt-24"
         >
           {stats.map((s, i) => (
             <motion.div
@@ -254,7 +256,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 + i * 0.1 }}
-              className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white border border-slate-100 rounded-2xl p-2 sm:p-5 flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-4 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${s.iconBg}`}>
                 <s.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${s.iconColor}`} />

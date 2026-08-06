@@ -7,7 +7,7 @@ import PricingSection from "@/components/landing/PricingSection";
 import Footer from "@/components/landing/Footer";
 
 const Landing = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen overflow-x-hidden">
     <Navbar />
     <HeroSection />
     <IntegrationsSection />

@@ -9,7 +9,8 @@ const tabs = [
 ];
 
 const SmartInboxMockup = () => (
-  <div className="relative w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top">
+  <div className="w-full overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
+    <div className="relative min-w-[800px] w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-100 origin-top-left md:origin-top">
     {/* Floating Badges */}
     <div className="hidden md:flex absolute -left-12 top-24 bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 items-center gap-2 z-10 animate-float">
       <div className="w-5 h-5 rounded-full bg-[#25D366] flex items-center justify-center">
@@ -231,12 +232,14 @@ const SmartInboxMockup = () => (
       </div>
     </div>
   </div>
+</div>
 );
 
 
 const FlowBuilderMockup = () => (
-  <div className="relative w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-90 origin-top">
-    <div className="bg-slate-100 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col h-[500px] relative">
+  <div className="w-full overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
+    <div className="relative min-w-[800px] w-full max-w-4xl mx-auto mt-4 animate-fade-in scale-[0.85] md:scale-100 origin-top-left md:origin-top">
+      <div className="bg-slate-100 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col h-[500px] relative">
       {/* Window Header */}
       <div className="h-12 bg-slate-100/50 border-b border-slate-200 flex items-center px-4 shrink-0 absolute top-0 w-full z-10 backdrop-blur-sm">
         <div className="flex gap-2">
@@ -389,6 +392,7 @@ const FlowBuilderMockup = () => (
       </div>
     </div>
   </div>
+</div>
 );
 
 const CampaignsMockup = () => (
@@ -602,8 +606,9 @@ const FeatureShowcaseSection = () => {
       <div className="container mx-auto px-6 relative z-10">
         
         {/* Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-full p-2.5 shadow-sm border border-slate-200 inline-flex gap-2 overflow-x-auto max-w-full">
+        <div className="w-full overflow-x-auto no-scrollbar mb-8 pb-2 -mx-6 px-6 md:mx-0 md:px-0">
+          <div className="flex md:justify-center w-max min-w-full">
+            <div className="bg-white rounded-full p-2.5 shadow-sm border border-slate-200 inline-flex gap-2">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -624,11 +629,12 @@ const FeatureShowcaseSection = () => {
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
 
         {/* Headings */}
-        <div className="text-center max-w-3xl mx-auto mb-10 h-[90px] flex flex-col justify-center">
+        <div className="text-center max-w-3xl mx-auto mb-10 min-h-[160px] md:min-h-[120px] flex flex-col justify-center">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 transition-all animate-fade-in" key={`h-${activeTab}`}>
             {getHeading()}
           </h2>

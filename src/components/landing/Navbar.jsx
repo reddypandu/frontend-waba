@@ -28,10 +28,10 @@ const Navbar = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-brand-green-500 shadow-md ${scrolled ? 'py-0' : 'py-1'}`}
     >
-      <div className="container mx-auto flex items-center justify-between h-24 px-6 md:px-8">
+      <div className="container mx-auto flex items-center justify-between h-16 md:h-24 px-4 md:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="h-14 rounded-xl flex items-center justify-center transition-all duration-300">
+          <div className="h-10 md:h-14 rounded-xl flex items-center justify-center transition-all duration-300">
             <img src="/logo.png" alt="Logo" className="w-auto h-full object-contain origin-left" />
           </div>
         </Link>
