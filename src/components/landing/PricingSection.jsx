@@ -20,7 +20,8 @@ const plans = [
   },
   {
     name: "Paid Plan",
-    price: "₹30,000",
+    price: "₹14,999",
+    originalPrice: "₹30,000",
     period: "/year",
     description: "Unlock full potential",
     features: [
@@ -112,6 +113,11 @@ const PricingSection = () => {
 
               {/* Price */}
               <div className="mb-7 flex items-baseline gap-1">
+                {plan.originalPrice && (
+                  <span className="text-2xl font-bold text-muted-foreground line-through mr-1">
+                    {plan.originalPrice}
+                  </span>
+                )}
                 <span className="text-4xl font-extrabold text-foreground">
                   {plan.price}
                 </span>
