@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Logo from "../../assets/yestickai.png"
+
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -28,11 +28,11 @@ const Navbar = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-brand-green-500 shadow-md ${scrolled ? 'py-0' : 'py-1'}`}
     >
-      <div className="container mx-auto flex items-center justify-between h-20 px-4">
+      <div className="container mx-auto flex items-center justify-between h-24 px-6 md:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="h-16 rounded-xl flex items-center justify-center transition-all duration-300">
-            <img src={Logo} alt="Logo" className="w-auto h-full object-contain scale-125 origin-left" />
+          <div className="h-20 rounded-xl flex items-center justify-center transition-all duration-300">
+            <img src="/logo.png" alt="Logo" className="w-auto h-full object-contain scale-[1.35] origin-left" />
           </div>
         </Link>
 
