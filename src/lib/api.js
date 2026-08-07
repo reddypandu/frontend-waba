@@ -116,3 +116,18 @@ export async function apiDelete(path) {
   if (!res.ok) throw new Error(data.error || "Request failed");
   return data;
 }
+
+export async function apiPatch(path, body) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}

@@ -13,9 +13,9 @@ const GlobalMessageNotifications = () => {
         queryKey: ["global-conversations", user?.id],
         queryFn: () => apiGet("/api/whatsapp/conversations"),
         enabled: !!user,
-        refetchInterval: 3000,
+        refetchInterval: 15000,
         refetchOnWindowFocus: true,
-        staleTime: 0,
+        staleTime: 5000,
     });
 
     const conversations = data?.conversations || [];

@@ -17,6 +17,8 @@ import {
   RefreshCw,
   ExternalLink,
   Phone,
+  Star,
+  Bookmark,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,9 +30,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiPost } from "@/lib/api";
-
-
+import { apiGet, apiPost, apiPatch } from "@/lib/api";
 
 const MessageTicks = ({ status, isOutbound }) => {
   if (!isOutbound) return null;
@@ -103,9 +103,9 @@ const Inbox = () => {
     queryKey: ["conversations", user?.id],
     queryFn: () => apiGet("/api/whatsapp/conversations"),
     enabled: !!user,
-    refetchInterval: 3000,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 5000,
   });
 
   const {
@@ -118,9 +118,9 @@ const Inbox = () => {
       return data.contacts || [];
     },
     enabled: !!user,
-    refetchInterval: 3000,
+    refetchInterval: 30000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 15000,
   });
   // Add this helper near the top of the component (or as a module-level function)
   const normalizePhone = (phone) =>
@@ -273,6 +273,18 @@ const Inbox = () => {
       list = list.filter((item) => !item.isConv);
     }
 
+    if (filter === "followup") {
+      list = list.filter(
+        (item) => item.isConv && item.is_pinned_followup
+      );
+    }
+
+    if (filter === "important") {
+      list = list.filter(
+        (item) => item.isConv && item.is_pinned_important
+      );
+    }
+
     /* ADD THIS HERE */
     list.sort((a, b) => {
       // Conversations first
@@ -349,9 +361,9 @@ const Inbox = () => {
     queryKey: ["messages", user?.id, selectedConversationId],
     queryFn: () => apiGet(`/api/whatsapp/messages/${selectedConversationId}`),
     enabled: !!user && !!selectedConversationId,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 2000,
   });
   // Component: MessageTicks.jsx
 
@@ -415,6 +427,48 @@ const Inbox = () => {
         description: err.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const pinMutation = useMutation({
+    mutationFn: async ({ id, type, value }) => {
+      return apiPatch(`/api/whatsapp/conversations/${id}/pin`, { type, value });
+    },
+    onMutate: async ({ id, type, value }) => {
+      await queryClient.cancelQueries({ queryKey: ["conversations", user?.id] });
+      const previousConversations = queryClient.getQueryData(["conversations", user?.id]);
+
+      queryClient.setQueryData(["conversations", user?.id], (old) => {
+        if (!old || !old.conversations) return old;
+        return {
+          ...old,
+          conversations: old.conversations.map((conv) => {
+            if (conv._id === id) {
+              return {
+                ...conv,
+                ...(type === "followup" ? { is_pinned_followup: value } : {}),
+                ...(type === "important" ? { is_pinned_important: value } : {}),
+              };
+            }
+            return conv;
+          }),
+        };
+      });
+
+      return { previousConversations };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousConversations) {
+        queryClient.setQueryData(["conversations", user?.id], context.previousConversations);
+      }
+      toast({
+        title: "Action failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
     },
   });
 
@@ -820,13 +874,21 @@ const Inbox = () => {
             {[
               { key: "all", label: "All" },
               { key: "unread", label: "Unread", count: unreadCount },
+              { key: "followup", label: "Follow up" },
+              { key: "important", label: "Hot Lead" },
             ].map((tab) => (
               <Button
                 key={tab.key}
                 variant={filter === tab.key ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter(tab.key)}
-                className="rounded-full h-8 px-4 text-xs flex items-center gap-2"
+                className={`rounded-full h-8 px-4 text-xs flex items-center gap-2 ${
+                  tab.key === 'important'
+                    ? filter === 'important' ? "bg-red-500 text-white hover:bg-red-600" : "text-red-500 hover:bg-red-50 border-red-200"
+                    : tab.key === 'followup'
+                    ? filter === 'followup' ? "bg-yellow-500 text-white hover:bg-yellow-600" : "text-yellow-600 hover:bg-yellow-50 border-yellow-200"
+                    : ""
+                }`}
               >
                 <span>{tab.label}</span>
 
@@ -907,36 +969,62 @@ const Inbox = () => {
       >
         {selectedConv && selectedConvData ? (
           <>
-            <div className="flex items-center gap-3 p-4 border-b border-border bg-background">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setSelectedConv(null)}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                {(
-                  selectedConvData.contact_id?.name ||
-                  selectedConvData.phone_number ||
-                  "?"
-                )
-                  ?.charAt(0)
-                  ?.toUpperCase()}
-              </div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="font-semibold text-foreground">
-                    {selectedConvData.contact_id?.name ||
-                      selectedConvData.phone_number}
-                  </h3>
+            <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setSelectedConv(null)}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                  {(
+                    selectedConvData.contact_id?.name ||
+                    selectedConvData.phone_number ||
+                    "?"
+                  )
+                    ?.charAt(0)
+                    ?.toUpperCase()}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {selectedConvData.contact_id?.phone_number ||
-                    selectedConvData.phone_number}
-                </p>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-foreground">
+                      {selectedConvData.contact_id?.name ||
+                        selectedConvData.phone_number}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedConvData.contact_id?.phone_number ||
+                      selectedConvData.phone_number}
+                  </p>
+                </div>
               </div>
+              {selectedConvData._id !== "new" && !String(selectedConvData._id).startsWith("contact-") && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 gap-1.5 rounded-full border-yellow-200 ${selectedConvData.is_pinned_followup ? "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500" : "text-yellow-600 hover:bg-yellow-50"}`}
+                    onClick={() => pinMutation.mutate({ id: selectedConvData._id, type: 'followup', value: !selectedConvData.is_pinned_followup })}
+                    disabled={pinMutation.isPending}
+                  >
+                    <Bookmark className={`w-4 h-4 ${selectedConvData.is_pinned_followup ? "fill-white text-white" : "text-yellow-600"}`} />
+                    <span className="hidden sm:inline">Follow Up</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 gap-1.5 rounded-full border-red-200 ${selectedConvData.is_pinned_important ? "bg-red-500 text-white hover:bg-red-600 border-red-500" : "text-red-500 hover:bg-red-50"}`}
+                    onClick={() => pinMutation.mutate({ id: selectedConvData._id, type: 'important', value: !selectedConvData.is_pinned_important })}
+                    disabled={pinMutation.isPending}
+                  >
+                    <Star className={`w-4 h-4 ${selectedConvData.is_pinned_important ? "fill-white text-white" : "text-red-500"}`} />
+                    <span className="hidden sm:inline">Hot Lead</span>
+                  </Button>
+                </div>
+              )}
             </div>
 
             <ScrollArea className="flex-1 p-4">
