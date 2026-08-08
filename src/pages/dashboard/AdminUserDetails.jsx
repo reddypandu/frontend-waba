@@ -22,6 +22,7 @@ import {
   Send,
   MessageCircle,
 } from "lucide-react";
+import MetaAccountPanel from "@/components/dashboard/whatsapp/MetaAccountPanel";
 
 const AdminUserDetails = () => {
   const { id } = useParams();
@@ -438,6 +439,10 @@ const AdminUserDetails = () => {
               </CardContent>
             </Card>
           )}
+
+          <div className="pt-4">
+            <MetaAccountPanel userId={id} />
+          </div>
         </TabsContent>
 
         {/* Activity Tab */}

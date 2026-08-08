@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import MetaAccountPanel from "@/components/dashboard/whatsapp/MetaAccountPanel";
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -108,7 +109,7 @@ const AdminPanel = () => {
 
     const label = targetUser.email || targetUser.full_name || userId;
     const confirmed = window.confirm(
-      `Delete ${label}? This permanently removes the user, MongoDB data, uploads, designs, and Cloudinary assets. This cannot be undone.`,
+      `Delete ${label}? This permanently removes the user, DB data, uploads, designs, and Cloudinary assets. This cannot be undone.`,
     );
     if (confirmed) deleteUserMutation.mutate(targetUser);
   };
@@ -141,6 +142,13 @@ const AdminPanel = () => {
             onClick={() => setActiveAdminTab("users")}
           >
             <Users className="mr-2 h-4 w-4" /> Users
+          </Button>
+          <Button
+            size="sm"
+            variant={activeAdminTab === "meta" ? "default" : "outline"}
+            onClick={() => setActiveAdminTab("meta")}
+          >
+            <Building2 className="mr-2 h-4 w-4" /> Meta Business
           </Button>
           <Button
             size="sm"
@@ -272,6 +280,8 @@ const AdminPanel = () => {
             </div>
           </CardContent>
         </Card>
+      ) : activeAdminTab === "meta" ? (
+        <MetaAccountPanel />
       ) : (
         <Card>
           <CardHeader>
