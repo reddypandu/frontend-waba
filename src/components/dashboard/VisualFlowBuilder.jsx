@@ -6,6 +6,7 @@ import {
   Trash2, GitBranch, SquareStack,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import "./VisualFlowBuilder.css";
 
 /* ─── Constants ─────────────────────────────────────────────── */
@@ -50,7 +51,7 @@ const NODE_TYPES = {
   },
 };
 
-const SIDEBAR_ITEMS = ["send_text", "send_buttons", "delay", "condition"];
+const SIDEBAR_ITEMS = ["trigger", "send_text", "send_buttons", "delay", "condition"];
 
 const snap = (v) => Math.round(v / GRID_SNAP) * GRID_SNAP;
 
@@ -151,6 +152,7 @@ export default function VisualFlowBuilder({
   initialData,
   isSaving,
 }) {
+  const { toast } = useToast();
   /* ── State ─────────────────────────────────────────────────── */
   const [workflowName, setWorkflowName] = React.useState("");
   const [triggerType, setTriggerType] = React.useState("keyword_match");
@@ -171,20 +173,28 @@ export default function VisualFlowBuilder({
   /* ── Initialize from data ──────────────────────────────────── */
   React.useEffect(() => {
     if (isOpen) {
+      let initialNodes = [];
       if (initialData) {
         setWorkflowName(initialData.name || "");
         setTriggerType(initialData.trigger_type || "keyword_match");
         setTriggerValue(initialData.trigger_value || "");
-        setNodes(actionsToNodes(initialData.actions, initialData.trigger_type, initialData.trigger_value));
+        initialNodes = actionsToNodes(initialData.actions, initialData.trigger_type, initialData.trigger_value);
+        setNodes(initialNodes);
       } else {
         setWorkflowName("");
         setTriggerType("keyword_match");
         setTriggerValue("");
-        setNodes(actionsToNodes([], "keyword_match", ""));
+        initialNodes = actionsToNodes([], "keyword_match", "");
+        setNodes(initialNodes);
       }
       setSelectedId(null);
       setZoom(1);
-      setPanOffset({ x: 0, y: 0 });
+      
+      const wrapperW = window.innerWidth > 768 ? window.innerWidth - 220 : window.innerWidth;
+      const trigger = initialNodes.find(n => n.type === "trigger");
+      const targetX = trigger ? trigger.position.x + (NODE_W / 2) : CANVAS_W / 2;
+      
+      setPanOffset({ x: -targetX + wrapperW / 2, y: 0 });
     }
   }, [isOpen, initialData]);
 
@@ -212,7 +222,16 @@ export default function VisualFlowBuilder({
   };
 
   const addNode = (type) => {
-    const id = genId();
+    if (type === "trigger" && nodes.some((n) => n.type === "trigger")) {
+      toast({
+        title: "Trigger Already Exists",
+        description: "A workflow can only have one trigger node. Please click the existing Trigger node to edit its settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const id = type === "trigger" ? "trigger" : genId();
     // Position below the lowest node
     let maxY = 0;
     nodes.forEach((n) => {
@@ -433,7 +452,13 @@ export default function VisualFlowBuilder({
               <button className="vfb-zoom-btn" onClick={() => setZoom((z) => Math.min(2, z + 0.15))}>
                 <Plus className="h-3.5 w-3.5" />
               </button>
-              <button className="vfb-zoom-btn" onClick={() => { setZoom(1); setPanOffset({ x: 0, y: 0 }); }}>
+              <button className="vfb-zoom-btn" onClick={() => { 
+                setZoom(1); 
+                const wrapperW = window.innerWidth > 768 ? window.innerWidth - 220 : window.innerWidth;
+                const trigger = nodes.find(n => n.type === "trigger");
+                const targetX = trigger ? trigger.position.x + (NODE_W / 2) : CANVAS_W / 2;
+                setPanOffset({ x: -targetX + wrapperW / 2, y: 0 }); 
+              }}>
                 <Maximize2 className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -492,12 +517,23 @@ export default function VisualFlowBuilder({
               e.preventDefault();
               const type = e.dataTransfer.getData("application/reactflow");
               if (!type) return;
+
+              if (type === "trigger" && nodes.some((n) => n.type === "trigger")) {
+                toast({
+                  title: "Trigger Already Exists",
+                  description: "A workflow can only have one trigger node. Please click the existing Trigger node to edit its settings.",
+                  variant: "destructive",
+                });
+                return;
+              }
               
               const coords = getCanvasCoords(e);
-              const id = genId();
+              const id = type === "trigger" ? "trigger" : genId();
               const newNode = {
                 id,
                 type,
+                triggerType: type === "trigger" ? "keyword_match" : undefined,
+                triggerValue: type === "trigger" ? "" : undefined,
                 text: "",
                 buttons: type === "send_buttons" ? [{ id: genId(), title: "Option 1", next_step: "" }] : [],
                 next_step: "",
