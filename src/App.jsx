@@ -30,6 +30,7 @@ import AdminPanel from "./pages/dashboard/AdminPanel";
 import AdminUserDetails from "./pages/dashboard/AdminUserDetails";
 import AutoReplies from "./pages/dashboard/AutoReplies";
 import Workflows from "./pages/dashboard/Workflows";
+import BusinessWorkflows from "./pages/dashboard/BusinessWorkflows";
 import Invoices from "./pages/dashboard/Invoices";
 import Designs from "./pages/dashboard/Designs";
 import DesignEditor from "./pages/dashboard/DesignEditor";
@@ -38,6 +39,10 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
+import BookingFlow from "./pages/public/BookingFlow";
+import PaymentFlow from "./pages/public/PaymentFlow";
+
+import PaymentUpiRedirect from "./pages/public/PaymentUpiRedirect";
 
 export const queryClient = new QueryClient();
 
@@ -88,6 +93,7 @@ const App = () => (
               <Route path="admin/users/:id" element={<AdminUserDetails />} />
               <Route path="auto-replies" element={<AutoReplies />} />
               <Route path="workflows" element={<Workflows />} />
+              <Route path="business-workflows" element={<BusinessWorkflows />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="designs" element={<Designs />} />
               <Route path="api-keys" element={<ApiKeys />} />
@@ -95,6 +101,9 @@ const App = () => (
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
+            <Route path="/b/calendar/:workflowId/:conversationId" element={<BookingFlow />} />
+            <Route path="/b/pay/:transactionId" element={<PaymentFlow />} />
+            <Route path="/b/pay/upi/:transactionId" element={<PaymentUpiRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatbotWidget />

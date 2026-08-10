@@ -24,6 +24,7 @@ const navGroups = [
       { title: "Inbox", path: "/dashboard/inbox", icon: Inbox, badge: "Live" },
       { title: "Auto Replies", path: "/dashboard/auto-replies", icon: Reply },
       { title: "Workflows", path: "/dashboard/workflows", icon: Workflow },
+      { title: "Business Workflows", path: "/dashboard/business-workflows", icon: Workflow },
       { title: "Designs", path: "/dashboard/designs", icon: Palette, badge: "New" },
     ],
   },

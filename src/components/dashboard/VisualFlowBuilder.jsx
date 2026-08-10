@@ -4,13 +4,14 @@ import {
   X, Plus, Minus, Maximize2, Save, ArrowLeft,
   MessageCircle, Zap, Clock, Type, MousePointerSquareDashed,
   Trash2, GitBranch, SquareStack,
+  Calendar, CreditCard, Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import "./VisualFlowBuilder.css";
 
 /* ─── Constants ─────────────────────────────────────────────── */
-const NODE_W = 240;
+const NODE_W = 250;
 const NODE_HEADER_H = 44;
 const NODE_BODY_H = 56;
 const NODE_H = NODE_HEADER_H + NODE_BODY_H;
@@ -49,9 +50,28 @@ const NODE_TYPES = {
     icon: GitBranch,
     colorClass: "node-color-condition",
   },
+  book_meeting: {
+    label: "Book Meeting",
+    desc: "Calendar booking",
+    icon: Calendar,
+    colorClass: "node-color-condition",
+  },
+  payment_invoice: {
+    label: "Payment Invoice",
+    desc: "Request payment",
+    icon: CreditCard,
+    colorClass: "node-color-condition",
+  },
+  save_data: {
+    label: "Save Data",
+    desc: "Export to Excel/Sheets",
+    icon: Database,
+    colorClass: "node-color-condition",
+  }
 };
 
-const SIDEBAR_ITEMS = ["trigger", "send_text", "send_buttons", "delay", "condition"];
+const SIDEBAR_ITEMS_BUSINESS = ["trigger", "send_text", "send_buttons", "delay", "condition", "book_meeting", "payment_invoice", "save_data"];
+const SIDEBAR_ITEMS_STANDARD = ["trigger", "send_text", "send_buttons", "delay", "condition"];
 
 const snap = (v) => Math.round(v / GRID_SNAP) * GRID_SNAP;
 
@@ -151,7 +171,9 @@ export default function VisualFlowBuilder({
   onSave,
   initialData,
   isSaving,
+  isBusinessWorkflow,
 }) {
+  const activeSidebarItems = isBusinessWorkflow ? SIDEBAR_ITEMS_BUSINESS : SIDEBAR_ITEMS_STANDARD;
   const { toast } = useToast();
   /* ── State ─────────────────────────────────────────────────── */
   const [workflowName, setWorkflowName] = React.useState("");
@@ -477,7 +499,7 @@ export default function VisualFlowBuilder({
           <div className="vfb-sidebar">
             <div className="vfb-sidebar-header">Add Nodes</div>
             <div className="vfb-sidebar-nodes">
-              {SIDEBAR_ITEMS.map((type) => {
+              {activeSidebarItems.map((type) => {
                 const meta = NODE_TYPES[type];
                 const Icon = meta.icon;
                 return (
@@ -664,18 +686,9 @@ export default function VisualFlowBuilder({
                         </div>
                       )}
                       {node.type === "send_buttons" && (
-                        <>
-                          <div className="vfb-node-preview">
-                            {node.text || "Enter button message..."}
-                          </div>
-                          {node.buttons?.length > 0 && (
-                            <div className="vfb-node-buttons-preview">
-                              {node.buttons.map((b) => (
-                                <span key={b.id} className="vfb-node-btn-tag">{b.title || "Button"}</span>
-                              ))}
-                            </div>
-                          )}
-                        </>
+                        <div className="vfb-node-preview">
+                          {node.text || "Enter button message..."}
+                        </div>
                       )}
                       {node.type === "delay" && (
                         <div className="vfb-node-preview">
@@ -689,11 +702,29 @@ export default function VisualFlowBuilder({
                             : "Set condition keyword..."}
                         </div>
                       )}
+                      {node.type === "book_meeting" && (
+                        <div className="vfb-node-preview">
+                          {node.text || "Book a Meeting"}
+                        </div>
+                      )}
+                      {node.type === "payment_invoice" && (
+                        <div className="vfb-node-preview">
+                          Amount: ₹{node.amount || 0}
+                        </div>
+                      )}
+                      {node.type === "save_data" && (
+                        <div className="vfb-node-preview">
+                          Saves to Database
+                        </div>
+                      )}
                     </div>
 
                     {/* Button port rows for send_buttons */}
                     {node.type === "send_buttons" && node.buttons?.map((btn, bIdx) => (
-                      <div key={btn.id} style={{ position: "relative", height: 28 }}>
+                      <div key={btn.id} style={{ position: "relative", height: 28, display: "flex", alignItems: "center", padding: "0 12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <span className="vfb-node-btn-tag" style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {btn.title || "Button"}
+                        </span>
                         <div
                           className="vfb-port vfb-port-btn-output"
                           onMouseDown={(e) => onPortMouseDown(e, node.id, `btn_${bIdx}`)}
@@ -702,11 +733,13 @@ export default function VisualFlowBuilder({
                       </div>
                     ))}
 
-                    {/* Output port */}
-                    <div
-                      className="vfb-port vfb-port-output"
-                      onMouseDown={(e) => onPortMouseDown(e, node.id, "output")}
-                    />
+                    {/* Output port (hidden for send_buttons) */}
+                    {node.type !== "send_buttons" && (
+                      <div
+                        className="vfb-port vfb-port-output"
+                        onMouseDown={(e) => onPortMouseDown(e, node.id, "output")}
+                      />
+                    )}
                   </motion.div>
                 );
               })}
@@ -803,43 +836,46 @@ export default function VisualFlowBuilder({
                         />
                       </div>
                       <div className="vfb-field">
-                        <label className="vfb-field-label">Buttons (Max 20 characters)</label>
-                        <div className="vfb-panel-btn-list">
-                          {(selectedNode.buttons || []).map((btn, bIdx) => (
-                            <div key={btn.id} className="vfb-panel-btn-item">
+                        <label className="vfb-field-label">Buttons (Max 3)</label>
+                        <div className="vfb-buttons-list">
+                          {(selectedNode.buttons || []).map((btn, i) => (
+                            <div key={btn.id} className="vfb-button-item">
                               <input
-                                placeholder={`Button ${bIdx + 1} title`}
-                                value={btn.title || ""}
-                                maxLength={20}
+                                className="vfb-field-input"
+                                placeholder={`Button ${i + 1} text`}
+                                value={btn.title}
                                 onChange={(e) => {
-                                  const btns = [...(selectedNode.buttons || [])];
-                                  btns[bIdx] = { ...btns[bIdx], title: e.target.value };
-                                  updateNode(selectedNode.id, { buttons: btns });
+                                  const newBtns = [...selectedNode.buttons];
+                                  newBtns[i].title = e.target.value;
+                                  updateNode(selectedNode.id, { buttons: newBtns });
                                 }}
                               />
                               <button
-                                className="vfb-panel-btn-remove"
+                                className="vfb-button-delete"
                                 onClick={() => {
-                                  const btns = (selectedNode.buttons || []).filter((_, i) => i !== bIdx);
-                                  updateNode(selectedNode.id, { buttons: btns });
+                                  const newBtns = selectedNode.buttons.filter((_, idx) => idx !== i);
+                                  updateNode(selectedNode.id, { buttons: newBtns });
                                 }}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           ))}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2 rounded-lg text-xs h-8 w-full"
-                          onClick={() => {
-                            const btns = [...(selectedNode.buttons || []), { id: genId(), title: "", next_step: "" }];
-                            updateNode(selectedNode.id, { buttons: btns });
-                          }}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add Button
-                        </Button>
+                        {(selectedNode.buttons?.length || 0) < 3 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => {
+                              updateNode(selectedNode.id, {
+                                buttons: [...(selectedNode.buttons || []), { id: genId(), title: "New Button", next_step: "" }],
+                              });
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" /> Add Button
+                          </Button>
+                        )}
                       </div>
                     </>
                   )}
@@ -869,6 +905,105 @@ export default function VisualFlowBuilder({
                         value={selectedNode.conditionKeyword || ""}
                         onChange={(e) => updateNode(selectedNode.id, { conditionKeyword: e.target.value })}
                       />
+                    </div>
+                  )}
+
+                  {/* ── Book Meeting panel ────────────────────── */}
+                  {selectedNode.type === "book_meeting" && (
+                    <>
+                      <div className="vfb-field">
+                        <label className="vfb-field-label">Message Text</label>
+                        <textarea
+                          className="vfb-field-input"
+                          rows={3}
+                          placeholder="e.g. Please choose a date and time..."
+                          value={selectedNode.text || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { text: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="vfb-field mt-4">
+                        <label className="vfb-field-label text-[10px] uppercase text-muted-foreground mb-1 block">Calendar Availability</label>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div>
+                            <label className="vfb-field-label text-xs">Start Time</label>
+                            <input
+                              type="time"
+                              className="vfb-field-input"
+                              value={selectedNode.startTime || "09:00"}
+                              onChange={(e) => updateNode(selectedNode.id, { startTime: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="vfb-field-label text-xs">End Time</label>
+                            <input
+                              type="time"
+                              className="vfb-field-input"
+                              value={selectedNode.endTime || "17:00"}
+                              onChange={(e) => updateNode(selectedNode.id, { endTime: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="vfb-field-label text-xs">Slot Duration (minutes)</label>
+                          <select
+                            className="vfb-field-input"
+                            value={selectedNode.slotDuration || 30}
+                            onChange={(e) => updateNode(selectedNode.id, { slotDuration: parseInt(e.target.value, 10) })}
+                          >
+                            <option value={15}>15 Minutes</option>
+                            <option value={30}>30 Minutes</option>
+                            <option value={60}>60 Minutes</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground mt-3">A calendar link will automatically be attached to this message.</p>
+                    </>
+                  )}
+
+                  {/* ── Payment Invoice panel ────────────────────── */}
+                  {selectedNode.type === "payment_invoice" && (
+                    <>
+                      <div className="vfb-field">
+                        <label className="vfb-field-label">Message Text</label>
+                        <textarea
+                          className="vfb-field-input"
+                          rows={3}
+                          placeholder="e.g. Please complete your payment."
+                          value={selectedNode.text || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { text: e.target.value })}
+                        />
+                      </div>
+                      <div className="vfb-field mt-3">
+                        <label className="vfb-field-label">Amount (₹)</label>
+                        <input
+                          type="number"
+                          className="vfb-field-input"
+                          min="1"
+                          value={selectedNode.amount || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { amount: parseInt(e.target.value, 10) || 0 })}
+                        />
+                      </div>
+                      <div className="vfb-field mt-3">
+                        <label className="vfb-field-label">UPI ID</label>
+                        <input
+                          type="text"
+                          className="vfb-field-input"
+                          placeholder="e.g. 9063663180@ptyes"
+                          value={selectedNode.upiId || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { upiId: e.target.value })}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">A native 'Pay Now' button pointing to your UPI ID will be sent to the customer.</p>
+                    </>
+                  )}
+
+                  {/* ── Save Data panel ────────────────────── */}
+                  {selectedNode.type === "save_data" && (
+                    <div className="vfb-field">
+                      <p className="text-sm text-foreground font-medium">Auto-Save</p>
+                      <p className="text-xs text-muted-foreground mt-1">This node silently saves the entire workflow conversation data (customer info, payment, booking) to your Business Dashboard.</p>
                     </div>
                   )}
 
