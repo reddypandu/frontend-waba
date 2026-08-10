@@ -180,8 +180,7 @@ const Workflows = () => {
       toast({ title: "Workflow created!" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["workflow-analytics", user?.id] });
-      setBuilderOpen(false);
-      setEditItem(null);
+      closeBuilder();
     },
     onError: (err) => toast({ title: "Error creating workflow", description: err.message, variant: "destructive" }),
   });
@@ -192,8 +191,7 @@ const Workflows = () => {
       toast({ title: "Workflow updated!" });
       queryClient.invalidateQueries({ queryKey: ["workflows", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["workflow-analytics", user?.id] });
-      setBuilderOpen(false);
-      setEditItem(null);
+      closeBuilder();
     },
   });
 
@@ -217,7 +215,28 @@ const Workflows = () => {
   const openBuilder = (wf = null) => {
     setEditItem(wf);
     setBuilderOpen(true);
+    window.location.hash = "builder";
   };
+
+  const closeBuilder = () => {
+    if (window.location.hash === "#builder") {
+      window.history.back();
+    } else {
+      setBuilderOpen(false);
+      setEditItem(null);
+    }
+  };
+
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash !== "#builder" && builderOpen) {
+        setBuilderOpen(false);
+        setEditItem(null);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [builderOpen]);
 
   const handleBuilderSave = (data) => {
     if (!data.name?.trim()) {
@@ -299,7 +318,7 @@ const Workflows = () => {
     <div className="space-y-6">
       <VisualFlowBuilder
         isOpen={builderOpen}
-        onClose={() => { setBuilderOpen(false); setEditItem(null); }}
+        onClose={closeBuilder}
         onSave={handleBuilderSave}
         initialData={editItem}
         isSaving={createMutation.isPending || updateMutation.isPending}
