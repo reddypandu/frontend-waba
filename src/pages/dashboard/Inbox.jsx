@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -99,9 +99,18 @@ const Inbox = () => {
     data: convsData,
     isLoading: convsLoading,
     isFetching: convsFetching,
-  } = useQuery({
-    queryKey: ["conversations", user?.id],
-    queryFn: () => apiGet("/api/whatsapp/conversations"),
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["conversations", user?.id, search],
+    queryFn: ({ pageParam = 1 }) =>
+      apiGet(`/api/whatsapp/conversations?page=${pageParam}&limit=20&search=${encodeURIComponent(search)}`),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) return lastPage.page + 1;
+      return undefined;
+    },
+    initialPageParam: 1,
     enabled: !!user,
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
@@ -125,8 +134,25 @@ const Inbox = () => {
   // Add this helper near the top of the component (or as a module-level function)
   const normalizePhone = (phone) =>
     (phone || "").toString().replace(/[^\d]/g, "").replace(/^0+/, "");
-  const conversations = convsData?.conversations || [];
+  const conversations = React.useMemo(() => {
+    return convsData?.pages.flatMap((page) => page.conversations) || [];
+  }, [convsData]);
   const contacts = contactsData || [];
+
+  // Infinite Scroll Observer
+  const observerTarget = React.useRef(null);
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const showLoading =
     (convsLoading || convsFetching) && conversations.length === 0;
@@ -217,93 +243,34 @@ const Inbox = () => {
       }
     });
 
-    // Build a lookup of contacts by normalized phone number
-    const contactByPhone = new Map();
-    contacts.forEach((contact) => {
-      contactByPhone.set(normalizePhone(contact.phone_number), contact);
-    });
+    let list = Array.from(convByPhone.values()).map((c) => ({
+      ...c,
+      isConv: true,
+    }));
 
-    let list = Array.from(convByPhone.entries()).map(([phone, c]) => {
-      // If the conversation's contact_id is missing/stale, patch in the matching contact
-      const matchedContact = contactByPhone.get(phone);
-      return {
-        ...c,
-        isConv: true,
-        contact_id: c.contact_id || matchedContact || null,
-      };
-    });
-
-    const convPhones = new Set(convByPhone.keys());
-
-    if (conversations.length > 0) {
-      contacts.forEach((contact) => {
-        if (!convPhones.has(normalizePhone(contact.phone_number))) {
-          list.push({
-            _id: `contact-${contact._id}`,
-            contact_id: contact,
-            phone_number: contact.phone_number,
-            isConv: false,
-          });
-        }
-      });
-    }
-
-    if (search) {
-      const s = search.toLowerCase();
-      list = list.filter(
-        (item) =>
-          (item.contact_id?.name || "").toLowerCase().includes(s) ||
-          (item.phone_number || "").includes(s) ||
-          (item.last_message || "").toLowerCase().includes(s),
-      );
-    }
     if (filter === "unread") {
-      list = list.filter(
-        (item) => item.isConv && (item.unread_count || 0) > 0
-      );
+      list = list.filter((item) => (item.unread_count || 0) > 0);
     }
 
     if (filter === "read") {
-      list = list.filter(
-        (item) => item.isConv && (item.unread_count || 0) === 0
-      );
-    }
-
-    if (filter === "new") {
-      list = list.filter((item) => !item.isConv);
+      list = list.filter((item) => (item.unread_count || 0) === 0);
     }
 
     if (filter === "followup") {
-      list = list.filter(
-        (item) => item.isConv && item.is_pinned_followup
-      );
+      list = list.filter((item) => item.is_pinned_followup);
     }
 
     if (filter === "important") {
-      list = list.filter(
-        (item) => item.isConv && item.is_pinned_important
-      );
+      list = list.filter((item) => item.is_pinned_important);
     }
 
-    /* ADD THIS HERE */
     list.sort((a, b) => {
-      // Conversations first
-      if (a.isConv && !b.isConv) return -1;
-      if (!a.isConv && b.isConv) return 1;
-
-      // Latest conversation first
-      const aTime = new Date(
-        a.updatedAt || a.last_message_at || a.createdAt || 0
-      ).getTime();
-
-      const bTime = new Date(
-        b.updatedAt || b.last_message_at || b.createdAt || 0
-      ).getTime();
-
+      const aTime = new Date(a.updatedAt || a.last_message_at || a.createdAt || 0).getTime();
+      const bTime = new Date(b.updatedAt || b.last_message_at || b.createdAt || 0).getTime();
       return bTime - aTime;
     });
     return list;
-  }, [conversations, contacts, search, filter]);
+  }, [conversations, filter]);
 
 
   // Handle ?phone= parameter
@@ -436,22 +403,25 @@ const Inbox = () => {
     },
     onMutate: async ({ id, type, value }) => {
       await queryClient.cancelQueries({ queryKey: ["conversations", user?.id] });
-      const previousConversations = queryClient.getQueryData(["conversations", user?.id]);
+      const previousConversations = queryClient.getQueriesData({ queryKey: ["conversations", user?.id] });
 
-      queryClient.setQueryData(["conversations", user?.id], (old) => {
-        if (!old || !old.conversations) return old;
+      queryClient.setQueriesData({ queryKey: ["conversations", user?.id] }, (old) => {
+        if (!old || !old.pages) return old;
         return {
           ...old,
-          conversations: old.conversations.map((conv) => {
-            if (conv._id === id) {
-              return {
-                ...conv,
-                ...(type === "followup" ? { is_pinned_followup: value } : {}),
-                ...(type === "important" ? { is_pinned_important: value } : {}),
-              };
-            }
-            return conv;
-          }),
+          pages: old.pages.map((page) => ({
+            ...page,
+            conversations: page.conversations.map((conv) => {
+              if (conv._id === id) {
+                return {
+                  ...conv,
+                  ...(type === "followup" ? { is_pinned_followup: value } : {}),
+                  ...(type === "important" ? { is_pinned_important: value } : {}),
+                };
+              }
+              return conv;
+            })
+          })),
         };
       });
 
@@ -459,7 +429,9 @@ const Inbox = () => {
     },
     onError: (err, variables, context) => {
       if (context?.previousConversations) {
-        queryClient.setQueryData(["conversations", user?.id], context.previousConversations);
+        context.previousConversations.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast({
         title: "Action failed",
@@ -959,6 +931,12 @@ const Inbox = () => {
                 </button>
               );
             })
+          )}
+          
+          {hasNextPage && (
+            <div ref={observerTarget} className="p-4 text-center text-sm text-muted-foreground">
+              {isFetchingNextPage ? "Loading more..." : "Load more"}
+            </div>
           )}
         </ScrollArea>
       </div>
