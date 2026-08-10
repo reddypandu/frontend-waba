@@ -114,6 +114,11 @@ function actionsToNodes(actions, triggerType, triggerValue) {
       next_step: action.next_step || "",
       delaySeconds: action.delaySeconds || 5,
       conditionKeyword: action.conditionKeyword || "",
+      amount: action.amount !== undefined ? action.amount : 0,
+      upiId: action.upiId || action.upi_id || "",
+      startTime: action.startTime || "09:00",
+      endTime: action.endTime || "17:00",
+      slotDuration: action.slotDuration || 30,
       position: action.position || {
         x: CANVAS_W / 2 - NODE_W / 2,
         y: 250 + idx * 160,
@@ -140,6 +145,12 @@ function nodesToActions(nodes) {
       next_step: n.next_step || "",
       delaySeconds: n.delaySeconds,
       conditionKeyword: n.conditionKeyword,
+      amount: n.amount,
+      upiId: n.upiId,
+      upi_id: n.upiId,
+      startTime: n.startTime,
+      endTime: n.endTime,
+      slotDuration: n.slotDuration,
       position: n.position,
     }));
 }
