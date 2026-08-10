@@ -116,6 +116,7 @@ function actionsToNodes(actions, triggerType, triggerValue) {
       conditionKeyword: action.conditionKeyword || "",
       amount: action.amount !== undefined ? action.amount : 0,
       upiId: action.upiId || action.upi_id || "",
+      metaPaymentConfig: action.metaPaymentConfig || action.meta_payment_config || "",
       startTime: action.startTime || "09:00",
       endTime: action.endTime || "17:00",
       slotDuration: action.slotDuration || 30,
@@ -148,6 +149,8 @@ function nodesToActions(nodes) {
       amount: n.amount,
       upiId: n.upiId,
       upi_id: n.upiId,
+      metaPaymentConfig: n.metaPaymentConfig,
+      meta_payment_config: n.metaPaymentConfig,
       startTime: n.startTime,
       endTime: n.endTime,
       slotDuration: n.slotDuration,
@@ -1006,7 +1009,20 @@ export default function VisualFlowBuilder({
                           onChange={(e) => updateNode(selectedNode.id, { upiId: e.target.value })}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3">A native 'Pay Now' button pointing to your UPI ID will be sent to the customer.</p>
+                      <div className="vfb-field mt-3">
+                        <label className="vfb-field-label">Meta Payment Config Name (For Native WhatsApp Pay)</label>
+                        <input
+                          type="text"
+                          className="vfb-field-input"
+                          placeholder="e.g. thepatternscompany"
+                          value={selectedNode.metaPaymentConfig || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { metaPaymentConfig: e.target.value })}
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                          💡 <strong>How to get this:</strong> Go to <strong>WhatsApp Manager → Payment configurations → India</strong> and copy the active configuration name (e.g. <code>thepatternscompany</code>).
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">A native in-chat payment card or button pointing to your UPI ID will be sent to the customer.</p>
                     </>
                   )}
 
