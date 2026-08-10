@@ -459,6 +459,8 @@ export default function VisualFlowBuilder({
                   <div
                     key={type}
                     className="vfb-sidebar-node"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("application/reactflow", type)}
                     onClick={() => addNode(type)}
                     role="button"
                     tabIndex={0}
@@ -482,6 +484,30 @@ export default function VisualFlowBuilder({
             ref={wrapperRef}
             className={`vfb-canvas-wrapper${connecting ? " connecting" : ""}`}
             onMouseDown={onCanvasMouseDown}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const type = e.dataTransfer.getData("application/reactflow");
+              if (!type) return;
+              
+              const coords = getCanvasCoords(e);
+              const id = genId();
+              const newNode = {
+                id,
+                type,
+                text: "",
+                buttons: type === "send_buttons" ? [{ id: genId(), title: "Option 1", next_step: "" }] : [],
+                next_step: "",
+                delaySeconds: type === "delay" ? 5 : undefined,
+                conditionKeyword: type === "condition" ? "" : undefined,
+                position: { x: snap(coords.x - NODE_W / 2), y: snap(coords.y - NODE_H / 2) },
+              };
+              setNodes((prev) => [...prev, newNode]);
+              setSelectedId(id);
+            }}
           >
             {/* Background grid (static, under pan/zoom) */}
             <div
