@@ -35,10 +35,19 @@ export default function PaymentFlow() {
   };
 
   const handlePay = async () => {
+    if (!transaction) return;
     setPayLoading(true);
+    
+    // Trigger native UPI deep link (WhatsApp Pay / GPay / PhonePe / Paytm)
+    const upiId = transaction.upi_id || transaction.upiId || "";
+    const amount = transaction.payment_amount || 0;
+    const businessName = transaction.business_name || transaction.service_name || "Business";
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(notes)}`;
+    
+    window.location.href = upiUrl;
+
     setStatus('verifying');
     
-    // Simulate WhatsApp Payment Verification delay
     setTimeout(async () => {
       try {
         const res = await fetch(`/api/business/pay/${transactionId}`, {
@@ -61,7 +70,7 @@ export default function PaymentFlow() {
       } finally {
         setPayLoading(false);
       }
-    }, 2500);
+    }, 4000);
   };
 
   if (loading) return (
