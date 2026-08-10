@@ -193,6 +193,7 @@ export default function BusinessWorkflows() {
       queryClient.invalidateQueries({ queryKey: ["business-workflow-analytics", user?.id] });
       closeBuilder();
     },
+    onError: (err) => toast({ title: "Error updating workflow", description: err.message, variant: "destructive" }),
   });
 
   const toggleMutation = useMutation({
@@ -201,6 +202,7 @@ export default function BusinessWorkflows() {
       queryClient.invalidateQueries({ queryKey: ["business-workflows", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-workflow-analytics", user?.id] });
     },
+    onError: (err) => toast({ title: "Error toggling workflow", description: err.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -210,6 +212,7 @@ export default function BusinessWorkflows() {
       queryClient.invalidateQueries({ queryKey: ["business-workflows", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-workflow-analytics", user?.id] });
     },
+    onError: (err) => toast({ title: "Error deleting workflow", description: err.message, variant: "destructive" }),
   });
 
   const openBuilder = (wf = null) => {
