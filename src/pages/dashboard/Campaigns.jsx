@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Send, Trash2, Play, Pause, Radio, Loader2 } from "lucide-react";
+import { Plus, Send, Trash2, Play, Pause, Radio, Loader2, MessageSquare } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -230,6 +230,18 @@ const Campaigns = () => {
                             <Radio className="w-3 h-3 mr-1" /> Resume
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                          title="Open Campaign Inbox"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/inbox?campaign_id=${c._id}`);
+                          }}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" /> Inbox
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

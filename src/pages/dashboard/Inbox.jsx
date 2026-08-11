@@ -87,7 +87,22 @@ const Inbox = () => {
   const [templateMappings, setTemplateMappings] = React.useState({});
   const [sendingTemplate, setSendingTemplate] = React.useState(false);
   const [filter, setFilter] = React.useState("all");
+  const [selectedCampaignId, setSelectedCampaignId] = React.useState(() => searchParams.get("campaign_id") || "all");
 
+  React.useEffect(() => {
+    const cid = searchParams.get("campaign_id");
+    if (cid) setSelectedCampaignId(cid);
+  }, [searchParams]);
+
+  const { data: campaignsData } = useQuery({
+    queryKey: ["campaigns-list-inbox", user?.id],
+    queryFn: async () => {
+      const data = await apiGet("/api/campaigns");
+      return data.campaigns || [];
+    },
+    enabled: !!user,
+  });
+  const campaignsList = campaignsData || [];
 
   const [newChatPhone, setNewChatPhone] = React.useState(null);
   const scrollStateRef = React.useRef({
@@ -103,9 +118,9 @@ const Inbox = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["conversations", user?.id, search],
+    queryKey: ["conversations", user?.id, search, selectedCampaignId],
     queryFn: ({ pageParam = 1 }) =>
-      apiGet(`/api/whatsapp/conversations?page=${pageParam}&limit=20&search=${encodeURIComponent(search)}`),
+      apiGet(`/api/whatsapp/conversations?page=${pageParam}&limit=20&search=${encodeURIComponent(search)}&campaign_id=${selectedCampaignId}`),
     getNextPageParam: (lastPage) => {
       if (lastPage.page < lastPage.totalPages) return lastPage.page + 1;
       return undefined;
@@ -841,6 +856,30 @@ const Inbox = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
 
+          </div>
+          <div className="mt-2.5 flex items-center gap-2">
+            <select
+              value={selectedCampaignId}
+              onChange={(e) => setSelectedCampaignId(e.target.value)}
+              className="w-full text-xs h-8 rounded-lg border border-border bg-background px-2.5 font-medium text-foreground focus:ring-1 focus:ring-primary shadow-sm"
+            >
+              <option value="all">🎯 All Campaigns Inbox</option>
+              {campaignsList.map((c) => (
+                <option key={c._id} value={c._id}>
+                  📢 {c.name || 'Campaign'}
+                </option>
+              ))}
+            </select>
+            {selectedCampaignId !== "all" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-[11px] font-medium text-destructive hover:bg-destructive/10 px-2 shrink-0"
+                onClick={() => setSelectedCampaignId("all")}
+              >
+                Reset
+              </Button>
+            )}
           </div>
           <div className="flex gap-2 mt-3">
             {[

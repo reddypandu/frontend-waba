@@ -501,15 +501,25 @@ const CampaignDetail = () => {
                       </div>
                     )}
                   {s.value > 0 && (
-                    <button
-                      className="text-[10px] font-semibold text-primary hover:underline mt-2 flex items-center gap-1"
-                      onClick={() => {
-                        setReportType(s.key);
-                        setShowContactList(false);
-                      }}
-                    >
-                      User list <ExternalLink className="w-2.5 h-2.5" />
-                    </button>
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <button
+                        className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1"
+                        onClick={() => {
+                          setReportType(s.key);
+                          setShowContactList(false);
+                        }}
+                      >
+                        User list <ExternalLink className="w-2.5 h-2.5" />
+                      </button>
+                      {s.key === "replied" && (
+                        <button
+                          className="text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                          onClick={() => navigate(`/dashboard/inbox?campaign_id=${id}`)}
+                        >
+                          View Inbox <MessageSquare className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>
