@@ -245,16 +245,29 @@
   overflow: visible;
 }
 
+.vfb-edge-group {
+  cursor: pointer;
+}
+
+.vfb-connection-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
 .vfb-connection-path {
   fill: none;
   stroke: #475569;
   stroke-width: 3;
   stroke-linecap: round;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
-.vfb-connection-path:hover {
-  stroke: #25D366;
+.vfb-edge-group:hover .vfb-connection-path {
+  stroke: #ef4444 !important;
   stroke-width: 4;
 }
 
@@ -262,6 +275,19 @@
   stroke: #25D366;
   stroke-width: 4;
   filter: drop-shadow(0 0 8px rgba(37, 211, 102, 0.6));
+}
+
+.vfb-edge-disconnect-btn {
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.6;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.vfb-edge-group:hover .vfb-edge-disconnect-btn,
+.vfb-edge-disconnect-btn:hover {
+  opacity: 1;
+  transform: scale(1.25);
 }
 
 .vfb-connection-temp {

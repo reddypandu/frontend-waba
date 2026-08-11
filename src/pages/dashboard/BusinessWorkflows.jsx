@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Download,
   GitBranch,
   Library,
   MessageCircle,
@@ -24,7 +25,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
+import { apiGet, apiPost, apiPut, apiDelete, BASE } from "@/lib/api";
 import VisualFlowBuilder from "@/components/dashboard/VisualFlowBuilder";
 
 const TRIGGER_ICONS = {
@@ -253,6 +254,31 @@ export default function BusinessWorkflows() {
     }
   };
 
+  const handleDownloadData = async (wf) => {
+    try {
+      const response = await fetch(`${BASE}/api/automation/workflows/${wf._id}/export`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to export workflow data');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${wf.name.replace(/[^a-z0-9]/gi, '_')}_saved_data.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast({ title: "Downloaded saved data CSV" });
+    } catch (err) {
+      toast({ title: "Error downloading data", description: err.message, variant: "destructive" });
+    }
+  };
+
   const createFromTemplate = (template) => {
     createMutation.mutate({
       name: template.name,
@@ -393,10 +419,19 @@ export default function BusinessWorkflows() {
                           checked={!!wf.is_active}
                           onCheckedChange={(checked) => toggleMutation.mutate({ id: wf._id, is_active: checked })}
                         />
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openBuilder(wf)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                          title="Download Saved Data CSV"
+                          onClick={() => handleDownloadData(wf)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Edit Workflow" onClick={() => openBuilder(wf)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(wf._id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" title="Delete Workflow" onClick={() => deleteMutation.mutate(wf._id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

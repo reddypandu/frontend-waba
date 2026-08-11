@@ -4,7 +4,7 @@ import {
   X, Plus, Minus, Maximize2, Save, ArrowLeft,
   MessageCircle, Zap, Clock, Type, MousePointerSquareDashed,
   Trash2, GitBranch, SquareStack,
-  Calendar, CreditCard, Database
+  Calendar, CreditCard, Database, HelpCircle, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,31 @@ const NODE_H = NODE_HEADER_H + NODE_BODY_H;
 const CANVAS_W = 6000;
 const CANVAS_H = 6000;
 const GRID_SNAP = 24;
+
+const DEFAULT_SUCCESS_RECEIPT = `🎉 *PAYMENT CONFIRMED* 🎉
+
+Thank you, *{customer_name}*! 🙏
+
+🧾 *Order ID: #{order_id}*
+━━━━━━━━━━━━━━━━━━━
+📋 *Order Details*
+▫️ *{service_name}* × 1 — ₹{amount}.00
+━━━━━━━━━━━━━━━━━━━
+🧮 Subtotal — ₹{amount}.00
+━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL PAID — ₹{amount}.00*
+━━━━━━━━━━━━━━━━━━━
+
+📱 Save this confirmation for your records.
+Thank you for doing business with us! ✨`;
+
+const DEFAULT_FAILED_RECEIPT = `❌ *PAYMENT PENDING / FAILED*
+
+Hello *{customer_name}*, we could not verify your payment of ₹{amount}.00 for *{service_name}*.
+
+Order ID: #{order_id}
+
+Please complete your payment or contact our team if you need assistance. 🙏`;
 
 const NODE_TYPES = {
   trigger: {
@@ -37,6 +62,12 @@ const NODE_TYPES = {
     desc: "Interactive buttons",
     icon: SquareStack,
     colorClass: "node-color-send-buttons",
+  },
+  ask_question: {
+    label: "Ask Question",
+    desc: "Question & Answer",
+    icon: HelpCircle,
+    colorClass: "node-color-send-text",
   },
   delay: {
     label: "Delay",
@@ -62,6 +93,12 @@ const NODE_TYPES = {
     icon: CreditCard,
     colorClass: "node-color-condition",
   },
+  verify_payment: {
+    label: "Verify Payment",
+    desc: "Check payment status",
+    icon: ShieldCheck,
+    colorClass: "node-color-condition",
+  },
   save_data: {
     label: "Save Data",
     desc: "Export to Excel/Sheets",
@@ -70,8 +107,8 @@ const NODE_TYPES = {
   }
 };
 
-const SIDEBAR_ITEMS_BUSINESS = ["trigger", "send_text", "send_buttons", "delay", "condition", "book_meeting", "payment_invoice", "save_data"];
-const SIDEBAR_ITEMS_STANDARD = ["trigger", "send_text", "send_buttons", "delay", "condition"];
+const SIDEBAR_ITEMS_BUSINESS = ["trigger", "send_text", "send_buttons", "ask_question", "delay", "condition", "book_meeting", "payment_invoice", "verify_payment", "save_data"];
+const SIDEBAR_ITEMS_STANDARD = ["trigger", "send_text", "send_buttons", "ask_question", "delay", "condition", "verify_payment"];
 
 const snap = (v) => Math.round(v / GRID_SNAP) * GRID_SNAP;
 
@@ -117,6 +154,12 @@ function actionsToNodes(actions, triggerType, triggerValue) {
       amount: action.amount !== undefined ? action.amount : 0,
       upiId: action.upiId || action.upi_id || "",
       metaPaymentConfig: action.metaPaymentConfig || action.meta_payment_config || "",
+      question: action.question || "",
+      variableName: action.variableName || action.variable_name || "",
+      success_next_step: action.success_next_step || action.successNextStep || "",
+      failed_next_step: action.failed_next_step || action.failedNextStep || "",
+      successText: action.type === "verify_payment" ? (action.successText || action.success_text || DEFAULT_SUCCESS_RECEIPT) : (action.successText || action.success_text || ""),
+      failedText: action.type === "verify_payment" ? (action.failedText || action.failed_text || DEFAULT_FAILED_RECEIPT) : (action.failedText || action.failed_text || ""),
       startTime: action.startTime || "09:00",
       endTime: action.endTime || "17:00",
       slotDuration: action.slotDuration || 30,
@@ -151,6 +194,15 @@ function nodesToActions(nodes) {
       upi_id: n.upiId,
       metaPaymentConfig: n.metaPaymentConfig,
       meta_payment_config: n.metaPaymentConfig,
+      question: n.question,
+      variableName: n.variableName,
+      variable_name: n.variableName,
+      success_next_step: n.success_next_step,
+      failed_next_step: n.failed_next_step,
+      successText: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
+      success_text: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
+      failedText: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
+      failed_text: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
       startTime: n.startTime,
       endTime: n.endTime,
       slotDuration: n.slotDuration,
@@ -171,6 +223,14 @@ function buildEdges(nodes) {
           edges.push({ from: n.id, fromPort: `btn_${i}`, to: b.next_step, toPort: "input" });
         }
       });
+    }
+    if (n.type === "verify_payment") {
+      if (n.success_next_step) {
+        edges.push({ from: n.id, fromPort: "verify_success", to: n.success_next_step, toPort: "input" });
+      }
+      if (n.failed_next_step) {
+        edges.push({ from: n.id, fromPort: "verify_failed", to: n.failed_next_step, toPort: "input" });
+      }
     }
   });
   return edges;
@@ -248,6 +308,8 @@ export default function VisualFlowBuilder({
         .map((n) => ({
           ...n,
           next_step: n.next_step === id ? "" : n.next_step,
+          success_next_step: n.success_next_step === id ? "" : n.success_next_step,
+          failed_next_step: n.failed_next_step === id ? "" : n.failed_next_step,
           buttons: (n.buttons || []).map((b) => ({
             ...b,
             next_step: b.next_step === id ? "" : b.next_step,
@@ -255,6 +317,33 @@ export default function VisualFlowBuilder({
         }))
     );
     if (selectedId === id) setSelectedId(null);
+  };
+
+  const disconnectEdge = (fromId, fromPort) => {
+    setNodes((prev) =>
+      prev.map((n) => {
+        if (n.id !== fromId) return n;
+        if (fromPort === "output") {
+          return { ...n, next_step: "" };
+        }
+        if (fromPort === "verify_success") {
+          return { ...n, success_next_step: "" };
+        }
+        if (fromPort === "verify_failed") {
+          return { ...n, failed_next_step: "" };
+        }
+        if (fromPort.startsWith("btn_")) {
+          const btnIdx = parseInt(fromPort.split("_")[1], 10);
+          const buttons = [...(n.buttons || [])];
+          if (buttons[btnIdx]) {
+            buttons[btnIdx] = { ...buttons[btnIdx], next_step: "" };
+          }
+          return { ...n, buttons };
+        }
+        return n;
+      })
+    );
+    toast({ title: "Connection removed" });
   };
 
   const addNode = (type) => {
@@ -281,6 +370,8 @@ export default function VisualFlowBuilder({
       next_step: "",
       delaySeconds: type === "delay" ? 5 : undefined,
       conditionKeyword: type === "condition" ? "" : undefined,
+      successText: type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : undefined,
+      failedText: type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : undefined,
       position: { x: snap(CANVAS_W / 2 - NODE_W / 2), y: snap(maxY + 160) },
     };
     setNodes((prev) => [...prev, newNode]);
@@ -297,11 +388,17 @@ export default function VisualFlowBuilder({
       return { x: x + NODE_W / 2, y };
     }
     if (port === "output") {
-      // calculate full height of this node
       const h = getNodeHeight(node);
       return { x: x + NODE_W / 2, y: y + h };
     }
-    // Button port: btn_0, btn_1, ...
+    if (port === "verify_success") {
+      const portY = y + NODE_HEADER_H + NODE_BODY_H + 6 + 0 * 28 + 14;
+      return { x: x + NODE_W, y: portY };
+    }
+    if (port === "verify_failed") {
+      const portY = y + NODE_HEADER_H + NODE_BODY_H + 6 + 1 * 28 + 14;
+      return { x: x + NODE_W, y: portY };
+    }
     if (port.startsWith("btn_")) {
       const btnIdx = parseInt(port.split("_")[1], 10);
       const btnY = y + NODE_HEADER_H + NODE_BODY_H + 6 + btnIdx * 28 + 14;
@@ -314,6 +411,8 @@ export default function VisualFlowBuilder({
     let h = NODE_HEADER_H + NODE_BODY_H;
     if (node.type === "send_buttons" && node.buttons?.length > 0) {
       h += 8 + node.buttons.length * 28 + 8;
+    } else if (node.type === "verify_payment") {
+      h += 8 + 2 * 28 + 8;
     }
     return h;
   };
@@ -373,6 +472,10 @@ export default function VisualFlowBuilder({
     // Create connection
     if (fromPort === "output") {
       updateNode(fromId, { next_step: toId });
+    } else if (fromPort === "verify_success") {
+      updateNode(fromId, { success_next_step: toId });
+    } else if (fromPort === "verify_failed") {
+      updateNode(fromId, { failed_next_step: toId });
     } else if (fromPort.startsWith("btn_")) {
       const btnIdx = parseInt(fromPort.split("_")[1], 10);
       setNodes((prev) =>
@@ -575,6 +678,8 @@ export default function VisualFlowBuilder({
                 next_step: "",
                 delaySeconds: type === "delay" ? 5 : undefined,
                 conditionKeyword: type === "condition" ? "" : undefined,
+                successText: type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : undefined,
+                failedText: type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : undefined,
                 position: { x: snap(coords.x - NODE_W / 2), y: snap(coords.y - NODE_H / 2) },
               };
               setNodes((prev) => [...prev, newNode]);
@@ -607,8 +712,20 @@ export default function VisualFlowBuilder({
                   const from = getPortPos(edge.from, edge.fromPort === "output" ? "output" : edge.fromPort);
                   const to = getPortPos(edge.to, "input");
                   const isActive = selectedId === edge.from || selectedId === edge.to;
+                  const midX = (from.x + to.x) / 2;
+                  const midY = (from.y + to.y) / 2;
+
                   return (
-                    <g key={`${edge.from}-${edge.fromPort}-${edge.to}-${i}`}>
+                    <g key={`${edge.from}-${edge.fromPort}-${edge.to}-${i}`} className="vfb-edge-group">
+                      {/* Invisible thick path for easy click/hover targeting */}
+                      <path
+                        d={bezierPath(from.x, from.y, to.x, to.y)}
+                        className="vfb-connection-hitbox"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          disconnectEdge(edge.from, edge.fromPort);
+                        }}
+                      />
                       <path
                         d={bezierPath(from.x, from.y, to.x, to.y)}
                         className={`vfb-connection-path${isActive ? " vfb-connection-path-active" : ""}`}
@@ -617,6 +734,18 @@ export default function VisualFlowBuilder({
                         d={bezierPath(from.x, from.y, to.x, to.y)}
                         className="vfb-connection-flow"
                       />
+                      {/* Midpoint disconnect button */}
+                      <g
+                        className="vfb-edge-disconnect-btn"
+                        transform={`translate(${midX}, ${midY})`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          disconnectEdge(edge.from, edge.fromPort);
+                        }}
+                      >
+                        <circle r="12" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+                        <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="bold">✕</text>
+                      </g>
                     </g>
                   );
                 })}
@@ -704,6 +833,11 @@ export default function VisualFlowBuilder({
                           {node.text || "Enter button message..."}
                         </div>
                       )}
+                      {node.type === "ask_question" && (
+                        <div className="vfb-node-preview">
+                          {node.question || node.text || "Enter question..."}
+                        </div>
+                      )}
                       {node.type === "delay" && (
                         <div className="vfb-node-preview">
                           Wait {node.delaySeconds || 5} seconds
@@ -724,6 +858,11 @@ export default function VisualFlowBuilder({
                       {node.type === "payment_invoice" && (
                         <div className="vfb-node-preview">
                           Amount: ₹{node.amount || 0}
+                        </div>
+                      )}
+                      {node.type === "verify_payment" && (
+                        <div className="vfb-node-preview">
+                          Check Payment Status
                         </div>
                       )}
                       {node.type === "save_data" && (
@@ -747,8 +886,34 @@ export default function VisualFlowBuilder({
                       </div>
                     ))}
 
-                    {/* Output port (hidden for send_buttons) */}
-                    {node.type !== "send_buttons" && (
+                    {/* Output ports for verify_payment */}
+                    {node.type === "verify_payment" && (
+                      <>
+                        <div style={{ position: "relative", height: 28, display: "flex", alignItems: "center", padding: "0 12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                          <span className="vfb-node-btn-tag text-emerald-400 font-medium" style={{ flex: 1 }}>
+                            ✓ Success (Paid)
+                          </span>
+                          <div
+                            className="vfb-port vfb-port-btn-output bg-emerald-500"
+                            onMouseDown={(e) => onPortMouseDown(e, node.id, "verify_success")}
+                            title="Connect Success Path"
+                          />
+                        </div>
+                        <div style={{ position: "relative", height: 28, display: "flex", alignItems: "center", padding: "0 12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                          <span className="vfb-node-btn-tag text-rose-400 font-medium" style={{ flex: 1 }}>
+                            ✕ Failed / Pending
+                          </span>
+                          <div
+                            className="vfb-port vfb-port-btn-output bg-rose-500"
+                            onMouseDown={(e) => onPortMouseDown(e, node.id, "verify_failed")}
+                            title="Connect Failed Path"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Output port (hidden for send_buttons & verify_payment) */}
+                    {node.type !== "send_buttons" && node.type !== "verify_payment" && (
                       <div
                         className="vfb-port vfb-port-output"
                         onMouseDown={(e) => onPortMouseDown(e, node.id, "output")}
@@ -1026,6 +1191,82 @@ export default function VisualFlowBuilder({
                     </>
                   )}
 
+                  {/* ── Ask Question panel ─────────────────── */}
+                  {selectedNode.type === "ask_question" && (
+                    <>
+                      <div className="vfb-field">
+                        <label className="vfb-field-label">Question Text</label>
+                        <textarea
+                          className="vfb-field-input"
+                          rows={3}
+                          placeholder="e.g. What is your full name?"
+                          value={selectedNode.question || selectedNode.text || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { question: e.target.value, text: e.target.value })}
+                        />
+                      </div>
+                      <div className="vfb-field mt-3">
+                        <label className="vfb-field-label">Save Answer To Variable</label>
+                        <input
+                          type="text"
+                          className="vfb-field-input"
+                          placeholder="e.g. customer_name, address, notes"
+                          value={selectedNode.variableName || ""}
+                          onChange={(e) => updateNode(selectedNode.id, { variableName: e.target.value })}
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                          💡 The customer's reply will be saved in this variable and stored in the database.
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Verify Payment panel ─────────────────── */}
+                  {selectedNode.type === "verify_payment" && (
+                    <>
+                      <div className="vfb-field">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="vfb-field-label">Payment Success Receipt Message</label>
+                          <button
+                            type="button"
+                            className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+                            onClick={() => updateNode(selectedNode.id, { successText: DEFAULT_SUCCESS_RECEIPT })}
+                          >
+                            Reset Default
+                          </button>
+                        </div>
+                        <textarea
+                          className="vfb-field-input font-mono text-xs"
+                          rows={11}
+                          placeholder="Enter payment receipt message..."
+                          value={selectedNode.successText !== undefined && selectedNode.successText !== "" ? selectedNode.successText : DEFAULT_SUCCESS_RECEIPT}
+                          onChange={(e) => updateNode(selectedNode.id, { successText: e.target.value })}
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                          💡 Dynamic placeholders: <code>{`{customer_name}`}</code>, <code>{`{order_id}`}</code>, <code>{`{service_name}`}</code>, <code>{`{amount}`}</code>
+                        </p>
+                      </div>
+                      <div className="vfb-field mt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="vfb-field-label">Payment Failed / Pending Message</label>
+                          <button
+                            type="button"
+                            className="text-[11px] text-rose-400 hover:underline cursor-pointer"
+                            onClick={() => updateNode(selectedNode.id, { failedText: DEFAULT_FAILED_RECEIPT })}
+                          >
+                            Reset Default
+                          </button>
+                        </div>
+                        <textarea
+                          className="vfb-field-input"
+                          rows={4}
+                          placeholder="Enter message for failed/pending payments..."
+                          value={selectedNode.failedText !== undefined && selectedNode.failedText !== "" ? selectedNode.failedText : DEFAULT_FAILED_RECEIPT}
+                          onChange={(e) => updateNode(selectedNode.id, { failedText: e.target.value })}
+                        />
+                      </div>
+                    </>
+                  )}
+
                   {/* ── Save Data panel ────────────────────── */}
                   {selectedNode.type === "save_data" && (
                     <div className="vfb-field">
@@ -1034,9 +1275,82 @@ export default function VisualFlowBuilder({
                     </div>
                   )}
 
+                  {/* ── Active Connections / Disconnect block ── */}
+                  <div className="vfb-field mt-4 pt-3 border-t border-white/10">
+                    <label className="vfb-field-label text-xs font-semibold uppercase tracking-wider text-muted-foreground">Connected Output Steps</label>
+                    
+                    {selectedNode.next_step && (
+                      <div className="flex items-center justify-between mt-2 p-2 rounded-lg bg-white/5 border border-white/10 text-xs">
+                        <span>Connected to <strong>{nodes.find(n => n.id === selectedNode.next_step)?.type ? (NODE_TYPES[nodes.find(n => n.id === selectedNode.next_step)?.type]?.label || selectedNode.next_step) : selectedNode.next_step}</strong></span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                          onClick={() => disconnectEdge(selectedNode.id, "output")}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
+                    )}
+
+                    {selectedNode.type === "verify_payment" && (
+                      <>
+                        {selectedNode.success_next_step && (
+                          <div className="flex items-center justify-between mt-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                            <span className="text-emerald-300">✓ Success → <strong>{nodes.find(n => n.id === selectedNode.success_next_step)?.type ? (NODE_TYPES[nodes.find(n => n.id === selectedNode.success_next_step)?.type]?.label || selectedNode.success_next_step) : selectedNode.success_next_step}</strong></span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                              onClick={() => disconnectEdge(selectedNode.id, "verify_success")}
+                            >
+                              Disconnect
+                            </Button>
+                          </div>
+                        )}
+                        {selectedNode.failed_next_step && (
+                          <div className="flex items-center justify-between mt-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs">
+                            <span className="text-rose-300">✕ Failed → <strong>{nodes.find(n => n.id === selectedNode.failed_next_step)?.type ? (NODE_TYPES[nodes.find(n => n.id === selectedNode.failed_next_step)?.type]?.label || selectedNode.failed_next_step) : selectedNode.failed_next_step}</strong></span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                              onClick={() => disconnectEdge(selectedNode.id, "verify_failed")}
+                            >
+                              Disconnect
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {selectedNode.type === "send_buttons" && selectedNode.buttons?.map((btn, bIdx) => (
+                      btn.next_step ? (
+                        <div key={btn.id} className="flex items-center justify-between mt-2 p-2 rounded-lg bg-white/5 border border-white/10 text-xs">
+                          <span>Button "{btn.title}" → <strong>{nodes.find(n => n.id === btn.next_step)?.type ? (NODE_TYPES[nodes.find(n => n.id === btn.next_step)?.type]?.label || btn.next_step) : btn.next_step}</strong></span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                            onClick={() => disconnectEdge(selectedNode.id, `btn_${bIdx}`)}
+                          >
+                            Disconnect
+                          </Button>
+                        </div>
+                      ) : null
+                    ))}
+
+                    {!selectedNode.next_step &&
+                     !selectedNode.success_next_step &&
+                     !selectedNode.failed_next_step &&
+                     !(selectedNode.type === "send_buttons" && selectedNode.buttons?.some(b => b.next_step)) && (
+                      <p className="text-xs text-muted-foreground mt-1.5 italic">No outgoing connections. Drag from output port to connect.</p>
+                    )}
+                  </div>
+
                   {/* ── Node ID (all non-trigger) ──────────── */}
                   {selectedNode.type !== "trigger" && (
-                    <div className="vfb-field" style={{ opacity: 0.5 }}>
+                    <div className="vfb-field mt-3" style={{ opacity: 0.5 }}>
                       <label className="vfb-field-label">Step ID</label>
                       <input
                         className="vfb-field-input"
