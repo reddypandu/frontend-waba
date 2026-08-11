@@ -135,9 +135,10 @@ function actionsToNodes(actions, triggerType, triggerValue) {
   };
 
   if (actions && actions.length > 0) {
-    triggerNode.next_step = actions[0].id;
-    if (actions[0]?.position) {
-      triggerNode.position = { x: actions[0].position.x, y: Math.max(80, (actions[0].position.y || 200) - 160) };
+    const triggerTargetAction = actions.find((a) => a.is_trigger_target) || actions[0];
+    triggerNode.next_step = triggerTargetAction.id;
+    if (triggerTargetAction?.position) {
+      triggerNode.position = { x: triggerTargetAction.position.x, y: Math.max(80, (triggerTargetAction.position.y || 200) - 160) };
     }
   }
   nodes.push(triggerNode);
@@ -175,39 +176,52 @@ function actionsToNodes(actions, triggerType, triggerValue) {
 
 /* ─── Convert nodes back to actions[] for API ───────────────── */
 function nodesToActions(nodes) {
-  return nodes
-    .filter((n) => n.type !== "trigger")
-    .map((n) => ({
-      id: n.id,
-      type: n.type,
-      text: n.text || "",
-      buttons: (n.buttons || []).map((b) => ({
-        id: b.id,
-        title: b.title || "",
-        next_step: b.next_step || "",
-      })),
-      next_step: n.next_step || "",
-      delaySeconds: n.delaySeconds,
-      conditionKeyword: n.conditionKeyword,
-      amount: n.amount,
-      upiId: n.upiId,
-      upi_id: n.upiId,
-      metaPaymentConfig: n.metaPaymentConfig,
-      meta_payment_config: n.metaPaymentConfig,
-      question: n.question,
-      variableName: n.variableName,
-      variable_name: n.variableName,
-      success_next_step: n.success_next_step,
-      failed_next_step: n.failed_next_step,
-      successText: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
-      success_text: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
-      failedText: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
-      failed_text: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
-      startTime: n.startTime,
-      endTime: n.endTime,
-      slotDuration: n.slotDuration,
-      position: n.position,
-    }));
+  const triggerNode = nodes.find((n) => n.type === "trigger");
+  const triggerTargetId = triggerNode?.next_step;
+
+  const actionNodes = nodes.filter((n) => n.type !== "trigger");
+
+  // Ensure the action connected to Trigger is placed at index 0 of actions array
+  if (triggerTargetId) {
+    const targetIdx = actionNodes.findIndex((n) => n.id === triggerTargetId);
+    if (targetIdx > 0) {
+      const [targetNode] = actionNodes.splice(targetIdx, 1);
+      actionNodes.unshift(targetNode);
+    }
+  }
+
+  return actionNodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    text: n.text || "",
+    buttons: (n.buttons || []).map((b) => ({
+      id: b.id,
+      title: b.title || "",
+      next_step: b.next_step || "",
+    })),
+    next_step: n.next_step || "",
+    delaySeconds: n.delaySeconds,
+    conditionKeyword: n.conditionKeyword,
+    amount: n.amount,
+    upiId: n.upiId,
+    upi_id: n.upiId,
+    metaPaymentConfig: n.metaPaymentConfig,
+    meta_payment_config: n.metaPaymentConfig,
+    question: n.question,
+    variableName: n.variableName,
+    variable_name: n.variableName,
+    success_next_step: n.success_next_step,
+    failed_next_step: n.failed_next_step,
+    successText: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
+    success_text: n.successText || (n.type === "verify_payment" ? DEFAULT_SUCCESS_RECEIPT : ""),
+    failedText: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
+    failed_text: n.failedText || (n.type === "verify_payment" ? DEFAULT_FAILED_RECEIPT : ""),
+    startTime: n.startTime,
+    endTime: n.endTime,
+    slotDuration: n.slotDuration,
+    position: n.position,
+    is_trigger_target: n.id === triggerTargetId,
+  }));
 }
 
 /* ─── Build edge list from nodes ────────────────────────────── */
