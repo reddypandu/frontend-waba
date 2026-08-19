@@ -17,7 +17,7 @@
     --popover-foreground: 222 47% 11%;
 
     /* Brand Green - YesTick AI */
-    --primary: 137 93% 37%;
+    --primary: 126 36.2% 49.8%;
     /* #62b020 */
     --primary-foreground: 0 0% 100%;
 
@@ -35,39 +35,39 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 137 93% 37%;
+    --ring: 126 36.2% 49.8%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 137 93% 37%;
+    --sidebar-primary: 126 36.2% 49.8%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 137 93% 37%;
+    --sidebar-ring: 126 36.2% 49.8%;
 
     /* Custom tokens */
     --hero-bg: 0 0% 100%;
     --hero-foreground: 222 47% 11%;
-    --success: 137 93% 37%;
+    --success: 126 36.2% 49.8%;
     --warning: 38 92% 55%;
     --info: 210 100% 60%;
     --surface: 0 0% 100%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(137, 93%, 37%), hsl(137, 93%, 27%));
+    --gradient-primary: linear-gradient(135deg, hsl(126, 36.2%, 49.8%), hsl(126, 36.2%, 39.8%));
     --gradient-hero: linear-gradient(135deg, hsl(0, 0%, 100%) 0%, hsl(210, 40%, 96%) 50%, hsl(0, 0%, 100%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(210, 40%, 98%));
-    --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(137 93% 37% / 0.15), transparent);
+    --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(126 36.2% 49.8% / 0.15), transparent);
 
     /* Shadows */
     --shadow-card: 0 0 0 1px hsl(222 20% 90%), 0 4px 16px hsl(222 30% 85% / 0.6);
-    --shadow-elevated: 0 0 0 1px hsl(137 93% 37% / 0.1), 0 8px 40px hsl(137 93% 37% / 0.08), 0 20px 60px hsl(222 30% 85% / 0.8);
-    --shadow-glow: 0 0 30px hsl(137 93% 37% / 0.15), 0 0 80px hsl(137 93% 37% / 0.08);
-    --shadow-btn: 0 4px 20px hsl(137 93% 37% / 0.2);
+    --shadow-elevated: 0 0 0 1px hsl(126 36.2% 49.8% / 0.1), 0 8px 40px hsl(126 36.2% 49.8% / 0.08), 0 20px 60px hsl(222 30% 85% / 0.8);
+    --shadow-glow: 0 0 30px hsl(126 36.2% 49.8% / 0.15), 0 0 80px hsl(126 36.2% 49.8% / 0.08);
+    --shadow-btn: 0 4px 20px hsl(126 36.2% 49.8% / 0.2);
   }
 }
 
@@ -183,11 +183,11 @@
 
   /* Glow effects */
   .glow-primary {
-    text-shadow: 0 0 30px hsl(137 93% 37% / 0.6);
+    text-shadow: 0 0 30px hsl(126 36.2% 49.8% / 0.6);
   }
 
   .glow-border {
-    box-shadow: 0 0 0 1px hsl(137 93% 37% / 0.4), 0 0 20px hsl(137 93% 37% / 0.15);
+    box-shadow: 0 0 0 1px hsl(126 36.2% 49.8% / 0.4), 0 0 20px hsl(126 36.2% 49.8% / 0.15);
   }
 
   /* Noise texture overlay */
@@ -214,7 +214,7 @@
 
   /* Hero glow blob */
   .hero-glow {
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, hsl(137 93% 37% / 0.2), transparent 70%);
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, hsl(126 36.2% 49.8% / 0.2), transparent 70%);
   }
 
   /* Card hover states */
@@ -230,9 +230,9 @@
   /* Badge/chip styles */
   .badge-primary {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
-    background: hsl(137 93% 37% / 0.12);
-    color: hsl(137 93% 37%);
-    border: 1px solid hsl(137 93% 37% / 0.25);
+    background: hsl(126 36.2% 49.8% / 0.12);
+    color: hsl(126 36.2% 49.8%);
+    border: 1px solid hsl(126 36.2% 49.8% / 0.25);
   }
 
   .badge-secondary {
@@ -285,11 +285,11 @@
 
     0%,
     100% {
-      box-shadow: 0 0 20px hsl(137 93% 37% / 0.3);
+      box-shadow: 0 0 20px hsl(126 36.2% 49.8% / 0.3);
     }
 
     50% {
-      box-shadow: 0 0 40px hsl(137 93% 37% / 0.6);
+      box-shadow: 0 0 40px hsl(126 36.2% 49.8% / 0.6);
     }
   }
 
