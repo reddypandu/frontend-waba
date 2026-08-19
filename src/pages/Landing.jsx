@@ -5,6 +5,7 @@ import IntegrationsSection from "@/components/landing/IntegrationsSection";
 import FeatureShowcaseSection from "@/components/landing/FeatureShowcaseSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PricingSection from "@/components/landing/PricingSection";
+import IndustriesSection from "@/components/landing/IndustriesSection";
 import Footer from "@/components/landing/Footer";
 
 const Landing = () => (
@@ -20,6 +21,7 @@ const Landing = () => (
     <FeatureShowcaseSection />
     <FeaturesSection />
     <PricingSection />
+    <IndustriesSection />
     <Footer />
   </div>
 );
