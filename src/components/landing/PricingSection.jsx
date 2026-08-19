@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Zap, Crown, Building2 } from "lucide-react"; // Import Crown icon
+import { Check } from "lucide-react";
+import { FaRocket, FaCrown, FaGem } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
 const plans = [
@@ -133,11 +134,11 @@ const PricingSection = () => {
 
               {/* Plan name & description */}
               <div
-                className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-4 shadow-lg`}
+                className={`inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.gradient} items-center justify-center mb-5 shadow-lg`}
               >
-                {plan.name === "Free Trial" && <Zap className="w-5 h-5 text-white" />}
-                {plan.name === "Paid Plan" && <Crown className="w-5 h-5 text-white" />}
-                {plan.name === "Enterprise" && <Building2 className="w-5 h-5 text-white" />}
+                {plan.name === "Free Trial" && <FaRocket className="w-5 h-5 text-white" />}
+                {plan.name === "Paid Plan" && <FaCrown className="w-5 h-5 text-white" />}
+                {plan.name === "Enterprise" && <FaGem className="w-5 h-5 text-white" />}
               </div>
               <h3 className="text-2xl font-extrabold text-foreground">
                 {plan.name}
