@@ -43,10 +43,10 @@ export default function IndustriesSection() {
   const marqueeItems = [...industries, ...industries, ...industries];
 
   return (
-    <section className="py-24 bg-slate-950 overflow-hidden relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950"></div>
+    <section className="py-16 bg-[#51ad5a] overflow-hidden relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#5bc266] via-[#51ad5a] to-[#44984d]"></div>
 
-      <div className="container mx-auto px-4 relative mb-16 text-center">
+      <div className="container mx-auto px-4 relative mb-10 text-center">
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -60,7 +60,7 @@ export default function IndustriesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
-          className="text-slate-400 text-lg max-w-2xl mx-auto"
+          className="text-white text-lg max-w-2xl mx-auto"
         >
           See how leading brands use YesTick AI to drive extraordinary results across various sectors.
         </motion.p>
@@ -71,7 +71,7 @@ export default function IndustriesSection() {
           {marqueeItems.map((item, idx) => (
             <div 
               key={`${item.id}-${idx}`}
-              className="relative w-[320px] md:w-[380px] h-[400px] mx-4 rounded-3xl overflow-hidden -skew-x-[8deg] group shrink-0 shadow-2xl border border-slate-800 bg-slate-900"
+              className="relative w-[280px] md:w-[320px] h-[320px] mx-4 rounded-3xl overflow-hidden -skew-x-[8deg] group shrink-0 shadow-2xl border border-slate-800 bg-slate-900"
             >
               {/* Image Background */}
               <div className="absolute inset-0 skew-x-[8deg] scale-[1.3]">
@@ -84,7 +84,7 @@ export default function IndustriesSection() {
               </div>
 
               {/* Content */}
-              <div className="absolute inset-0 skew-x-[8deg] flex flex-col justify-end p-8 z-10 pointer-events-none">
+              <div className="absolute inset-0 skew-x-[8deg] flex flex-col justify-end p-6 z-10 pointer-events-none">
                 <div className="flex items-center gap-3 mb-4 opacity-90 transform translate-x-[-10px]">
                   <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center font-bold text-slate-900 text-sm">
                     {item.company.charAt(0)}
@@ -92,11 +92,11 @@ export default function IndustriesSection() {
                   <span className="text-white font-bold tracking-widest uppercase text-sm">{item.company}</span>
                 </div>
                 
-                <h3 className="text-6xl font-black text-red-500 mb-2 drop-shadow-md tracking-tighter transform translate-x-[-10px]">
+                <h3 className="text-5xl font-black text-white mb-2 drop-shadow-md tracking-tighter transform translate-x-[-10px]">
                   {item.stat}
                 </h3>
                 
-                <p className="text-slate-300 font-bold text-lg leading-tight transform translate-x-[-10px]">
+                <p className="text-slate-300 font-bold text-base leading-tight transform translate-x-[-10px]">
                   {item.description}
                 </p>
               </div>
