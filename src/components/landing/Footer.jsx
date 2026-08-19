@@ -1,4 +1,6 @@
-import { MessageSquare, Twitter, Linkedin, Github, Mail, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { FaFacebook, FaInstagram, FaYoutube, FaLinkedin, FaGoogle } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 const Logo = "/logo1.png";
 
@@ -33,10 +35,12 @@ const cols = [
 ];
 
 const socials = [
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Mail, href: "#", label: "Email" },
+  { icon: FaFacebook, href: "https://www.facebook.com/YesTickAi/", label: "Facebook" },
+  { icon: FaInstagram, href: "https://www.instagram.com/yestickai/", label: "Instagram" },
+  { icon: FaXTwitter, href: "https://x.com/YesTickAI", label: "X (Twitter)" },
+  { icon: FaYoutube, href: "https://www.youtube.com/@YesTickAi", label: "YouTube" },
+  { icon: FaLinkedin, href: "https://www.linkedin.com/company/yestickai/", label: "LinkedIn" },
+  { icon: FaGoogle, href: "https://share.google/PfTrrkAZdqMpXH8k9", label: "Google" },
 ];
 
 const Footer = () => (
@@ -72,9 +76,8 @@ const Footer = () => (
         {/* Brand column */}
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5 mb-4 font-extrabold text-2xl">
-            <div className="w-50 h-10 rounded-xl flex items-center justify-center shadow-lg">
-              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
-
+            <div className="h-16 md:h-20 rounded-xl flex items-center justify-start">
+              <img src="/logo.png" alt="Logo" className="w-auto h-full object-contain origin-left" />
             </div>
 
           </div>
