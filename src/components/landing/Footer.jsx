@@ -1,6 +1,6 @@
 import { MessageSquare, Twitter, Linkedin, Github, Mail, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import Logo from "../../assets/yestickai.png"
+const Logo = "/logo1.png";
 
 const cols = [
   {

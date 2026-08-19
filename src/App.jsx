@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatbotWidget from "@/components/landing/ChatbotWidget";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
@@ -47,70 +48,72 @@ import PaymentUpiRedirect from "./pages/public/PaymentUpiRedirect";
 export const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route
-              path="/dashboard/designs/editor/:id"
-              element={
-                <ProtectedRoute>
-                  <DesignEditor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardOverview />} />
-              <Route path="whatsapp-setup" element={<WhatsAppSetup />} />
-              <Route path="business-profile" element={<BusinessProfile />} />
-              <Route path="templates" element={<Templates />} />
-              <Route path="templates/create" element={<CreateTemplate />} />
-              <Route path="templates/edit/:id" element={<EditTemplate />} />
-              <Route path="campaigns" element={<Campaigns />} />
-              <Route path="campaigns/create" element={<CreateCampaign />} />
-              <Route path="campaigns/:id" element={<CampaignDetail />} />
-              <Route path="contacts" element={<Contacts />} />
-              <Route path="inbox" element={<Inbox />} />
-              <Route path="billing" element={<Billing />} />
-              <Route path="wallet" element={<Wallet />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="admin" element={<AdminPanel />} />
-              <Route path="admin/users/:id" element={<AdminUserDetails />} />
-              <Route path="auto-replies" element={<AutoReplies />} />
-              <Route path="workflows" element={<Workflows />} />
-              <Route path="business-workflows" element={<BusinessWorkflows />} />
-              <Route path="invoices" element={<Invoices />} />
-              <Route path="designs" element={<Designs />} />
-              <Route path="api-keys" element={<ApiKeys />} />
-            </Route>
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/data-deletion" element={<DataDeletion />} />
-            <Route path="/b/calendar/:workflowId/:conversationId" element={<BookingFlow />} />
-            <Route path="/b/pay/:transactionId" element={<PaymentFlow />} />
-            <Route path="/b/pay/upi/:transactionId" element={<PaymentUpiRedirect />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <ChatbotWidget />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route
+                path="/dashboard/designs/editor/:id"
+                element={
+                  <ProtectedRoute>
+                    <DesignEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="whatsapp-setup" element={<WhatsAppSetup />} />
+                <Route path="business-profile" element={<BusinessProfile />} />
+                <Route path="templates" element={<Templates />} />
+                <Route path="templates/create" element={<CreateTemplate />} />
+                <Route path="templates/edit/:id" element={<EditTemplate />} />
+                <Route path="campaigns" element={<Campaigns />} />
+                <Route path="campaigns/create" element={<CreateCampaign />} />
+                <Route path="campaigns/:id" element={<CampaignDetail />} />
+                <Route path="contacts" element={<Contacts />} />
+                <Route path="inbox" element={<Inbox />} />
+                <Route path="billing" element={<Billing />} />
+                <Route path="wallet" element={<Wallet />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="admin" element={<AdminPanel />} />
+                <Route path="admin/users/:id" element={<AdminUserDetails />} />
+                <Route path="auto-replies" element={<AutoReplies />} />
+                <Route path="workflows" element={<Workflows />} />
+                <Route path="business-workflows" element={<BusinessWorkflows />} />
+                <Route path="invoices" element={<Invoices />} />
+                <Route path="designs" element={<Designs />} />
+                <Route path="api-keys" element={<ApiKeys />} />
+              </Route>
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/data-deletion" element={<DataDeletion />} />
+              <Route path="/b/calendar/:workflowId/:conversationId" element={<BookingFlow />} />
+              <Route path="/b/pay/:transactionId" element={<PaymentFlow />} />
+              <Route path="/b/pay/upi/:transactionId" element={<PaymentUpiRedirect />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <ChatbotWidget />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
 import { motion } from "framer-motion";
-import Logo from "@/assets/yestickai.png";
+const Logo = "/logo1.png";
 
 const benefits = [
   "14-day free trial, no credit card needed",
@@ -92,14 +93,19 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex bg-background">
+      <Helmet>
+        <title>Sign Up | YesTick AI Automation Services</title>
+        <meta name="description" content="Start your 14-day free trial with YesTick AI. Automate your business processes and set up your omnichannel inbox in under 5 minutes." />
+        <meta name="keywords" content="AI automation platform sign up, AI automation services, affordable AI automation solutions for businesses, automated business processes" />
+      </Helmet>
       {/* Left Panel */}
       <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden items-center justify-center p-12 bg-muted/30">
         <div className="absolute inset-0 opacity-30" />
 
         <div className="relative z-10 max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-12">
-            <div className="w-50 h-12 rounded-xl flex items-center justify-center text-primary-foreground">
-              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
+            <div className="h-20 rounded-xl flex items-center justify-center text-primary-foreground">
+              <img src="/logo1.png" alt="Logo" className="w-auto h-full object-contain" />
             </div>
           </Link>
 

@@ -31,8 +31,8 @@ const Navbar = () => {
       <div className="container mx-auto flex items-center justify-between h-16 md:h-24 px-4 md:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="h-10 md:h-14 rounded-xl flex items-center justify-center transition-all duration-300">
-            <img src="/logo.png" alt="Logo" className="w-auto h-full object-contain origin-left" />
+          <div className="h-14 md:h-20 rounded-xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-105">
+            <img src="/logo1.png" alt="Logo" className="w-auto h-full object-contain origin-left drop-shadow-md" />
           </div>
         </Link>
 

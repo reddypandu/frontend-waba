@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare } from "lucide-react";
-import Logo from "@/assets/yestickai.png";
+const Logo = "/logo1.png";
 import { Eye, EyeOff } from "lucide-react";
 
 
@@ -44,11 +45,16 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/50 px-4">
+      <Helmet>
+        <title>Login | YesTick AI Business Solutions</title>
+        <meta name="description" content="Login to YesTick AI to access your AI business automation dashboard." />
+        <meta name="keywords" content="AI business solutions, AI solutions company, login YesTick AI" />
+      </Helmet>
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <Link to="/" className="flex justify-center mb-4">
-            <div className="h-12 w-50 rounded-xl flex items-center justify-center">
-              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
+          <Link to="/" className="flex justify-center mb-6">
+            <div className="h-20 rounded-xl flex items-center justify-center text-primary-foreground">
+              <img src="/logo1.png" alt="Logo" className="w-auto h-full object-contain" />
             </div>
           </Link>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>

@@ -1,0 +1,20 @@
+# YesTick AI
+
+> The complete omnichannel inbox and smart chatbot platform.
+
+YesTick AI is a powerful AI productivity platform and AI business automation software. 
+It enables organizations to build intelligent AI agents, automate business workflows, and scale their customer engagement without writing a single line of code.
+
+## Key Features
+- **Omnichannel Inbox**: Centralize messages from WhatsApp API, FB Messenger, Telegram, Instagram, etc.
+- **AI Automation Platform**: Automate business processes and create custom workflow automations.
+- **Smart Chatbot**: Provide 24/7 intelligent customer support.
+- **Enterprise AI Solutions**: Scalable automation software for businesses of all sizes.
+
+## Resources
+- Website: https://yestickai.com
+- Sign up for a 14-day free trial: https://yestickai.com/register
+- Log in: https://yestickai.com/login
+
+## Pricing
+We offer a 14-day free trial, no credit card needed. Setup takes under 5 minutes.

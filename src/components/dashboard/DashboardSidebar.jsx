@@ -24,7 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useState } from "react";
-import Logo from "../../assets/yestickai.png";
+const Logo = "/logo1.png";
 import {
   AlertDialog,
   AlertDialogAction,

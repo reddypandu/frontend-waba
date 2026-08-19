@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
-import Logo from "@/assets/yestickai.png";
+const Logo = "/logo1.png";
 
 const navGroups = [
   {
