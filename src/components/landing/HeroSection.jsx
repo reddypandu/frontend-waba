@@ -46,7 +46,7 @@ const HeroSection = () => {
             </motion.div>
 
             {/* Headline */}
-            <h1 className="text-[32px] sm:text-4xl md:text-5xl lg:text-5xl xl:text-7xl font-extrabold text-[#1a202c] leading-[1.1] mb-4 xl:mb-6 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-black text-[#1a202c] leading-[1.05] mb-4 xl:mb-6 tracking-tighter">
               The Complete <br />
               <span className="text-brand-green-500">Omnichannel</span> Inbox <br />
               & Smart Chatbot

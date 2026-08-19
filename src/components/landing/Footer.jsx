@@ -77,7 +77,7 @@ const Footer = () => (
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5 mb-4 font-extrabold text-2xl">
             <div className="h-16 md:h-20 rounded-xl flex items-center justify-start">
-              <img src="/logo1.png" alt="Logo" className="w-auto h-full object-contain origin-left" />
+              <img src="/footerlogo1.png" alt="Logo" className="w-auto h-full object-contain origin-left" />
             </div>
 
           </div>
