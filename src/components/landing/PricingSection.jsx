@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Zap, Crown, Building2 } from "lucide-react"; // Import Crown icon
@@ -65,6 +66,12 @@ const plans = [
 ];
 
 const PricingSection = () => {
+  const [expanded, setExpanded] = useState({});
+
+  const toggleExpand = (index) => {
+    setExpanded((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   return (
     <section
       id="pricing"
@@ -102,7 +109,7 @@ const PricingSection = () => {
         </motion.div>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto items-start">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -110,7 +117,7 @@ const PricingSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
-              className={`relative rounded-3xl p-8 border transition-all duration-300 ${plan.popular
+              className={`relative flex flex-col h-full rounded-3xl p-8 border transition-all duration-300 ${plan.popular
                 ? "border-primary bg-card shadow-xl scale-105"
                 : "border-border bg-card/60 hover:border-primary/50"
                 }`}
@@ -164,9 +171,10 @@ const PricingSection = () => {
               </Button>
 
               {/* Features */}
-              <ul className="space-y-4">
-                {plan.features.map((f, idx) => {
-                  const isObj = typeof f === 'object';
+              <div className="flex-1 flex flex-col">
+                <ul className="space-y-4 flex-1">
+                  {(expanded[i] ? plan.features : plan.features.slice(0, 5)).map((f, idx) => {
+                    const isObj = typeof f === 'object';
                   const text = isObj ? f.text : f;
                   const isBold = isObj ? f.bold : false;
                   const hasInfo = isObj ? f.info : false;
@@ -183,7 +191,16 @@ const PricingSection = () => {
                     </li>
                   );
                 })}
-              </ul>
+                </ul>
+                {plan.features.length > 5 && (
+                  <button
+                    onClick={() => toggleExpand(i)}
+                    className="text-sm font-semibold text-brand-green-600 hover:text-brand-green-700 mt-6 flex items-center justify-center py-2 px-4 rounded-lg bg-brand-green-50/50 hover:bg-brand-green-100/50 transition-colors border border-brand-green-100"
+                  >
+                    {expanded[i] ? "Show less" : "Read more"}
+                  </button>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
